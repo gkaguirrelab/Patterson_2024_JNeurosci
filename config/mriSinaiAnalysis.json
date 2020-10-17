@@ -25,7 +25,58 @@
 		"type": "git",
 		"update": "",
 		"url": "https:\/\/github.com\/gkaguirrelab\/forwardModelWrapper.git"
+	},
+	{
+		"flavor": "",
+		"hook": "",
+		"importance": "",
+		"localHookTemplate": "",
+		"name": "forwardModel",
+		"pathPlacement": "prepend",
+		"subfolder": "",
+		"toolboxRoot": "",
+		"type": "git",
+		"update": "",
+		"url": "https:\/\/github.com\/gkaguirrelab\/forwardModel.git"
+	},
+	{
+		"flavor": "",
+		"hook": "",
+		"importance": "",
+		"localHookTemplate": "",
+		"name": "fw_sdk_matlab",
+		"pathPlacement": "append",
+		"subfolder": "",
+		"toolboxRoot": "",
+		"type": "include",
+		"update": "",
+		"url": ""
+	},
+	{
+		"flavor": "",
+		"hook": "",
+		"importance": "",
+		"localHookTemplate": "",
+		"name": "freesurferMatlab",
+		"pathPlacement": "append",
+		"subfolder": "matlab",
+		"toolboxRoot": "",
+		"type": "git",
+		"update": "",
+		"url": "https:\/\/github.com\/freesurfer\/freesurfer"
+	},
+	{
+		"flavor": "",
+		"hook": "",
+		"importance": "",
+		"localHookTemplate": "",
+		"name": "ciftiMatlab",
+		"pathPlacement": "prepend",
+		"subfolder": "",
+		"toolboxRoot": "",
+		"type": "git",
+		"update": "",
+        "url": "https:\/\/github.com\/Washington-University\/cifti-matlab.git"
 	}
-
 ]
 

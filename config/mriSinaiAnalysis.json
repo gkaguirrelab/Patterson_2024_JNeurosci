@@ -1,0 +1,31 @@
+[
+	{
+		"flavor": "",
+		"hook": "",
+		"importance": "",
+		"localHookTemplate": "config/mriSinaiAnalysisLocalHookTemplate.m",
+	        "printLocalHookOutput": "1",
+		"name": "mriSinaiAnalysis",
+		"pathPlacement": "append",
+		"subfolder": ["code"],
+		"toolboxRoot": "",
+		"type": "git",
+		"update": "",
+		"url": "https:\/\/github.com\/gkaguirrelab\/mriSinaiAnalysis.git"
+	},
+ 	{
+		"flavor": "",
+		"hook": "",
+		"importance": "",
+		"localHookTemplate": "",
+		"name": "forwardModelWrapper",
+		"pathPlacement": "append",
+		"subfolder": "",
+		"toolboxRoot": "#",
+		"type": "git",
+		"update": "",
+		"url": "https:\/\/github.com\/gkaguirrelab\/forwardModelWrapper.git"
+	}
+
+]
+

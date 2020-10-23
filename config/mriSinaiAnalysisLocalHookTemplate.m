@@ -24,14 +24,27 @@ if (ispref(projectName))
 end
 
 
+%% Paths to find DropBox directory
+if ismac
+        [~, userName] = system('whoami');
+        userName = strtrim(userName);
+        dropboxBaseDir = ...
+            fullfile('/Users', userName, ...
+            'Dropbox (Aguirre-Brainard Lab)');
+        setpref(projectName,'dropboxBaseDir',dropboxBaseDir);
+elseif isunix
+    warning('Need to edit this line in the mriSinaiAnalysisLocalHook template')
+elseif ispc
+    warning('Need to edit this line in the mriSinaiAnalysisLocalHook template')
+else
+    disp('What are you using?')
+end
+
+
+
 %% Specify and save project location
 projectBaseDir = tbLocateProject(projectName);
 setpref(projectName,'projectBaseDir',projectBaseDir);
-
-
-%% Get the userID
-[~, userID] = system('whoami');
-userID = strtrim(userID);
 
 
 

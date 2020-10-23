@@ -1,4 +1,4 @@
-function makeStimForFw(subject, fw_key)
+function mtSinaiStimulusConstruction(subject, fw_key)
 % This function constructs stimuli for mtSinai forwardModel Flywheel runs. 
 %
 % Syntax:
@@ -20,27 +20,18 @@ function makeStimForFw(subject, fw_key)
 %   NA              
 %
 
-% Set path to dropbox
-if ismac
-[~, userName] = system('whoami');
-userName = strtrim(userName);
-dropboxAnalysisDir = ...
-    fullfile('/Users', userName, ...
-    '/Dropbox (Aguirre-Brainard Lab)/MELA_analysis/fmriBlockFrequencyDirectionAnalysis/');
-elseif isunix 
-userName = getenv('USER');
-dropboxAnalysisDir = ...
-    fullfile('/home', userName, ...
-    '/Dropbox (Aguirre-Brainard Lab)/MELA_analysis/fmriBlockFrequencyDirectionAnalysis/');  
-elseif ispc 
-userName = getenv('username');
-dropboxAnalysisDir = ...
-    fullfile('C:\Users', userName, ...
-    '/Dropbox (Aguirre-Brainard Lab)/MELA_analysis/fmriBlockFrequencyDirectionAnalysis/');    
-end
+% Get the path to DropBox
+dropboxBaseDir = getpref('mriSinaiAnalysis', 'dropboxBaseDir');
+
+% Path to the dataDir within dropbox
+dataDir = fullfile('MELA_data_Through061317','fmriBlockFreqDirection7T');
+subjectNames = {'HERO_asb1','HERO_gka1'};
+
+%% LOOP OVER THE SUBJECTS. LOAD THEIR RAW DATA FILES FROM THE mela_data
+%% DIRECTORY. CONVERT THESE INTO MATRICES
 
 % Set path to stimulus file
-stimulusFile = fullfile(dropboxAnalysisDir, 'packetCache', 'stimulusStructCache', 'bd69a9b432898b177763fd264390096b.mat');
+stimulusFile = fullfile(dropboxBaseDir, 'packetCache', 'stimulusStructCache', 'bd69a9b432898b177763fd264390096b.mat');
 
 % Load the stimulus file
 load(stimulusFile);

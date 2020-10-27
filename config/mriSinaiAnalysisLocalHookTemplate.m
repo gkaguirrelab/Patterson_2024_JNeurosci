@@ -26,26 +26,32 @@ end
 
 %% Paths to find DropBox directory
 if ismac
-        [~, userName] = system('whoami');
-        userName = strtrim(userName);
-        dropboxBaseDir = ...
-            fullfile('/Users', userName, ...
-            'Dropbox (Aguirre-Brainard Lab)');
-        setpref(projectName,'dropboxBaseDir',dropboxBaseDir);
+    [~, userName] = system('whoami');
+    userName = strtrim(userName);
 elseif isunix
-    warning('Need to edit this line in the mriSinaiAnalysisLocalHook template')
+    userName = getenv('USER');
 elseif ispc
-    warning('Need to edit this line in the mriSinaiAnalysisLocalHook template')
+    userName = getenv('username');
 else
     disp('What are you using?')
 end
 
+dropboxBaseDir = ...
+    fullfile('/Users', userName, ...
+    'Dropbox (Aguirre-Brainard Lab)');
+
+% Set pref to dropboxBaseDir
+setpref(projectName,'dropboxBaseDir',dropboxBaseDir);
+
+% Set pref to username
+setpref(projectName,'userName',userName);
 
 
 %% Specify and save project location
 projectBaseDir = tbLocateProject(projectName);
 setpref(projectName,'projectBaseDir',projectBaseDir);
 
-
+%% Flywheel key preferences 
+setpref(projectName, 'flywheelAPIkey', 'Enter your key here');
 
 end

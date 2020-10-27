@@ -13,6 +13,19 @@
 		"update": "",
 		"url": "https:\/\/github.com\/gkaguirrelab\/mriSinaiAnalysis.git"
 	},
+	{
+		"flavor": "",
+		"hook": "",
+		"importance": "",
+		"localHookTemplate": "",
+		"name": "MRklar",
+		"pathPlacement": "append",
+		"subfolder": "",
+		"toolboxRoot": "",
+		"type": "git",
+		"update": "",
+		"url": "https:\/\/github.com\/gkaguirrelab\/MRklar.git"
+	},
  	{
 		"flavor": "",
 		"hook": "",

@@ -58,7 +58,7 @@ for ss = 1:length(stimulusSessDirs)
         % Make the stimulus structure
         [preMergeStimStructCellArray{ss, ii}.values, ...
          preMergeStimStructCellArray{ss, ii}.timebase, ...
-         preMergeStimStructCellArray{ss, ii}.metaData] = fmriBFDM_MakeStimStruct(makeStimStructParams);
+         preMergeStimStructCellArray{ss, ii}.metaData] = makeStimStruct(makeStimStructParams);
     end
     fprintf('\n');
 end

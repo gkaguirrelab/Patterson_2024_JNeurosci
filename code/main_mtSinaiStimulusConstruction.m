@@ -30,7 +30,7 @@ stimStructCellArray = loadStimStructCellArray(userName);
 % Path to the dataDir within dropbox
 subjectNames = {'HERO_asb1' 'HERO_gka1'};
 
-for ss = length(subjectNames)
+for ss = 1:length(subjectNames)
     subject = subjectNames{ss};
 
     % Get the subjects
@@ -51,27 +51,57 @@ for ss = length(subjectNames)
     % Loop through sessions and group them together
     lengthSes = length(sub);
 
-    % First append the condition A
+    % First append the condition A session 1
     for ii = 1:lengthSes
-        if sub{ii}.metaData.modulationDirection == "LightFlux" && sub{ii}.metaData.stimulusOrderAorB == 'A'
+        if sub{ii}.metaData.modulationDirection == "LightFlux" && sub{ii}.metaData.stimulusOrderAorB == 'A' && strcmp(sub{ii}.metaData.sessionDate, '041416')
             LightFluxSessions{end+1} = sub{ii};
-        elseif sub{ii}.metaData.modulationDirection == "L-M" && sub{ii}.metaData.stimulusOrderAorB == 'A'
+        elseif sub{ii}.metaData.modulationDirection == "L-M" && sub{ii}.metaData.stimulusOrderAorB == 'A' && strcmp(sub{ii}.metaData.sessionDate, '041416')
             LMinusMSessions{end+1} = sub{ii};
-        elseif sub{ii}.metaData.modulationDirection == "S" && sub{ii}.metaData.stimulusOrderAorB == 'A'    
+        elseif sub{ii}.metaData.modulationDirection == "S" && sub{ii}.metaData.stimulusOrderAorB == 'A' && strcmp(sub{ii}.metaData.sessionDate, '041416')    
             SSessions{end+1} = sub{ii};
         end
     end
-    % Now append the condition B
+    % condition A session 2
     for ii = 1:lengthSes
-        if sub{ii}.metaData.modulationDirection == "LightFlux" && sub{ii}.metaData.stimulusOrderAorB == 'B'
+        if sub{ii}.metaData.modulationDirection == "LightFlux" && sub{ii}.metaData.stimulusOrderAorB == 'A' && strcmp(sub{ii}.metaData.sessionDate, '041516')
             LightFluxSessions{end+1} = sub{ii};
-        elseif sub{ii}.metaData.modulationDirection == "L-M" && sub{ii}.metaData.stimulusOrderAorB == 'B'
+        elseif sub{ii}.metaData.modulationDirection == "L-M" && sub{ii}.metaData.stimulusOrderAorB == 'A' && strcmp(sub{ii}.metaData.sessionDate, '041516')
             LMinusMSessions{end+1} = sub{ii};
-        elseif sub{ii}.metaData.modulationDirection == "S" && sub{ii}.metaData.stimulusOrderAorB == 'B'    
+        elseif sub{ii}.metaData.modulationDirection == "S" && sub{ii}.metaData.stimulusOrderAorB == 'A' && strcmp(sub{ii}.metaData.sessionDate, '041516')    
+            SSessions{end+1} = sub{ii};
+        end
+    end    
+    % Now append the condition B session 1
+    for ii = 1:lengthSes
+        if sub{ii}.metaData.modulationDirection == "LightFlux" && sub{ii}.metaData.stimulusOrderAorB == 'B' && strcmp(sub{ii}.metaData.sessionDate, '041416')
+            LightFluxSessions{end+1} = sub{ii};
+        elseif sub{ii}.metaData.modulationDirection == "L-M" && sub{ii}.metaData.stimulusOrderAorB == 'B' && strcmp(sub{ii}.metaData.sessionDate, '041416')
+            LMinusMSessions{end+1} = sub{ii};
+        elseif sub{ii}.metaData.modulationDirection == "S" && sub{ii}.metaData.stimulusOrderAorB == 'B' && strcmp(sub{ii}.metaData.sessionDate, '041416')    
             SSessions{end+1} = sub{ii};
         end
     end
-
+    % condition B session 2
+    for ii = 1:lengthSes
+        if sub{ii}.metaData.modulationDirection == "LightFlux" && sub{ii}.metaData.stimulusOrderAorB == 'B' && strcmp(sub{ii}.metaData.sessionDate, '041516')
+            LightFluxSessions{end+1} = sub{ii};
+        elseif sub{ii}.metaData.modulationDirection == "L-M" && sub{ii}.metaData.stimulusOrderAorB == 'B' && strcmp(sub{ii}.metaData.sessionDate, '041516')
+            LMinusMSessions{end+1} = sub{ii};
+        elseif sub{ii}.metaData.modulationDirection == "S" && sub{ii}.metaData.stimulusOrderAorB == 'B' && strcmp(sub{ii}.metaData.sessionDate, '041516')    
+            SSessions{end+1} = sub{ii};
+        end
+    end
+    
+    % Replace the extralightFLuxB_run1 with the original run1 and extraSA2 with SA2 
+    if strcmp(subject, 'HERO_asb1')
+        LightFluxSessions(7) = LightFluxSessions(13);
+        LightFluxSessions(13) = [];
+        
+        SSessions(2) = SSessions(7);
+        SSessions(7) = [];
+    end
+  
+    
     % Combine the input matrices 
     inputMatrix = {LightFluxSessions LMinusMSessions SSessions};
 
@@ -138,17 +168,17 @@ for ss = length(subjectNames)
 
     % Save lightflux
     stimulus = outputMatrix{1,1};
-    lfmod = fullfile(outputFolder, ['stimulus_HERO_' subject '1_LightFlux.mat']);
+    lfmod = fullfile(outputFolder, ['stimulus_' subject '_LightFlux.mat']);
     save(lfmod, 'stimulus')
 
     % Save LM 
     stimulus = outputMatrix{1,2};
-    lmmod = fullfile(outputFolder, ['stimulus_HERO_' subject '1_L-M.mat']);
+    lmmod = fullfile(outputFolder, ['stimulus_' subject '_L-M.mat']);
     save(lmmod, 'stimulus')
 
     % S
     stimulus = outputMatrix{1,3};
-    smod = fullfile(outputFolder, ['stimulus_HERO_' subject '1_S.mat']);
+    smod = fullfile(outputFolder, ['stimulus_' subject '_S.mat']);
     save(smod, 'stimulus')
 
     % Save using the CLI 

@@ -149,7 +149,7 @@ for ss = 1:length(subjectNames)
             % the matrix
             for event = inputMatrix{modality}{1, ii}.metaData.eventTimesArray
                 attentionVal = round(event/1000);
-                emptyMat(7,attentionVal) = 1;
+                emptyMat(length(frequencies)+1,attentionVal) = 1;
             end
 
             % Put the final acquisition matrix in the output matrix

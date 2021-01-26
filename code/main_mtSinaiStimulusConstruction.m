@@ -118,9 +118,10 @@ for ss = 1:length(subjectNames)
         for ii = 1:length(inputMatrix{modality})
 
             % Create an empty stimulus matrix 7x336
-            emptyMat = zeros(7,336);
+            emptyMat = zeros(8,336);
 
             % Get the order of different Hz in the current acquisition 
+            zeroHz = find(inputMatrix{modality}{1, ii}.metaData.stimTypes == 1);  
             TwoHz = find(inputMatrix{modality}{1, ii}.metaData.stimTypes == 2);  
             FourHz = find(inputMatrix{modality}{1, ii}.metaData.stimTypes == 3);  
             EightHz = find(inputMatrix{modality}{1, ii}.metaData.stimTypes == 4);  
@@ -129,7 +130,7 @@ for ss = 1:length(subjectNames)
             SixtyfourHz = find(inputMatrix{modality}{1, ii}.metaData.stimTypes == 7);  
 
             % Combine the frequencies in cell
-            frequencies = {TwoHz' FourHz' EightHz' SixteenHz' ThirtytwoHz' SixtyfourHz'};
+            frequencies = {zeroHz' TwoHz' FourHz' EightHz' SixteenHz' ThirtytwoHz' SixtyfourHz'};
 
             % Loop through frequencies in the current acquisition and determine 
             % the starting and stopping point

@@ -1,0 +1,8 @@
+projectLabel,mtSinaiFlicker,gearName,denoise-icaaroma,rootSession,funcZip01,ConfigKeys,"{'averageAcquisitions','dataFileType','dataSourceType','modelClass','modelOpts','RegName','tr'}",ConfigVals,"{'1','cifti','icafix','prfTimeShift',modelOpts,'FS','0.8'}"
+Inputs,fmriprepOutputArchive,optionalAROMAnoiseICs,analysisSubmissionTag,,,,,,
+DefaultLabel,,,,,,,,,
+FileSuffix,zip,zip,,,,,,,
+ContainerType,analysis,project,,,,,,,
+ExactStringMatch,0,0,,Notes,,,,,
+,,,,,,,,,
+HEROgka1,HEROgka1/041416/fmriprep-fwheudiconv/fmriprep_sub-HEROgka1_5f9f6cf691c4826351f35c57.zip,,HEROgka1_denoiseICA,,,,,,

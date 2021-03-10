@@ -53,7 +53,11 @@ for ss = 1: length(subjectNames)
         delete(tmpPath)
         
         % Fit the DoE model
-        [results,fieldNames] = fitDoEModel(results);
+        [resultsDoE,fieldNames] = fitDoEModel(results);
+        
+        % Add the original time-series R2 fit
+        resultsDoE.initialR2 = results.R2;
+        fieldNames = [fieldNames 'initialR2'];
         
         % Save the map results into images
         for ff = 1:length(fieldNames)
@@ -61,7 +65,7 @@ for ss = 1: length(subjectNames)
             % The initial, CIFTI space image
             outCIFTIFile = fullfile(resultsSaveDir, [subjectNames{ss} '_' analysisLabels{aa} '_' fieldNames{ff} '.dtseries.nii']);
             outData = templateImage;
-            outData.cdata = single(results.(fieldNames{ff}));
+            outData.cdata = single(resultsDoE.(fieldNames{ff}));
             outData.diminfo{1,2}.length = 1;
             cifti_write(outData, outCIFTIFile)
             

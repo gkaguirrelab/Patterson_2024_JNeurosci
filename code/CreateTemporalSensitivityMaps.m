@@ -2,14 +2,28 @@
 % frequency experiments, and then fits a difference-of-exponentials model
 % to the data. The resulting fits are saved back as maps.
 
+% To find the analysis IDs, get the ID for the session (which is in the URL
+% of the web GUI, and then use this command to get a list of the analyses
+% associated with that session, and then find the analysis ID the we want.
+%
+%{
+    toolboxName = 'flywheelMRSupport';
+    fw = flywheel.Flywheel(getpref(toolboxName,'flywheelAPIKey'));
+    sessionID = '5a1fa4b33b71e50019fd55dd';
+    analysisList = fw.getSessionAnalyses(sessionID);
+%}
+
 
 % Save location for the maps
 subjectNames = {'HEROgka1','HEROasb1'};
-analysisIDs = { {'602ae04bf32ab1cf2fe2d7a5','602ae042ae50da7a462c12d6','602ae03afae38976c793401b'} , ...
-    {'60313a5e2471d261bd0b62e8', '60313a5593240e7ae82c122b', '60313a4cd184138a20933f3c'} };
+analysisIDs = { {'6048d43b61d36d2068d8d969','6048d42b6b47545dd4c852ba','6048d41ec47614f78289342e'} , ...
+    {'6048d45f2fc5506ee3c84f3e', '6048d45349868fea27c850ab', '6048d447171bd2f8468932a8'} };
+retinoMapIDs = {'5dc88aaee74aa3005e169380','5dc88aaee74aa3005e169380' };
+retinoFileNames = {'TOME_3021_cifti_maps.zip','TOME_3021_cifti_maps.zip'};
 
 % Analysis parameters
-scratchSaveDir = getpref('forwardModelWrapper','flywheelScratchDir');
+scratchSaveDir = getpref('flywheelMRSupport','flywheelScratchDir');
+scratchSaveDir = '/Users/aguirre/Desktop/tempFiles';
 analysisLabels = {'LF','L-M','S'};
 
 % Create the functional tmp save dir if it does not exist
@@ -25,83 +39,103 @@ fw = flywheel.Flywheel(getpref('forwardModelWrapper','flywheelAPIKey'));
 for ss = 1: length(subjectNames)
     
     % Set up the paths for this subject
-    fileStem = [subjectNames{ss} '_eventGain_'];    
+    fileStem = [subjectNames{ss} '_eventGain_'];
     resultsSaveDir = ['/Users/aguirre/Desktop/' subjectNames{ss}];
     mkdir(resultsSaveDir);
+    
+    % Download and unzip the retino maps
+    fileName = retinoFileNames{ss};
+    tmpPath = fullfile(saveDir,fileName);
+    fw.downloadOutputFromAnalysis(retinoMapIDs{ss},fileName,tmpPath);
+    command = ['unzip -q -n ' tmpPath ' -d ' saveDir];
+    system(command);
+    
+    % Load the retino maps
+    tmpPath = fullfile(saveDir,strrep(fileName,'_cifti_maps.zip','_inferred_varea.dtseries.nii'));
+    vArea = cifti_read(tmpPath);
+    vArea = vArea.cdata;
+    tmpPath = fullfile(saveDir,strrep(fileName,'_cifti_maps.zip','_inferred_eccen.dtseries.nii'));
+    eccenMap = cifti_read(tmpPath);
+    eccenMap = eccenMap.cdata;
+    tmpPath = fullfile(saveDir,strrep(fileName,'_cifti_maps.zip','_inferred_angle.dtseries.nii'));
+    polarMap = cifti_read(tmpPath);
+    polarMap = polarMap.cdata;
+    tmpPath = fullfile(saveDir,strrep(fileName,'_cifti_maps.zip','_inferred_sigma.dtseries.nii'));
+    sigmaMap = cifti_read(tmpPath);
+    sigmaMap = sigmaMap.cdata;
     
     % Loop over analysis IDs
     for aa = 1:length(analysisIDs{ss})
         
         % Download the results file
         fileName = [fileStem 'results.mat'];
-        tmpPath = fullfile(saveDir,fileName);
+        tmpPath = fullfile(saveDir,[analysisLabels{aa} '_' fileName]);
         fw.downloadOutputFromAnalysis(analysisIDs{ss}{aa},fileName,tmpPath);
         
         % Load the result file into memory and delete the downloaded file
         clear results
         load(tmpPath,'results')
-        delete(tmpPath)
+%        delete(tmpPath)
         
         % Download the templateImage file
         fileName = [fileStem 'templateImage.mat'];
-        tmpPath = fullfile(saveDir,fileName);
+        tmpPath = fullfile(saveDir,[analysisLabels{aa} '_' fileName]);
         fw.downloadOutputFromAnalysis(analysisIDs{ss}{aa},fileName,tmpPath);
         
         % Load the result file into memory and delete the downloaded file
         clear templateImage
         load(tmpPath,'templateImage')
-        delete(tmpPath)
+%        delete(tmpPath)
         
         % Fit the DoE model
-        [resultsDoE,fieldNames] = fitDoEModel(results);
+        [resultsFit,fieldNames] = fitSplineModel(results);
         
         % Add the original time-series R2 fit
-        resultsDoE.initialR2 = results.R2;
+        resultsFit.initialR2 = results.R2;
         fieldNames = [fieldNames 'initialR2'];
         
         % Save the map results into images
         for ff = 1:length(fieldNames)
-            
             % The initial, CIFTI space image
             outCIFTIFile = fullfile(resultsSaveDir, [subjectNames{ss} '_' analysisLabels{aa} '_' fieldNames{ff} '.dtseries.nii']);
             outData = templateImage;
-            outData.cdata = single(resultsDoE.(fieldNames{ff}));
+            outData.cdata = single(resultsFit.(fieldNames{ff}));
             outData.diminfo{1,2}.length = 1;
             cifti_write(outData, outCIFTIFile)
-            
         end
         
+        % generate visual field maps
+        makeVisualFieldMap(resultsFit,eccenMap,polarMap,vArea,sigmaMap);
     end
     
 end
 
 
-function [results,fieldNames] = fitDoEModel(results)
+
+function [results,fieldNames] = fitSplineModel(results)
 
 %% Fit the difference-of-exponentials model
 nFreqs = 6;
 freqs = [2 4 8 16 32 64];
-freqsFit = logspace(log10(0.1),log10(100),1000);
+freqsFit = logspace(log10(freqs(1)),log10(freqs(end)),1000);
+
 nV = size(results.params,1);
 
-% Anonymous function for a difference-of-exponentials model
-doe = @(a,tau1,tau2,f) a.*(exp(-(f./tau1))-exp(-(f./tau2)));
-
 % Variables to hold the results
-fitPeakAmpDoE = nan(nV,1);
-fitPeakFreqDoE = nan(nV,1);
-fitR2DoE = nan(nV,1);
-
-% Define the options for the search
-options = optimset('fminsearch');
-options.Display = 'off';
+fitPeakAmp = nan(nV,1);
+fitPeakFreq = nan(nV,1);
+fitOffset = nan(nV,1);
 
 % Loop through the vertices / voxels
 for vv = 1:nV
     if results.R2(vv)>0.05
         
         % Get the beta values
-        yVals = results.params(vv,1:nFreqs);
+        yVals = results.params(vv,1:nFreqs+1);
+        
+        % The params have an explicit coding for the blank screen, so we
+        % adjust for this
+        yVals = yVals(2:end) - yVals(1);
         
         % Handle a negative offset
         if min(yVals)<0
@@ -110,26 +144,103 @@ for vv = 1:nV
         else
             offset = 0;
         end
-        
-        % Set up the objective
-        myObj = @(x) norm(yVals - doe(x(1),x(2),x(3),freqs));
-        
-        % Fit
-        x = fminsearch(myObj,[20,1,2],options);
-        myFit = doe(x(1),x(2),x(3),freqsFit)+offset;
+                        
+        myFit = spline(0:nFreqs-1,yVals,linspace(0,nFreqs-1,1000));
         
         [a,idx] = max(myFit);
-        fitPeakAmpDoE(vv) = a;
-        fitPeakFreqDoE(vv) = freqsFit(idx);
-        fitR2DoE(vv) = corr(doe(x(1),x(2),x(3),freqs)',(yVals+offset)');
-        
+        fitPeakAmp(vv) = a+offset;
+        fitPeakFreq(vv) = freqsFit(idx);
+        fitOffset(vv) = offset;
+        fitStuff(vv).yVals = yVals;
+        fitStuff(vv).myFit = myFit;
     end
 end
 
 % Place the analysis in the results variable
-results.fitPeakAmpDoE = fitPeakAmpDoE;
-results.fitPeakFreqDoE = fitPeakFreqDoE;
-results.fitR2DoE = fitR2DoE;
-fieldNames = {'fitPeakAmpDoE','fitPeakFreqDoE','fitR2DoE'};
+results.fitPeakAmp = fitPeakAmp;
+results.fitPeakFreq = fitPeakFreq;
+results.fitOffset = fitOffset;
+results.fitSupport.freqs = freqs;
+results.fitSupport.freqsFit = freqsFit;
+results.fitStuff = fitStuff;
+fieldNames = {'fitPeakAmp','fitPeakFreq','fitOffset'};
 
 end
+
+
+
+
+function figHandle = makeVisualFieldMap(resultsFit,eccenMap,polarMap,vArea,sigmaMap)
+
+
+%figHandle = figure('visible','on');
+%set(figHandle,'PaperOrientation','landscape');
+%set(figHandle,'PaperUnits','normalized');
+%set(gcf,'Units','points','Position',[100 100 400 400]);
+
+% Identify the vertices with fits above the threshold
+goodIdx = logical((resultsFit.initialR2 > 0.125).*( (resultsFit.fitOffset./resultsFit.fitPeakAmp) < 0.1).*(eccenMap>0.1).*(vArea==1).*(vArea==1));
+
+% Left and right hemisphere
+%polarMap(32492:end)=-polarMap(32492:end);
+
+% % Map R2 value to a red-green plot symbol color
+nColors = 200;
+[mycolormap] = make_colormap(nColors);
+
+valMin = 0;
+valMax = 16;
+val = resultsFit.fitPeakFreq(goodIdx);
+ind = floor((nColors-1).* (val-valMin)./(valMax-valMin))+1;
+
+% valMin = 0;
+% valMax = 10;
+% val = resultsDoE.fitPeakAmpDoE(goodIdx) ./ abs(resultsDoE.fitOffset(goodIdx));
+% ind = floor((nColors-1).* (val-valMin)./(valMax-valMin))+1;
+
+ind(ind>nColors)=nColors;
+ind(ind<1)=1;
+colorTriple = mycolormap(ind,:);
+
+
+markSize = sigmaMap(goodIdx).*100;
+markSize(markSize==0) = 25;
+
+% The polar angle map has the dorsal V1 border at +180, and the ventral V1
+% border at 0. By adding 90 degrees to the polar angle, this places the
+% dorsal V1 border at 270, which on the matlab polar scatter corresponds to
+% the 6 o'clock position on the plot. Therefore, the polarscatter plot is
+% in visual field coordinates(i.e., 6 o'clock represents the inferior
+% vertical meridian of the visual field).
+%h = polarscatter(deg2rad(polarMap(goodIdx)+90),eccenMap(goodIdx),markSize, ...
+%    colorTriple,'filled','o','MarkerFaceAlpha',1/8);
+
+%rlim([0 60])
+% 
+ fieldMap = createFieldMap(resultsFit.fitPeakFreq(goodIdx),polarMap(goodIdx),eccenMap(goodIdx),sigmaMap(goodIdx));
+% fieldMap = createFieldMap(resultsFit.fitPeakAmp(goodIdx),polarMap(goodIdx),eccenMap(goodIdx),sigmaMap(goodIdx));
+
+% subplot(2,1,1)
+% plot(eccenMap(goodIdx),resultsFit.fitPeakAmp(goodIdx),'.r');
+% ylim([0 50]);
+% xlim([0 80]);
+% subplot(2,1,2)
+% plot(eccenMap(goodIdx),resultsFit.fitPeakFreq(goodIdx),'.r');
+% ylim([0 64]);
+% xlim([0 80]);
+
+end
+
+function [mycolormap] = make_colormap(mapres)
+
+
+
+%% Create colormap
+mycolormap = zeros(mapres,3);
+mycolormap(:,1)=1;
+
+% red to yellow
+mycolormap(:,2) = linspace(0,1,mapres);
+
+end
+

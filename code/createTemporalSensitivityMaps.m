@@ -67,6 +67,8 @@ for ss = 1: length(subjectNames)
     % Loop over analysis IDs
     for aa = 1:length(analysisIDs{ss})
         
+        aa
+        
         % Download the results file
         fileName = [fileStem 'results.mat'];
         tmpPath = fullfile(saveDir,[analysisLabels{aa} '_' fileName]);
@@ -133,7 +135,8 @@ fitMaxFreq = nan(nV,1);
 fitWidthFreqDB = nan(nV,1);
 fit64HzResid = nan(nV,1);
 fitR2 = nan(nV,1);
-         
+fitStuff = struct([]);
+
 % The fitting function is a non-central beta, that is further modified to
 % allow adjustment of the bounded interval and scaling of the overall
 % amplitude. The function is constrained to hold the first degree parameter
@@ -153,7 +156,7 @@ myFunc = @(f,A,B,C,D)  C.*ncbeta(f./D, 1e-6, A, B );
 % x0 and bounds
     x0 = [1 1 1 8];
     lb = [0 1 0 0];
-    ub = [100 100 100 10];
+    ub = [100 100 100 8];
 
 % define some search options
 options = optimoptions(@fmincon,...
@@ -203,8 +206,8 @@ for vv = 1:nV
          [~,idx]=min(abs(freqsFitIdx-p(4)));
          fitMaxFreq(vv) = freqsFit(idx);
          [~,idx]=mink(abs(myFit-a/2),2);
-         fitWidthFreqDB = abs(diff(idx));
-         fit64HzResid = yVals(end)-myFunc(max(freqs),p(1),p(2),p(3),p(4));
+         fitWidthFreqDB(vv) = abs(diff(idx));
+         fit64HzResid(vv) = yVals(end)-myFunc(max(freqs),p(1),p(2),p(3),p(4));
          fitR2(vv) = R2;
          fitStuff(vv).p = p;
          fitStuff(vv).yVals = yVals;
@@ -225,6 +228,7 @@ results.fitStuff = fitStuff;
 fieldNames = {'fitPeakAmp','fitPeakFreq','fitMaxFreq','fitWidthFreqDB','fit64HzResid','fitR2'};
 
 end
+
 
 function [c, ceq] = betaNonlcon(p,y,f)
 
@@ -276,63 +280,6 @@ pz      = @(r) ncfpdf( r./(const*(1-r)), a, b, lam).* 1./(const*(1-r).^2);
 pz      = pz(x);
 
 end
-
-
-function [results,fieldNames] = fitSplineModel(results)
-
-%% Fit the difference-of-exponentials model
-nFreqs = 6;
-freqs = [2 4 8 16 32 64];
-freqsFit = logspace(log10(freqs(1)),log10(freqs(end)),1000);
-
-nV = size(results.params,1);
-
-% Variables to hold the results
-fitPeakAmp = nan(nV,1);
-fitPeakFreq = nan(nV,1);
-fitOffset = nan(nV,1);
-
-% Loop through the vertices / voxels
-for vv = 1:nV
-    if results.R2(vv)>0.25
-        
-        % Get the beta values
-        yVals = results.params(vv,1:nFreqs+1);
-        
-        % The params have an explicit coding for the blank screen, so we
-        % adjust for this
-        yVals = yVals(2:end) - yVals(1);
-        
-        % Handle a negative offset
-        if min(yVals)<0
-            offset = min(yVals);
-            yVals = yVals-offset;
-        else
-            offset = 0;
-        end
-        
-        myFit = spline(0:nFreqs-1,yVals,linspace(0,nFreqs-1,1000));
-        
-        [a,idx] = max(myFit);
-        fitPeakAmp(vv) = a+offset;
-        fitPeakFreq(vv) = freqsFit(idx);
-        fitOffset(vv) = offset;
-        fitStuff(vv).yVals = yVals;
-        fitStuff(vv).myFit = myFit;
-    end
-end
-
-% Place the analysis in the results variable
-results.fitPeakAmp = fitPeakAmp;
-results.fitPeakFreq = fitPeakFreq;
-results.fitOffset = fitOffset;
-results.fitSupport.freqs = freqs;
-results.fitSupport.freqsFit = freqsFit;
-results.fitStuff = fitStuff;
-fieldNames = {'fitPeakAmp','fitPeakFreq','fitOffset'};
-
-end
-
 
 
 

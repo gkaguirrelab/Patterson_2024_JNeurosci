@@ -1,6 +1,6 @@
 function fieldMap = createFieldMap(vals,polarVals,eccenVals,sigmaVals)
 
-vals = log10(vals);
+%vals = log10(vals);
 
 eccenMax = 90;
 mapRes = 100;
@@ -23,7 +23,7 @@ fieldMap(weightSum<0.1)=nan;
 figure
 imagesc(fieldMap)
 axis square
-caxis([log10(2) log10(32)])
-%caxis([0 25])
+%caxis([log10(2) log10(32)])
+caxis([0 25])
 
 end

@@ -16,7 +16,7 @@
 
 % Save location for the maps
 subjectNames = {'HEROgka1','HEROasb1'};
-analysisIDs = { {'6048d43b61d36d2068d8d969','6048d42b6b47545dd4c852ba','6048d41ec47614f78289342e'} , ...
+analysisIDs = { {'60ca690869059f3228c9a883','60ca68f6ba295e18031aaa35','60ca68e3f90bf6d5775e9e2b'} , ...
     {'6048d45f2fc5506ee3c84f3e', '6048d45349868fea27c850ab', '6048d447171bd2f8468932a8'} };
 retinoMapIDs = {'5dc88aaee74aa3005e169380','5dc88aaee74aa3005e169380' };
 retinoFileNames = {'TOME_3021_cifti_maps.zip','TOME_3021_cifti_maps.zip'};
@@ -39,7 +39,7 @@ fw = flywheel.Flywheel(getpref('forwardModelWrapper','flywheelAPIKey'));
 for ss = 1: length(subjectNames)
     
     % Set up the paths for this subject
-    fileStem = [subjectNames{ss} '_eventGain_'];
+    fileStem = [subjectNames{ss} '_agtcOL_'];
     resultsSaveDir = ['/Users/aguirre/Desktop/' subjectNames{ss}];
     mkdir(resultsSaveDir);
     
@@ -65,7 +65,7 @@ for ss = 1: length(subjectNames)
     sigmaMap = sigmaMap.cdata;
     
     % Loop over analysis IDs
-    for aa = 1:length(analysisIDs{ss})
+    for aa = 2:length(analysisIDs{ss})
         
         % Download the results file
         fileName = [fileStem 'results.mat'];
@@ -88,7 +88,7 @@ for ss = 1: length(subjectNames)
 %        delete(tmpPath)
         
         % Fit the DoE model
-        [resultsFit,fieldNames] = fitSplineModel(results);
+        [resultsFit,fieldNames] = fitDoEModel(results);
         
         % Add the original time-series R2 fit
         resultsFit.initialR2 = results.R2;
@@ -106,10 +106,118 @@ for ss = 1: length(subjectNames)
         
         % generate visual field maps
         makeVisualFieldMap(resultsFit,eccenMap,polarMap,vArea,sigmaMap);
+        
+        foo=1;
     end
     
 end
 
+
+
+function [results,fieldNames] = fitDoEModel(results)
+
+%% Fit the difference-of-exponentials model
+nFreqs = 6;
+freqs = [2 4 8 16 32 64];
+freqsFit = logspace(log10(1),log10(128),1000);
+
+nV = size(results.params,1);
+
+% Variables to hold the results
+fitPeakAmp = nan(nV,1);
+fitPeakFreq = nan(nV,1);
+fitOffset = nan(nV,1);
+maxF = 7;
+
+%myFunc =  @(f,A,B,C,D,E) C.*evpdf( ((E+f)./D),A,B);
+%myFunc =  @(f,A,B,C,D,E) C.*A.*B.*((f+D)/E).^(A-1).*(1-((f+D)/E).^(A)).^(B-1);
+myFunc = @(f,A,B,C,D)  D.*ncbeta(f./maxF, A, B, C );
+
+[~,idxSet]=maxk(results.R2,10);
+
+figure
+for ii=1:9
+subplot(3,3,ii)
+idx = idxSet(ii);
+y = results.params(idx,2:7)-min(results.params(idx,1));
+myObj = @(p) norm(y - myFunc(1:nFreqs,p(1),p(2),p(3),p(4)));
+p=fmincon(myObj,[1,1,1,1]);
+myObj(p)
+plot(1:nFreqs,y,'*k');
+hold on
+plot(0:0.1:nFreqs+1,myFunc(0:0.1:nFreqs+1,p(1),p(2),p(3),p(4)),'-r');
+end
+
+% Loop through the vertices / voxels
+for vv = 1:nV
+    if results.R2(vv)>0.25
+        
+        % Get the beta values
+        yVals = results.params(vv,1:nFreqs+1);
+        
+        % The params have an explicit coding for the blank screen, so we
+        % adjust for this
+        yVals = yVals(2:end) - yVals(1);
+        
+        % Handle a negative offset
+        if min(yVals)<0
+            offset = min(yVals);
+            yVals = yVals-offset;
+        else
+            offset = 0;
+        end
+                        
+        myFit = spline(0:nFreqs-1,yVals,linspace(0,nFreqs-1,1000));
+        
+        [a,idx] = max(myFit);
+        fitPeakAmp(vv) = a+offset;
+        fitPeakFreq(vv) = freqsFit(idx);
+        fitOffset(vv) = offset;
+        fitStuff(vv).yVals = yVals;
+        fitStuff(vv).myFit = myFit;
+    end
+end
+
+% Place the analysis in the results variable
+results.fitPeakAmp = fitPeakAmp;
+results.fitPeakFreq = fitPeakFreq;
+results.fitOffset = fitOffset;
+results.fitSupport.freqs = freqs;
+results.fitSupport.freqsFit = freqsFit;
+results.fitStuff = fitStuff;
+fieldNames = {'fitPeakAmp','fitPeakFreq','fitOffset'};
+
+end
+
+
+function [ pz ] = ncbeta (x, a, b, lam )
+%This function computes the probability density function for the
+%noncentral beta distribution using a transformation of variables to put
+%the desired density function in terms of a noncentral F, which is included
+%in Matlabs statsitics toolbox already.
+%
+% USAGES
+% [ pz ] = ncbeta (x, a, b, lambda )
+%
+% INPUT
+% x:    Vector of possible argument values for the pdf.
+% a:    The first degree of freedom/shape parameter.
+% b:    The second degree of freedom/shape parameter.
+% lam:  The noncentrality parameter.
+% 
+% OUTPUT
+% pz:   The probability density function for x, given the input parameters.
+%
+%-----------------------------------------------------------------------
+% Latest Edit: 18.Feb.2014
+% Joshua D Carmichael
+% josh.carmichael@gmail.com
+%-----------------------------------------------------------------------
+const   = a./b;
+pz      = @(r) ncfpdf( r./(const*(1-r)), a, b, lam).* 1./(const*(1-r).^2);
+pz      = pz(x);
+
+end
 
 
 function [results,fieldNames] = fitSplineModel(results)
@@ -128,7 +236,7 @@ fitOffset = nan(nV,1);
 
 % Loop through the vertices / voxels
 for vv = 1:nV
-    if results.R2(vv)>0.05
+    if results.R2(vv)>0.25
         
         % Get the beta values
         yVals = results.params(vv,1:nFreqs+1);
@@ -179,7 +287,7 @@ function figHandle = makeVisualFieldMap(resultsFit,eccenMap,polarMap,vArea,sigma
 %set(gcf,'Units','points','Position',[100 100 400 400]);
 
 % Identify the vertices with fits above the threshold
-goodIdx = logical((resultsFit.initialR2 > 0.125).*( (resultsFit.fitOffset./resultsFit.fitPeakAmp) < 0.1).*(eccenMap>0.1).*(vArea==1).*(vArea==1));
+goodIdx = logical((resultsFit.R2 > 0.25).*( (resultsFit.fitOffset./resultsFit.fitPeakAmp) < 0.1).*(eccenMap>0.1).*(vArea==1).*(vArea==1));
 
 % Left and right hemisphere
 %polarMap(32492:end)=-polarMap(32492:end);

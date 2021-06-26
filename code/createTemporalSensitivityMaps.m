@@ -165,7 +165,7 @@ options = optimoptions(@fmincon,...
 
 % Loop through the vertices / voxels
 for vv = 1:nV
-    if results.R2(vv)>0.25
+    if results.R2(vv)>0.15
         
         % Get the beta values
         yVals = results.params(vv,1:nFreqs+1);

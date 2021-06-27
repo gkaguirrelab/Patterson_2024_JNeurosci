@@ -89,8 +89,12 @@ for ss = 1: length(subjectNames)
         load(tmpPath,'templateImage')
         %        delete(tmpPath)
         
-        % Fit the DoE model
-        [resultsFit,fieldNames] = fitDoEModel(results);
+        % Fit the TTF model
+        [resultsFit,fieldNames] = fitTTFModel(results);
+        
+        % Save the TTF model fits
+        outFile = fullfile(resultsSaveDir, [subjectNames{ss} '_' analysisLabels{aa} '_ResultsFit.mat']);
+        save(outFile,'resultsFit');
         
         % Add the original time-series R2 fit
         fieldNames = [fieldNames 'R2'];
@@ -106,7 +110,8 @@ for ss = 1: length(subjectNames)
         end
         
         % generate visual field maps
-        %makeVisualFieldMap(resultsFit,eccenMap,polarMap,vArea,sigmaMap);
+        outFileStem = fullfile(resultsSaveDir, [subjectNames{ss} '_' analysisLabels{aa} ]);
+        makeVisualFieldMap(resultsFit,eccenMap,polarMap,vArea,sigmaMap,outFileStem);
         
         foo=1;
     end
@@ -115,7 +120,7 @@ end
 
 
 
-function [results,fieldNames] = fitDoEModel(results)
+function [results,fieldNames] = fitTTFModel(results)
 
 %% Fit the difference-of-exponentials model
 freqs = [2 4 8 16 32 64];
@@ -135,14 +140,18 @@ fitMaxFreq = nan(nV,1);
 fitWidthFreqDB = nan(nV,1);
 fit64HzResid = nan(nV,1);
 fitR2 = nan(nV,1);
-fitStuff = struct([]);
+fitStuff = struct('p',{},'yVals',{},'myFit',{});
+fitStuff_p = nan(nV,4);
+fitStuff_yVals = nan(nV,nFreqs);
+fitStuff_myFit = nan(nV,length(freqsFit));
+
 
 % The fitting function is a non-central beta, that is further modified to
 % allow adjustment of the bounded interval and scaling of the overall
 % amplitude. The function is constrained to hold the first degree parameter
 % to an arbitrarily small value, and to apply non-linear constraints in the
 % fitting (described below).
-% 
+%
 % There is no particular theoretical motivation for using this fitting
 % form. The fit does reflect the following expectations:
 % - The amplitude of response will approach zero as the stimulus
@@ -154,9 +163,9 @@ fitStuff = struct([]);
 myFunc = @(f,A,B,C,D)  C.*ncbeta(f./D, 1e-6, A, B );
 
 % x0 and bounds
-    x0 = [1 1 1 8];
-    lb = [0 1 0 0];
-    ub = [100 100 100 8];
+x0 = [1 1 1 8];
+lb = [0 1 0 0];
+ub = [100 100 100 8];
 
 % define some search options
 options = optimoptions(@fmincon,...
@@ -164,16 +173,22 @@ options = optimoptions(@fmincon,...
     'Display','off');
 
 % Loop through the vertices / voxels
-for vv = 1:nV
+parfor vv = 1:nV
     if results.R2(vv)>0.15
         
+        % save the current warning status and silence anticipated warnings
+        warningState = warning;
+        warning('off','MATLAB:singularMatrix');
+        warning('off','MATLAB:nearlySingularMatrix');
+        warning('off','MATLAB:illConditionedMatrix');
+                
         % Get the beta values
         yVals = results.params(vv,1:nFreqs+1);
         
         % The params have an explicit coding for the blank screen, so we
         % adjust for this
         yVals = yVals(2:end) - yVals(1);
-         
+        
         % Define the objective and non-linear constraint
         myObj = @(p) norm(yVals - myFunc(freqsIdx,p(1),p(2),p(3),p(4)));
         myNonlcon = @(p) betaNonlcon(p,yVals,freqsFitIdx);
@@ -200,18 +215,23 @@ for vv = 1:nV
         pause
         %}
         
-         [a,idx] = max(myFit);
-         fitPeakAmp(vv) = a;
-         fitPeakFreq(vv) = freqsFit(idx);
-         [~,idx]=min(abs(freqsFitIdx-p(4)));
-         fitMaxFreq(vv) = freqsFit(idx);
-         [~,idx]=mink(abs(myFit-a/2),2);
-         fitWidthFreqDB(vv) = abs(diff(idx));
-         fit64HzResid(vv) = yVals(end)-myFunc(max(freqs),p(1),p(2),p(3),p(4));
-         fitR2(vv) = R2;
-         fitStuff(vv).p = p;
-         fitStuff(vv).yVals = yVals;
-         fitStuff(vv).myFit = myFit;
+        % Store the values from this vertex
+        [a,idx] = max(myFit);
+        fitPeakAmp(vv) = a;
+        fitPeakFreq(vv) = freqsFit(idx);
+        [~,idx]=min(abs(freqsFitIdx-p(4)));
+        fitMaxFreq(vv) = freqsFit(idx);
+        [~,idx]=mink(abs(myFit-a/2),2);
+        fitWidthFreqDB(vv) = abs(diff(idx));
+        fit64HzResid(vv) = yVals(end)-myFunc(max(freqs),p(1),p(2),p(3),p(4));
+        fitR2(vv) = R2;
+        fitStuff_p(vv,:) = p;
+        fitStuff_yVals(vv,:) = yVals;
+        fitStuff_myFit(vv,:) = myFit;
+        
+        % Restore the warning state
+        warning(warningState);
+        
     end
 end
 
@@ -224,7 +244,10 @@ results.fit64HzResid = fit64HzResid;
 results.fitR2 = fitR2;
 results.fitSupport.freqs = freqs;
 results.fitSupport.freqsFit = freqsFit;
-results.fitStuff = fitStuff;
+results.fitStuff.p = fitStuff_p;
+results.fitStuff.yVals = fitStuff_yVals;
+results.fitStuff.myFit = fitStuff_myFit;
+
 fieldNames = {'fitPeakAmp','fitPeakFreq','fitMaxFreq','fitWidthFreqDB','fit64HzResid','fitR2'};
 
 end
@@ -232,25 +255,26 @@ end
 
 function [c, ceq] = betaNonlcon(p,y,f)
 
-    % Evaluate the function
-    yFit = p(3).*ncbeta(f./p(4), 1e-6, p(1), p(2) );
-    yFit = yFit(isfinite(yFit));
-    
-    % The rate of change should not exceed 1 unit
-    d = diff(yFit);
-    d = d(isfinite(d));
-    c = max(abs(d))-1;
-    
-    % The interpolated peak should not be more than 25% the size of the
-    % largest y value
-    peak = (max(yFit)-max(y))./max(y) - 0.5;
-    if peak > 0
-        ceq = peak;
-    else
-        ceq = 0;
-    end
-    
+% Evaluate the function
+yFit = p(3).*ncbeta(f./p(4), 1e-6, p(1), p(2) );
+yFit = yFit(isfinite(yFit));
+
+% The rate of change should not exceed 1 unit
+d = diff(yFit);
+d = d(isfinite(d));
+c = max(abs(d))-1;
+
+% The interpolated peak should not be more than 25% the size of the
+% largest y value
+peak = (max(yFit)-max(y))./max(y) - 0.5;
+if peak > 0
+    ceq = peak;
+else
+    ceq = 0;
 end
+
+end
+
 
 function [ pz ] = ncbeta (x, a, b, lam )
 %This function computes the probability density function for the
@@ -283,77 +307,34 @@ end
 
 
 
-function figHandle = makeVisualFieldMap(resultsFit,eccenMap,polarMap,vArea,sigmaMap)
+function makeVisualFieldMap(resultsFit,eccenMap,polarMap,vArea,sigmaMap,outFileStem)
 
-
-%figHandle = figure('visible','on');
-%set(figHandle,'PaperOrientation','landscape');
-%set(figHandle,'PaperUnits','normalized');
-%set(gcf,'Units','points','Position',[100 100 400 400]);
 
 % Identify the vertices with fits above the threshold
-goodIdx = logical((resultsFit.R2 > 0.25).*( (resultsFit.fitOffset./resultsFit.fitPeakAmp) < 0.1).*(eccenMap>0.1).*(vArea==1).*(vArea==1));
+goodIdx = logical( (resultsFit.R2 > 0.15) .* (resultsFit.fitR2 > 0.8) .* (eccenMap>00).*(vArea==1).*(vArea==1) );
 
-% Left and right hemisphere
+% Separate the polar angles for the left and right hemispheres
 %polarMap(32492:end)=-polarMap(32492:end);
 
-% % Map R2 value to a red-green plot symbol color
-nColors = 200;
-[mycolormap] = make_colormap(nColors);
+fieldNames = {'R2','fitPeakFreq','fitMaxFreq','fit64HzResid','fitWidthFreqDB'};
+ranges = { [0.15 0.5], [0 20], [0 64], [-1 1], [0 40] };
 
-valMin = 0;
-valMax = 16;
-val = resultsFit.fitPeakFreq(goodIdx);
-ind = floor((nColors-1).* (val-valMin)./(valMax-valMin))+1;
-
-% valMin = 0;
-% valMax = 10;
-% val = resultsDoE.fitPeakAmpDoE(goodIdx) ./ abs(resultsDoE.fitOffset(goodIdx));
-% ind = floor((nColors-1).* (val-valMin)./(valMax-valMin))+1;
-
-ind(ind>nColors)=nColors;
-ind(ind<1)=1;
-colorTriple = mycolormap(ind,:);
-
-
-markSize = sigmaMap(goodIdx).*100;
-markSize(markSize==0) = 25;
-
-% The polar angle map has the dorsal V1 border at +180, and the ventral V1
-% border at 0. By adding 90 degrees to the polar angle, this places the
-% dorsal V1 border at 270, which on the matlab polar scatter corresponds to
-% the 6 o'clock position on the plot. Therefore, the polarscatter plot is
-% in visual field coordinates(i.e., 6 o'clock represents the inferior
-% vertical meridian of the visual field).
-%h = polarscatter(deg2rad(polarMap(goodIdx)+90),eccenMap(goodIdx),markSize, ...
-%    colorTriple,'filled','o','MarkerFaceAlpha',1/8);
-
-%rlim([0 60])
-%
-fieldMap = createFieldMap(resultsFit.fitPeakFreq(goodIdx),polarMap(goodIdx),eccenMap(goodIdx),sigmaMap(goodIdx));
-% fieldMap = createFieldMap(resultsFit.fitPeakAmp(goodIdx),polarMap(goodIdx),eccenMap(goodIdx),sigmaMap(goodIdx));
-
-% subplot(2,1,1)
-% plot(eccenMap(goodIdx),resultsFit.fitPeakAmp(goodIdx),'.r');
-% ylim([0 50]);
-% xlim([0 80]);
-% subplot(2,1,2)
-% plot(eccenMap(goodIdx),resultsFit.fitPeakFreq(goodIdx),'.r');
-% ylim([0 64]);
-% xlim([0 80]);
+for ff = 1:length(fieldNames)
+    
+    % Which result to plot
+    thisField = fieldNames{ff};
+    
+    % Make the fieldMap
+    figHandle = createFieldMap(resultsFit.(thisField)(goodIdx),polarMap(goodIdx),eccenMap(goodIdx),sigmaMap(goodIdx),30,true);
+    
+    % Clean up
+    title(thisField);
+    caxis(ranges{ff})
+    outFile = [outFileStem '_fieldMap_ ' thisField '.pdf'];
+    saveas(figHandle,outFile);
+    close(figHandle)
+end
 
 end
 
-function [mycolormap] = make_colormap(mapres)
-
-
-
-%% Create colormap
-mycolormap = zeros(mapres,3);
-mycolormap(:,1)=1;
-
-% red to yellow
-mycolormap(:,2) = linspace(0,1,mapres);
-
-end
 

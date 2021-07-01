@@ -14,16 +14,18 @@
 %}
 
 
+        [~, userName] = system('whoami');
+        
 % Save location for the maps
 subjectNames = {'HEROgka1','HEROasb1'};
-analysisIDs = { {'60ca690869059f3228c9a883','60ca68f6ba295e18031aaa35','60ca68e3f90bf6d5775e9e2b'} , ...
+analysisIDs = { {'60ca690869059f3228c9a883','60ca68f6ba295e18031aaa35','60d797d64137d32dd02b6dc2'} , ...
     {'60ca692f00f93080b0e14068', '60ca692379649f8717b0f6ec', '60ca69155f24eb23f2e14335'} };
 retinoMapIDs = {'5dc88aaee74aa3005e169380','5dc88aaee74aa3005e169380' };
 retinoFileNames = {'TOME_3021_cifti_maps.zip','TOME_3021_cifti_maps.zip'};
 
 % Analysis parameters
 scratchSaveDir = getpref('flywheelMRSupport','flywheelScratchDir');
-scratchSaveDir = '/Users/aguirre/Desktop/tempFiles';
+scratchSaveDir = ['/Users/' userName '/Desktop/tempFiles'];
 analysisLabels = {'LF','L-M','S'};
 
 % Create the functional tmp save dir if it does not exist
@@ -33,14 +35,14 @@ if ~exist(saveDir,'dir')
 end
 
 % Create a flywheel object
-fw = flywheel.Flywheel(getpref('forwardModelWrapper','flywheelAPIKey'));
+fw = flywheel.Flywheel(getpref('flywheelMRSupport','flywheelAPIKey'));
 
 % Loop over subjects
 for ss = 1: length(subjectNames)
     
     % Set up the paths for this subject
     fileStem = [subjectNames{ss} '_agtcOL_'];
-    resultsSaveDir = ['/Users/aguirre/Desktop/' subjectNames{ss}];
+    resultsSaveDir = ['/Users/' userName '/Desktop/' subjectNames{ss}];
     mkdir(resultsSaveDir);
     
     % Download and unzip the retino maps
@@ -65,7 +67,7 @@ for ss = 1: length(subjectNames)
     sigmaMap = sigmaMap.cdata;
     
     % Loop over analysis IDs
-    for aa = 1:length(analysisIDs{ss})
+    for aa = 3:length(analysisIDs{ss})
         
         aa
         

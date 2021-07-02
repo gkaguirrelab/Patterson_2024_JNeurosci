@@ -14,7 +14,8 @@
 %}
 
 
-        [~, userName] = system('whoami');
+[~, userName] = system('whoami');
+userName = strip(userName);        
         
 % Save location for the maps
 subjectNames = {'HEROgka1','HEROasb1'};

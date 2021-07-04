@@ -20,7 +20,7 @@ userName = strip(userName);
 % Save location for the maps
 subjectNames = {'HEROgka1','HEROasb1'};
 analysisIDs = { {'60d79805bdc454c70ce074ba','60d797efb57eec5d8896ca85','60d797d64137d32dd02b6dc2'} , ...
-    {'60ca692f00f93080b0e14068', '60ca692379649f8717b0f6ec', '60ca69155f24eb23f2e14335'} };
+    {'60d7983aee644e04d2e077f2', '60d7982a2f9897247256ae78', '60d798187f0b6d3546dd8edf'} };
 retinoMapIDs = {'5dc88aaee74aa3005e169380','5dc88aaee74aa3005e169380' };
 retinoFileNames = {'TOME_3021_cifti_maps.zip','TOME_3021_cifti_maps.zip'};
 

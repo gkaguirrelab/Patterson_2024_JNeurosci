@@ -67,6 +67,7 @@ for ss = 1: length(subjectNames)
     sigmaMap = cifti_read(tmpPath);
     sigmaMap = sigmaMap.cdata;
     
+    %{
     % Loop over analysis IDs
     for aa = 1:length(analysisIDs{ss})
                 
@@ -116,7 +117,48 @@ for ss = 1: length(subjectNames)
         
         foo=1;
     end
+    %}
     
+    % Now load the three results files and create a relative
+    % post-receptoral direction measure
+    for aa = 1:length(analysisIDs{ss})
+        inFile = fullfile(resultsSaveDir, [subjectNames{ss} '_' analysisLabels{aa} '_ResultsFit.mat']);
+        load(inFile,'resultsFit');
+        if aa==1
+                dklFull = nan(length(resultsFit.fitPeakAmp),3);
+                r2Full = nan(length(resultsFit.R2),3);
+        end
+        dklFull(:,aa)=resultsFit.fitPeakAmp;
+        r2Full = resultsFit.R2;
+    end
+    allNan = all(isnan(dklFull'))';
+    anyNan = any(isnan(dklFull'))';
+    dkl = dklFull(~anyNan,:);
+    dkl(isnan(dkl))=0;
+    
+    % Flip the sign of the LM-channel so we can use the purple - green range
+    dkl(:,1) = -dkl(:,1);
+    
+    v=vecnorm(dkl,2,2);
+    dkl = dkl./v;
+
+    % Create the weights
+    r2 = r2Full(~anyNan,:);
+    r2(isnan(r2))=0;
+    w = mean(r2,2);
+    
+    w(w<0.33)=nan;
+    
+    rgb = dklToRGB(dkl);
+    
+    figure
+    h = scatter3(dkl(:,1),dkl(:,2),dkl(:,3),500*(w.^2),rgb,'filled');
+    axis equal
+    view(-135,15);
+    box off
+    grid off
+    
+    foo=1;
 end
 
 

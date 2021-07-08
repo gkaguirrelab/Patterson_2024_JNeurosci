@@ -217,7 +217,7 @@ options = optimoptions(@fmincon,...
 
 % Loop through the vertices / voxels
 parfor vv = 1:nV
-    if results.R2(vv)>0.15
+    if results.R2(vv)>0.05
         
         % save the current warning status and silence anticipated warnings
         warningState = warning;

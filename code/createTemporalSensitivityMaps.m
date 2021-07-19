@@ -19,15 +19,17 @@ userName = strip(userName);
         
 % Save location for the maps
 subjectNames = {'HEROgka1','HEROasb1'};
-analysisIDs = { {'60d79805bdc454c70ce074ba','60d797efb57eec5d8896ca85','60d797d64137d32dd02b6dc2'} , ...
-    {'60d7983aee644e04d2e077f2', '60d7982a2f9897247256ae78', '60d798187f0b6d3546dd8edf'} };
+analysisLabels = {'LF','L-M','S'};
+analysisIDs = { {'60e9ea6dbceb4c0bc9e0767e','60e9ea50a85492ed8f96cabd','60e9ea334ef89230db2b7021'} , ...
+    {'60e9eabf4ef89230db2b7027', '60e9eaa1a74445f40c56b123', '60e9ea85bd00f64426dd9301'} };
+% analysisIDs = { {'60d79805bdc454c70ce074ba','60d797efb57eec5d8896ca85','60d797d64137d32dd02b6dc2'} , ...
+%     {'60d7983aee644e04d2e077f2', '60d7982a2f9897247256ae78', '60d798187f0b6d3546dd8edf'} };
 retinoMapIDs = {'5dc88aaee74aa3005e169380','5dc88aaee74aa3005e169380' };
 retinoFileNames = {'TOME_3021_cifti_maps.zip','TOME_3021_cifti_maps.zip'};
 
 % Analysis parameters
 scratchSaveDir = getpref('flywheelMRSupport','flywheelScratchDir');
 scratchSaveDir = ['/Users/' userName '/Desktop/tempFiles'];
-analysisLabels = {'LF','L-M','S'};
 
 % Create the functional tmp save dir if it does not exist
 saveDir = fullfile(scratchSaveDir,'v0','output');
@@ -43,7 +45,7 @@ for ss = 1: length(subjectNames)
     
     % Set up the paths for this subject
     fileStem = [subjectNames{ss} '_agtcOL_'];
-    resultsSaveDir = ['/Users/' userName '/Desktop/' subjectNames{ss}];
+    resultsSaveDir = ['/Users/' userName '/Desktop/mriSinai/' subjectNames{ss}];
     mkdir(resultsSaveDir);
     
     % Download and unzip the retino maps
@@ -67,8 +69,8 @@ for ss = 1: length(subjectNames)
     sigmaMap = cifti_read(tmpPath);
     sigmaMap = sigmaMap.cdata;
     
-    %{
     % Loop over analysis IDs
+    %{
     for aa = 1:length(analysisIDs{ss})
                 
         % Download the results file
@@ -115,7 +117,6 @@ for ss = 1: length(subjectNames)
         outFileStem = fullfile(resultsSaveDir, [subjectNames{ss} '_' analysisLabels{aa} ]);
         makeVisualFieldMap(resultsFit,eccenMap,polarMap,vArea,sigmaMap,outFileStem);
         
-        foo=1;
     end
     %}
     

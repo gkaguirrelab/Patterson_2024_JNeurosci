@@ -45,7 +45,7 @@ for ss = 1: length(subjectNames)
     
     % Set up the paths for this subject
     fileStem = [subjectNames{ss} '_agtcOL_'];
-    resultsSaveDir = ['/Users/' userName '/Desktop/mriSinai/' subjectNames{ss}];
+    resultsSaveDir = ['/Users/aguirre/Dropbox (Aguirre-Brainard Lab)/_Papers/Patterson_2021_EccentricityFlicker/matlabFigures/' subjectNames{ss}];
     mkdir(resultsSaveDir);
     
     % Download and unzip the retino maps

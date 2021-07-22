@@ -13,7 +13,7 @@ function rgb = dklToRGB(dkl)
 % Inputs:
 %   dkl                   - An nx3 matrix of weights, in the range of ±1,
 %                           corresponding to the post-receptoral directions
-%                           of luminance, red-green, and blue-yellow.
+%                           of red-green, blue-yellow, and luminance.
 % Outputs:
 %   rgb                   - An nx3 matrix of RGB color values, in the range
 %                           of 0-1.
@@ -25,11 +25,7 @@ function rgb = dklToRGB(dkl)
     dkl = [XVec, YVec, ZVec];
     rgb = dklToRGB(dkl);
     posQuadrant = logical((XVec<=1e-6) .* (YVec>=-1e-6) .* (ZVec>=0));
-    rgb(~posQuadrant,:)=nan;
     rgb = reshape(rgb,41,41,3);
-    X(~posQuadrant)=nan;
-    Y(~posQuadrant)=nan;
-    Z(~posQuadrant)=nan;
     figure
     surf(X,Y,Z,rgb,'EdgeColor','none','FaceColor','interp');
     axis equal
@@ -37,7 +33,7 @@ function rgb = dklToRGB(dkl)
 %}
 
 gamutHeadroom = 0.95;
-lumBoost = 1.25;
+lumBoost = 1;
 
 % Load the Stockman-Sharpe cone fundamentals and a "standard" calibration
 % file
@@ -54,7 +50,7 @@ calLMS = SetGammaMethod(calLMS,1);
 calLum = SetSensorColorSpace(cal,T_Y,S_Y);
 
 %% Define background.
-% I go a bit below th emonitor mid-point, allowing for more saturated
+% I go a bit below the monitor mid-point, allowing for more saturated
 % display colors and a bit more gamut to work with.
 
 bgLMS = PrimaryToSensor(calLMS,[0.4 0.4 0.4]');

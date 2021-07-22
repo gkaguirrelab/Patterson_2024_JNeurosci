@@ -79,10 +79,10 @@ options = optimoptions(@fmincon,...
 % Loop through the subjects and directions
 for ss = 1:2
     
-        % Set up the paths for this subject
+    % Set up the paths for this subject
     fileStem = [subjectNames{ss} '_agtcOL_'];
     resultsSaveDir = ['/Users/aguirre/Dropbox (Aguirre-Brainard Lab)/_Papers/Patterson_2021_EccentricityFlicker/matlabFigures/' subjectNames{ss}];
-
+    
     allResults = cell(3,1);
     
     for dd = 1:3
@@ -115,7 +115,7 @@ for ss = 1:2
         % threshold.
         goodIdxA = ( (vArea>=1) .* (vArea<=1) .* (eccenMap > eccenDivs(ee)) .* (eccenMap < eccenDivs(ee+1)) ) .* ...
             ( ((allResults{1}.attention-allResults{1}.f0Hz)>attentionThresh) .* ((allResults{2}.attention-allResults{2}.f0Hz)>attentionThresh) .* ((allResults{3}.attention-allResults{3}.f0Hz)>attentionThresh) );
-
+        
         % Also require that at least one of the three modulation directions
         % was associated with an fMRI time-series fit above the R2
         % threshold.
@@ -169,13 +169,13 @@ for ss = 1:2
                 ylabel(analysisLabels{dd});
                 semilogx([1 1],[0 5],'-k','LineWidth',1)
             end
-
+            
         end
         
         % Normalize the set of responses across the three channels to have
         % unit magnitude
         dkl(ee,:) = y/norm(y);
-
+        
     end
     
     % Save the TTF plot
@@ -184,7 +184,7 @@ for ss = 1:2
     
     % Plot the DKL surface
     figHandle1 = figure();
-
+    
     % Render the DKL surface
     [X,Y,Z] = sphere(40);
     XVec = X(:); YVec = Y(:); ZVec = Z(:);
@@ -198,9 +198,15 @@ for ss = 1:2
     Z(~posQuadrant)=nan;
     surf(X,Y,Z,rgbSurf,'EdgeColor','none','FaceColor','interp');
     hold on
-
-    scatter3(dkl(:,1),dkl(:,2),dkl(:,3),100*(1:length(eccenDivs)-1),'k','LineWidth',2);
-    plot3(dkl(:,1),dkl(:,2),dkl(:,3),'-k');
+    
+    plotOnSphere(dkl(:,1),dkl(:,2),dkl(:,3),'Color','k','LineWidth',2);
+    
+    % Add circles around each location
+    rVals = linspace(0.9999,0.999,length(eccenDivs)-1);
+    for ii = 1:size(dkl,1)
+        addCircleAtCoordinate(dkl(ii,:),rVals(ii));
+    end
+    
     axis equal
     xlim([0 1])
     ylim([0 1])
@@ -210,10 +216,10 @@ for ss = 1:2
     ylabel('yellow-violet');
     view(135,45);
     
-        % Save the DKL surface plot
+    % Save the DKL surface plot
     outFile = fullfile(resultsSaveDir, [subjectNames{ss} '_RelativeChannelResponses.pdf']);
     print(figHandle1,outFile,'-dpdf','-bestfit');
-
+    
 end
 
 
@@ -270,3 +276,26 @@ pz      = @(r) ncfpdf( r./(const*(1-r)), a, b, lam).* 1./(const*(1-r).^2);
 pz      = pz(x);
 
 end
+
+
+function h = addCircleAtCoordinate(X,r)
+
+theta=-pi:0.1:pi;
+
+    x = r*ones(size(theta));
+    y = ((1-r^2)^0.5)*cos(theta);
+    z = ((1-r^2)^0.5)*sin(theta);
+    x = [x x(1)];
+    y = [y y(1)];
+    z = [z z(1)];
+    
+    h = plot3(x,y,z,'-k','LineWidth',2);
+    
+    [az,el] = cart2sph(X(1),X(2),X(3));
+
+    rotate(h,[0 0 1],rad2deg(az),[0 0 0]);
+    R = [cos(az) -sin(az); sin(az) cos(az)];
+    direction =  [(R*[0;1])' 0];
+    rotate(h,direction,-rad2deg(el),[0 0 0]);
+end
+    

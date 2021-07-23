@@ -25,8 +25,8 @@ function y = temporalSensitivityFunction(p,w)
 %}
 %{
     % Use in a non-linear search. Here are the data and studied frequencies
-    w = [2 4 8 16 32 64];
-    y = [0.6918    1.5463    2.7830    4.8807    3.7902    0.1244];
+    w = [2 4 8 16 32 64 128];
+    y = [0.6918    1.5463    2.7830    4.8807    3.7902    0.1244 0];
 
     % Create a scaled-up, log-spaced, version of the frequency domain
     wDelta = min(diff(log10(w)));
@@ -34,7 +34,7 @@ function y = temporalSensitivityFunction(p,w)
     wFit = 10.^(log10(min(w))-wDelta+wDelta/upScale:wDelta/upScale:log10(max(w))+wDelta);
 
     % Set up the p0 guess, and the bounds on the params
-    p0 = [5,0.3,0.02,1,1,3];
+    p0 = [100,0.3,0.01,5,0.01,10];
     lb = [0 0 0 0 0 0];
     ub = [Inf 1 1 20 1 20];
 

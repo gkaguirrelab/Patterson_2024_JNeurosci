@@ -175,7 +175,8 @@ for ss = 1:2
             axis off
             
             % Report the parameters
-            str = sprintf('C=[%dms,%2.1f°], S=%2.2f*[%dms,%2.1f°]',round(p(3)*1000),p(4),p(2),round(p(5)*1000),p(6));
+            str = {sprintf('C=[%d,%2.1f°]',round(p(3)*1000),p(4)),...
+                sprintf('S=%2.1f[%d,%2.1f°]',p(2),round(p(5)*1000),p(6))};
             text(1,6,str);
             
             % Add some chart stuff

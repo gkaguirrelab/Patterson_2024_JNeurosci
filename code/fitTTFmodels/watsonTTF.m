@@ -1,8 +1,8 @@
-function y = temporalSensitivityFunction(p,w)
+function y = watsonTTF(p,w)
 % Implements the AB Watson center-surround temporal sensitivity model
 %
 % Syntax:
-%  y = temporalSensitivityFunction(p,w)
+%  y = watsonTTF(p,w)
 %
 % Description
 %   Watson citation and model details here
@@ -20,7 +20,7 @@ function y = temporalSensitivityFunction(p,w)
     % Basic functionality
     w = [2 4 8 16 32 64 128];
     p = [1,0.3,0.02,1,1,3];
-    y = temporalSensitivityFunction(p,w);
+    y = watsonTTF(p,w);
     semilogx(w,y,'-r');
 %}
 %{
@@ -44,13 +44,13 @@ function y = temporalSensitivityFunction(p,w)
         'Display','off');
 
     % The objective function is the norm of the model fit error
-    myObj = @(p) norm(y - temporalSensitivityFunction(p,w));
+    myObj = @(p) norm(y - watsonTTF(p,w));
 
     % Search
     p = fmincon(myObj,p0,[],[],[],[],lb,ub,[],options);
 
     % Obtain the high-resolution model fit
-    yFit = temporalSensitivityFunction(p,wFit);
+    yFit = watsonTTF(p,wFit);
 
     % Plot it
     figure

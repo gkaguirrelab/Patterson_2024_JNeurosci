@@ -12,8 +12,7 @@ function y = watsonTTF(p,w)
 %   w                     - 1xn vector of temporal frequencies in Hz
 %
 % Outputs:
-%   y                     - 1xn vector of values that is the modeled
-%                           response
+%   y                     - A 1xn vector of modeled values
 %
 % Examples:
 %{
@@ -74,7 +73,7 @@ Hs=(w.*1i*2*pi*ts+1).^-1*ns;
 % The response is the difference between the center and surround
 % filters, with the surround subject to a relative gain scaling
 % (with a lower bound at zero) and the overall reesponse
-y=G*(Hc-(Gs*Hs));
+y = G*(Hc-(Gs*Hs));
 
 % Return just the real component, as this is all we are currently using
 y = real(y);

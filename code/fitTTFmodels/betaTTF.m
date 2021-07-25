@@ -114,8 +114,15 @@ if nargin==2
     ceq = [];
 else
     
+    % Detect the case in which the entire model fit is zeros
+    if all(yFit==0)
+        returnVal = 1e2;
+        ceq = 1e2;
+        return
+    end
+    
     % Calculate the non-linear constraints. The rate of change should not
-    % exceed 1 unit
+    % exceed 0.5 unit
     d = diff(yFit)./max(yFit);
     d = d(isfinite(d));
     c = max(abs(d))-1;

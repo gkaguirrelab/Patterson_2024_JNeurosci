@@ -56,19 +56,24 @@ area = 1;
 % Some values used for fitting peak frequency
 freqs = [2 4 8 16 32 64];
 nFreqs = length(freqs);
-freqsIdx = 1:nFreqs;
 deltaF10 = min(diff(log10(freqs)));
 fitScaleUp = 10;
 freqsFit = 10.^(log10(min(freqs))-deltaF10+deltaF10/fitScaleUp:deltaF10/fitScaleUp:log10(max(freqs))+deltaF10);
-freqsFitIdx = 1/fitScaleUp:1/fitScaleUp:nFreqs+1;
 
-% The fitting function
-myFunc = @(f,A,B,C,D)  C.*ncbeta(f./D, 1e-6, A, B );
+% Which TTF model to use
+ttfModel = 'watson';
 
 % x0 and bounds
-x0 = [14.4936   25.5673    0.9136    6.5449];
-lb = [0 1 0 0];
-ub = [100 100 100 8];
+switch ttfModel
+    case 'watson'
+        p0 = [ 119.7714    0.5326    0.0091    6.5988    0.0092   12.3815];
+        lb = [0 0 0 0 0 0];
+        ub = [Inf 1 1 20 1 20];
+    case 'beta'
+        p0 = [1.8518    5.2050    6.7683   11.7180];
+        lb = [0 0 0 1];
+        ub = [100 8 100 100];
+end
 
 % define some search options
 options = optimoptions(@fmincon,...
@@ -135,14 +140,26 @@ for ss = 1:2
             % Obtain the set of beta valyes, relative to the baseline condition
             yVals = yVals(2:end)-yVals(1);
             
-            % Define the objective and non-linear constraint
-            myObj = @(p) norm(yVals - myFunc(freqsIdx,p(1),p(2),p(3),p(4)));
-            myNonlcon = @(p) betaNonlcon(p,yVals,freqsFitIdx);
+            % Define the objective and non-linear constraint            
+            switch ttfModel
+                case 'watson'
+                    myObj = @(p) norm(yVals - watsonTTF(p,freqs));
+                    myNonlcon = [];
+                case 'beta'
+                    myObj = @(p) norm(yVals - betaTTF(p,freqs));
+                    myNonlcon = @(p) betaTTF(p,freqsFit,yVals);
+            end
             
-            % Fit
-            p = fmincon(myObj,x0,[],[],[],[],lb,ub,myNonlcon,options);
-            R2 = corr(yVals',myFunc(freqsIdx,p(1),p(2),p(3),p(4))').^2;
-            myFit = myFunc(freqsFitIdx,p(1),p(2),p(3),p(4));
+            % Search
+            p = fmincon(myObj,p0,[],[],[],[],lb,ub,[],options);
+            
+            % Get the fitted response
+            switch ttfModel
+                case 'watson'
+                    myFit = watsonTTF(p,freqsFit);
+                case 'beta'
+                    myFit = betaTTF(p,freqsFit);
+            end
             myFit(~isfinite(myFit))=nan;
             
             % Store the interpolated maximum response
@@ -154,8 +171,14 @@ for ss = 1:2
             hold on
             semilogx(freqsFit,myFit,'-r')
             semilogx([1 64],[0 0],':k','LineWidth',1)
-            ylim([-1 6]);
+            ylim([-1 7]);
             axis off
+            
+            % Report the parameters
+            str = sprintf('C=[%dms,%2.1f°], S=%2.2f*[%dms,%2.1f°]',round(p(3)*1000),p(4),p(2),round(p(5)*1000),p(6));
+            text(1,6,str);
+            
+            % Add some chart stuff
             if dd==1
                 ax = gca;
                 ax.Title.Visible = 'on';
@@ -167,7 +190,7 @@ for ss = 1:2
                 ax = gca;
                 ax.YLabel.Visible = 'on';
                 ylabel(analysisLabels{dd});
-                semilogx([1 1],[0 5],'-k','LineWidth',1)
+                semilogx([1 1],[0 7],'-k','LineWidth',1)
             end
             
         end
@@ -222,60 +245,6 @@ for ss = 1:2
     
 end
 
-
-
-
-function [c, ceq] = betaNonlcon(p,y,f)
-
-% Evaluate the function
-yFit = p(3).*ncbeta(f./p(4), 1e-6, p(1), p(2) );
-yFit = yFit(isfinite(yFit));
-
-% The rate of change should not exceed 1 unit
-d = diff(yFit);
-d = d(isfinite(d));
-c = max(abs(d))-1;
-
-% The interpolated peak should not be more than 10% the size of the
-% largest y value
-peak = (max(yFit)-max(y))./max(y) - 0.1;
-if peak > 0
-    ceq = peak;
-else
-    ceq = 0;
-end
-
-end
-
-
-function [ pz ] = ncbeta (x, a, b, lam )
-%This function computes the probability density function for the
-%noncentral beta distribution using a transformation of variables to put
-%the desired density function in terms of a noncentral F, which is included
-%in Matlabs statsitics toolbox already.
-%
-% USAGES
-% [ pz ] = ncbeta (x, a, b, lambda )
-%
-% INPUT
-% x:    Vector of possible argument values for the pdf.
-% a:    The first degree of freedom/shape parameter.
-% b:    The second degree of freedom/shape parameter.
-% lam:  The noncentrality parameter.
-%
-% OUTPUT
-% pz:   The probability density function for x, given the input parameters.
-%
-%-----------------------------------------------------------------------
-% Latest Edit: 18.Feb.2014
-% Joshua D Carmichael
-% josh.carmichael@gmail.com
-%-----------------------------------------------------------------------
-const   = a./b;
-pz      = @(r) ncfpdf( r./(const*(1-r)), a, b, lam).* 1./(const*(1-r).^2);
-pz      = pz(x);
-
-end
 
 
 function h = addCircleAtCoordinate(X,r)

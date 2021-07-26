@@ -66,9 +66,9 @@ ttfModel = 'watson';
 % x0 and bounds
 switch ttfModel
     case 'watson'
-        p0 = [ 119.7714    0.5326    0.0091    6.5988    0.0092   12.3815];
-        lb = [0 0 0 0 0 0];
-        ub = [Inf 1 1 20 1 20];
+        p0 = [1.72, 0.87, 0.013];
+        lb = [0 0 0];
+        ub = [5 1 0.025];
     case 'beta'
         p0 = [1.8518    5.2050    6.7683   11.7180];
         lb = [0 0 0 1];
@@ -80,6 +80,8 @@ options = optimoptions(@fmincon,...
     'Diagnostics','off',...
     'Display','off');
 
+% Set up a variable to hold the model fit results
+pVals = [];
 
 % Loop through the subjects and directions
 for ss = 1:2
@@ -153,6 +155,9 @@ for ss = 1:2
             % Search
             p = fmincon(myObj,p0,[],[],[],[],lb,ub,[],options);
             
+            % Save the params
+            pVals(ss,dd,ee,:)=p;
+            
             % Get the fitted response
             switch ttfModel
                 case 'watson'
@@ -175,9 +180,9 @@ for ss = 1:2
             axis off
             
             % Report the parameters
-            str = {sprintf('C=[%d,%2.1f°]',round(p(3)*1000),p(4)),...
-                sprintf('S=%2.1f[%d,%2.1f°]',p(2),round(p(5)*1000),p(6))};
-            text(1,6,str);
+           str = {sprintf('[%2.1f, %2.2f]',p(1:2)),...
+               sprintf('%2.1f ms',p(3)*1000)};
+           text(1,6,str);
             
             % Add some chart stuff
             if dd==1
@@ -205,7 +210,7 @@ for ss = 1:2
     % Save the TTF plot
     outFile = fullfile(resultsSaveDir, [subjectNames{ss} '_TTFbyEccenbyChannel.pdf']);
     print(figHandle0,outFile,'-dpdf','-bestfit');
-    
+        
     % Plot the DKL surface
     figHandle1 = figure();
     

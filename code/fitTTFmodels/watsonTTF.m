@@ -1,14 +1,23 @@
-function y = watsonTTF(p,w)
+function [y,Hc,Hs] = watsonTTF(p,w)
 % Implements the AB Watson center-surround temporal sensitivity model
 %
 % Syntax:
-%  y = watsonTTF(p,w)
+%  [y,Hc,Hs] = watsonTTF(p,w)
 %
 % Description
 %   Watson citation and model details here
 %
+%   The model as implemented here fixes several parameters of the Watson
+%   model based upon Figure 6.5 of Watson's Temporal Sensitivity chapter.
+%   The degree of the center and surround filters are fixed at order 9 and
+%   10, respectively, and the ratio of the surround-to-center time constant
+%   is fixed at 1.33. This leaves the following free parameters:
+%     - Overall amplitude (G)
+%     - Relative amplitude of the surround filter (Gs)
+%     - Time constant of the center filter (tc) 
+%
 % Inputs:
-%   p                     - 1x6 vector of parameter values:
+%   p                     - 1x3 vector of parameter values:
 %   w                     - 1xn vector of temporal frequencies in Hz
 %
 % Outputs:
@@ -18,7 +27,7 @@ function y = watsonTTF(p,w)
 %{
     % Basic functionality
     w = [2 4 8 16 32 64 128];
-    p = [1,0.3,0.02,1,1,3];
+    p = [1.72, 0.87, 0.013];
     y = watsonTTF(p,w);
     semilogx(w,y,'-r');
 %}
@@ -33,9 +42,9 @@ function y = watsonTTF(p,w)
     wFit = 10.^(log10(min(w))-wDelta+wDelta/upScale:wDelta/upScale:log10(max(w))+wDelta);
 
     % Set up the p0 guess, and the bounds on the params
-    p0 = [100,0.3,0.01,5,0.01,10];
-    lb = [0 0 0 0 0 0];
-    ub = [Inf 1 1 20 1 20];
+    p0 = [1.72, 0.87, 0.013];
+    lb = [0 0 0];
+    ub = [5 1 0.025];
 
     % The options for the search (mostly silence diagnostics)
     options = optimoptions(@fmincon,...
@@ -62,18 +71,21 @@ function y = watsonTTF(p,w)
 G = p(1);
 Gs = p(2);
 tc = p(3);
-nc = p(4);
-ts = p(5);
-ns = p(6);
+nc = 9;
+ts = tc.*1.33;
+ns = 10;
 
 % Two linear bandpass filters
 Hc=(w.*1i*2*pi*tc+1).^-1*nc;
 Hs=(w.*1i*2*pi*ts+1).^-1*ns;
 
+% Apply the magnitude scaling
+Hs = Gs*Hs;
+
 % The response is the difference between the center and surround
 % filters, with the surround subject to a relative gain scaling
 % (with a lower bound at zero) and the overall reesponse
-y = G*(Hc-(Gs*Hs));
+y = G*(Hc-Hs);
 
 % Return just the real component, as this is all we are currently using
 y = real(y);

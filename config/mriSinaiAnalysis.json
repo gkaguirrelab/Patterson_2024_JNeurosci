@@ -116,6 +116,19 @@
 		"type": "git",
 		"update": "",
         "url": "https:\/\/github.com\/Washington-University\/cifti-matlab.git"
+	},
+	{
+		"flavor": "",
+		"hook": "",
+		"importance": "",
+		"localHookTemplate": "",
+		"name": "gkaModelEye",
+		"pathPlacement": "append",
+		"subfolder": "",
+		"toolboxRoot": "",
+		"type": "include",
+		"update": "",
+        "url": ""
 	}
 ]
 

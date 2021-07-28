@@ -46,6 +46,20 @@ setpref(projectName,'dropboxBaseDir',dropboxBaseDir);
 % Set pref to username
 setpref(projectName,'userName',userName);
 
+%% Paths to directory where we are writing the paper
+
+% Set paths for this user
+switch userName
+    case 'aguirre'
+        localSaveDir = fullfile(dropboxBaseDir,'_Papers/Patterson_2021_EccentricityFlicker/matlabFigures');
+    case 'patterson'
+        % Need your path here
+    otherwise
+        error('add your userName to the switch statement')
+end
+setpref(projectName,'localSaveDir',localSaveDir);
+
+
 
 %% Specify and save project location
 projectBaseDir = tbLocateProject(projectName);

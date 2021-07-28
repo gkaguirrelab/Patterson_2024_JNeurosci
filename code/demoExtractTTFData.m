@@ -5,43 +5,27 @@
 % frequencies
 
 
+% Get the localSaveDir pref
+localSaveDir = getpref('mriSinaiAnalysis','localSaveDir');
+
 % These variables define the subject names, stimulus directions, and the
 % analysis IDs
 subjectNames = {'HEROgka1','HEROasb1'};
 shortNames = {'gka','asb'};
 analysisLabels = {'LF','L-M','S'};
-analysisIDs = { {'60e9ea6dbceb4c0bc9e0767e','60e9ea50a85492ed8f96cabd','60e9ea334ef89230db2b7021'} , ...
-    {'60e9eabf4ef89230db2b7027', '60e9eaa1a74445f40c56b123', '60e9ea85bd00f64426dd9301'} };
 
 % These are the frequencies that were studied
 freqs = [2 4 8 16 32 64];
 nFreqs = length(freqs);
 
-% Set up a temporary location to save files we will need
-scratchSaveDir = tempdir();
-
-% Create a flywheel object. You need to set you flywheelAPIKey in the
-% "flywheelMRSupport" local hook.
-fw = flywheel.Flywheel(getpref('flywheelMRSupport','flywheelAPIKey'));
-
-% Download and unzip the retino maps
-retinoMapID = '5dc88aaee74aa3005e169380';
-retinoFileName = 'TOME_3021_cifti_maps.zip';
-saveDir = fullfile(scratchSaveDir,'v0','output');
-mkdir(saveDir);
-tmpPath = fullfile(saveDir,retinoFileName);
-fw.downloadOutputFromAnalysis(retinoMapID,retinoFileName,tmpPath);
-command = ['unzip -q -n ' tmpPath ' -d ' saveDir];
-system(command);
-
 % Load the retino maps
-tmpPath = fullfile(saveDir,strrep(retinoFileName,'_cifti_maps.zip','_inferred_varea.dtseries.nii'));
+tmpPath = fullfile(localSaveDir,'retinoFiles','TOME_3021_inferred_varea.dtseries.nii');
 vArea = cifti_read(tmpPath); vArea = vArea.cdata;
-tmpPath = fullfile(saveDir,strrep(retinoFileName,'_cifti_maps.zip','_inferred_eccen.dtseries.nii'));
+tmpPath = fullfile(localSaveDir,'retinoFiles','TOME_3021_inferred_eccen.dtseries.nii');
 eccenMap = cifti_read(tmpPath); eccenMap = eccenMap.cdata;
-tmpPath = fullfile(saveDir,strrep(retinoFileName,'_cifti_maps.zip','_inferred_angle.dtseries.nii'));
+tmpPath = fullfile(localSaveDir,'retinoFiles','TOME_3021_inferred_angle.dtseries.nii');
 polarMap = cifti_read(tmpPath); polarMap = polarMap.cdata;
-tmpPath = fullfile(saveDir,strrep(retinoFileName,'_cifti_maps.zip','_inferred_sigma.dtseries.nii'));
+tmpPath = fullfile(localSaveDir,'retinoFiles','TOME_3021_inferred_sigma.dtseries.nii');
 sigmaMap = cifti_read(tmpPath); sigmaMap = sigmaMap.cdata;
 
 % Create a "subcortical" map
@@ -63,15 +47,9 @@ ss = 2;
 % Which stimulus direction?
 dd = 1;
 
-% Download the results file for this subject / direction
-fileStem = [subjectNames{ss} '_agtcOL_'];
-fileName = [fileStem 'results.mat'];
-tmpPath = fullfile(saveDir,[analysisLabels{dd} '_' fileName]);
-fw.downloadOutputFromAnalysis(analysisIDs{ss}{dd},fileName,tmpPath);
-
-% Load the result file into memory and delete the downloaded file
-clear results
-load(tmpPath,'results')
+% Load the results file for this subject / direction
+filePath = fullfile(localSaveDir,'resultsFiles',[analysisLabels{dd} '_' subjectNames{ss} '_agtcOL_results.mat']);
+load(filePath,'results')
 
 % Find the vertices that we wish to analyze
 goodIdx = logical( (results.R2 > r2Thresh) .* (vArea==1) .* (eccenMap > eccenRange(1)) .* (eccenMap < eccenRange(2)) );

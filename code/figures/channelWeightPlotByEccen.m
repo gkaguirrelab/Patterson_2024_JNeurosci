@@ -8,7 +8,7 @@
 localSaveDir = getpref('mriSinaiAnalysis','localSaveDir');
 
 % Define where we want to save these figures
-resultsSaveDir = fullfile(localSaveDir,'FigX - channel weight by eccen');
+resultsSaveDir = fullfile(localSaveDir,'Fig X - channel weight by eccen');
 mkdir(resultsSaveDir);
 
 % These variables define the subject names, stimulus directions, and the

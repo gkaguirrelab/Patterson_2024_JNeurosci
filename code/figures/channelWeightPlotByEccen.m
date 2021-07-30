@@ -1,8 +1,7 @@
 %% channelWeightPlotByEccen
 %
-% This routine loads (and optionally downloads) the forwardModel
-% results.mat files, and then creates plots of the TTF data and fitting
-% across eccentricity bands
+% This routine loads the forwardModel results.mat files, and then creates
+% plots of the TTF data and fitting across eccentricity bands
 
 % Get the localSaveDir pref
 localSaveDir = getpref('mriSinaiAnalysis','localSaveDir');
@@ -90,6 +89,7 @@ for ss = 1:2
     % Set the eccentricity divisions
     eccenDivs = [0 90./(2.^(5:-1:0))];
     
+    % Create a figure
     figHandle0 = figure();
     
     dkl = [];

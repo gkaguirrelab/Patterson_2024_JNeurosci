@@ -216,6 +216,10 @@ for ss = 1:length(subjectNames)
     save(allmod, 'stimulus')
     system(['fw login' ' ' flywheelAPIkey ';' ' ' 'fw upload' ' ' allmod ' ' 'fw://gkaguirrelab/mtSinaiFlicker/'])
     
+    % This command outputs the indices to be used for averaging
+    %{
+        fprintf('{ '); for ii=1:6; fprintf(sprintf('[%d:%d,%d:%d,%d:%d,%d:%d,%d:%d,%d:%d],',[(ii-1)*336+1,ii*336,(ii+5)*336+1,(ii+6)*336], [(ii-1+12)*336+1,(ii+12)*336,(ii+5+12)*336+1,(ii+6+12)*336], [(ii-1+24)*336+1,(ii+24)*336,(ii+5+24)*336+1,(ii+6+24)*336] ));end; fprintf(' }\n');
+    %}
 
 end
 

@@ -92,7 +92,8 @@ for ss = 1:length(subjectNames)
         end
     end
     
-    % Replace the extralightFLuxB_run1 with the original run1 and extraSA2 with SA2
+    % For asb1, replace the original LigtFLuxB_run1 and SA_run2 with the 
+    % extra ones that were acquired in the second session.
     if strcmp(subject, 'HERO_asb1')
         LightFluxSessions(7) = LightFluxSessions(13);
         LightFluxSessions(13) = [];

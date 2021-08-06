@@ -192,27 +192,28 @@ for ss = 1:length(subjectNames)
     % trials, and combining into a single vector the baseline (0Hz) and
     % attention trials
     stimulus = {};
-    for ii=1:length(outputMatrix{1,2})
-        stimMat = zeros(20,336);
-        stimMat(1,:) = outputMatrix{1,2}{ii}(1,:);
-        stimMat(20,:) = outputMatrix{1,2}{ii}(8,:);
-        stimMat(2:7,:) = outputMatrix{1,2}{ii}(2:7,:);
-        stimulus{end+1}=stimMat;
+    stimLabels = '(stimLabels),{';
+    dirLabels = {'LMS','LminusM','S'};
+    condLabels = {'f0Hz','f2Hz','f4Hz','f8Hz','f16Hz','f32Hz','f64Hz','attention'};
+    nConds = size(outputMatrix{1,1}{1},1);
+    nCols = nConds * sum(cellfun(@(x) length(x),outputMatrix));
+    offset = 0;
+    for gg = [2 3 1]
+        for ii=1:length(outputMatrix{1,gg})
+            stimMat = zeros(nCols,336);
+            stimMat(1+offset:nConds+offset,:) = outputMatrix{1,gg}{ii};
+            offset = offset + nConds;
+            stimulus{end+1}=stimMat;
+            theseLabels = cellfun(@(x) ['(' x '_' dirLabels{gg} '_' sprintf('%0.2d',ii) '),'],condLabels,'UniformOutput',false);
+            theseLabels = strcat(theseLabels{:});
+            stimLabels = [stimLabels theseLabels];
+        end
     end
-    for ii=1:length(outputMatrix{1,3})
-        stimMat = zeros(20,336);
-        stimMat(1,:) = outputMatrix{1,3}{ii}(1,:);
-        stimMat(20,:) = outputMatrix{1,3}{ii}(8,:);
-        stimMat(8:13,:) = outputMatrix{1,3}{ii}(2:7,:);
-        stimulus{end+1}=stimMat;
-    end
-    for ii=1:length(outputMatrix{1,1})
-        stimMat = zeros(20,336);
-        stimMat(1,:) = outputMatrix{1,1}{ii}(1,:);
-        stimMat(20,:) = outputMatrix{1,1}{ii}(8,:);
-        stimMat(14:19,:) = outputMatrix{1,1}{ii}(2:7,:);
-        stimulus{end+1}=stimMat;
-    end
+    
+    % Remove trailing comma from the stimLabels and cap with bracket
+    stimLabels = [stimLabels(1:end-1) '}\n' ];
+	fprintf(stimLabels);
+        
     allmod = fullfile(outputFolder, ['stimulus_' subject '_all.mat']);
     save(allmod, 'stimulus')
     system(['fw login' ' ' flywheelAPIkey ';' ' ' 'fw upload' ' ' allmod ' ' 'fw://gkaguirrelab/mtSinaiFlicker/'])

@@ -229,6 +229,28 @@ for ss = 1:2
     
 end
 
+% Create an average params plot
+plotColors = {'r','b','k'};
+paramNames = {'amplitude [%change]','relative rurround [0-1]','time constant [secs]'};
+for pp = 1:3
+    figHandle = figure();
+    for ss=1:2
+        subplot(2,1,ss)
+        for dd=1:3
+            semilogx(eccenDivs(2:end),squeeze(pVals(ss,dd,:,pp)),'-','Color',plotColors{dd});
+            hold on
+        end
+        title(subjectNames{ss});
+        xlabel('Eccentricity band');
+        ylabel(paramNames{pp});
+        xlim([2.5 100]);
+        ax = gca;
+        ax.XTick = eccenDivs(2:end);
+        
+    end
+    outFile = fullfile(resultsSaveDir, ['Params_' paramNames{pp} '.pdf']);
+    print(figHandle,outFile,'-dpdf','-bestfit');
+end
 
 
 function h = addCircleAtCoordinate(X,r)

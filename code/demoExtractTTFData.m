@@ -14,7 +14,6 @@ subjectNames = {'HEROgka1','HEROasb1'};
 shortNames = {'gka','asb'};
 directions = {'LminusM','S','LMS'};
 freqs = [0,2,4,8,16,32,64];
-stimLabels = results.model.opts{6};
 nFreqs = length(freqs);
 
 % Load the retino maps
@@ -33,12 +32,12 @@ subcorticalMap(1:26298)=1;
 
 % This is the threshold for the goodness of fit to the fMRI time-series
 % data
-r2Thresh = 0.25;
+r2Thresh = 0.1;
 
 % This is the visual area and eccentricity range to grab. The visual areas
 % are: V1 = 1, V2 = 2, V3 = 3, hV4/LO = [4 5], MT/MST = [8 9]
-area = 1;
-eccenRange = [0 90];
+area = 8;
+eccenRange = [0 2.8];
 
 % Create a figure
 figure;
@@ -55,7 +54,10 @@ for ss = 1:2
         % Load the results file for this subject
         filePath = fullfile(localSaveDir,'resultsFiles',[subjectNames{ss} '_mtSinai_results.mat']);
         load(filePath,'results')
-        
+
+        % Grab the stimLabels
+        stimLabels = results.model.opts{6};
+
         % Find the vertices that we wish to analyze
         goodIdx = logical( (results.R2 > r2Thresh) .* (vArea==area) .* (eccenMap > eccenRange(1)) .* (eccenMap < eccenRange(2)) );
         

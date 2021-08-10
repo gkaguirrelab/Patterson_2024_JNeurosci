@@ -36,8 +36,8 @@ r2Thresh = 0.1;
 
 % This is the visual area and eccentricity range to grab. The visual areas
 % are: V1 = 1, V2 = 2, V3 = 3, hV4/LO = [4 5], MT/MST = [8 9]
-area = 8;
-eccenRange = [0 2.8];
+area = 1;
+eccenRange = [0 90];
 
 % Create a figure
 figure;

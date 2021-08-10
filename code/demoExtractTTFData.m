@@ -12,10 +12,9 @@ localSaveDir = getpref('mriSinaiAnalysis','localSaveDir');
 % analysis IDs
 subjectNames = {'HEROgka1','HEROasb1'};
 shortNames = {'gka','asb'};
-analysisLabels = {'LF','L-M','S'};
-
-% These are the frequencies that were studied
-freqs = [2 4 8 16 32 64];
+directions = {'LminusM','S','LMS'};
+freqs = [0,2,4,8,16,32,64];
+stimLabels = results.model.opts{6};
 nFreqs = length(freqs);
 
 % Load the retino maps
@@ -39,39 +38,58 @@ r2Thresh = 0.25;
 % This is the visual area and eccentricity range to grab. The visual areas
 % are: V1 = 1, V2 = 2, V3 = 3, hV4/LO = [4 5], MT/MST = [8 9]
 area = 1;
-eccenRange = [0 20];
+eccenRange = [0 90];
 
-% Which subject?
-ss = 2;
+% Create a figure
+figure;
 
-% Which stimulus direction?
-dd = 1;
+% Create a data variable to hold the results. This will be a 2 x 3 x 6
+% (subjects x directons x frequencies) cell array for the selected subject. Each cell
+% will have the 12 measurements
+data = cell(2,3,6);
 
-% Load the results file for this subject / direction
-filePath = fullfile(localSaveDir,'resultsFiles',[analysisLabels{dd} '_' subjectNames{ss} '_agtcOL_results.mat']);
-load(filePath,'results')
-
-% Find the vertices that we wish to analyze
-goodIdx = logical( (results.R2 > r2Thresh) .* (vArea==1) .* (eccenMap > eccenRange(1)) .* (eccenMap < eccenRange(2)) );
-
-% Get the beta values for these indices
-yVals = results.params(goodIdx,1:nFreqs+1);
-
-% Get the mean betas across vertices / voxels
-yValsMean = nanmean(yVals);
-
-% Obtain the set of beta valyes, relative to the baseline condition
-y = yValsMean(2:end)-yValsMean(1);
-
-% Plot the data
-figure
-semilogx(freqs,y,'-k');
-hold on
-semilogx(freqs,y,'*r');
-
-% Clean up the plot
-title(sprintf([shortNames{ss} '-' analysisLabels{dd} ' v = %d'],sum(goodIdx)))
-ylabel('BOLD response [% change]')
-xlabel('Frequency [hz]');
-
-
+% Loop through the directions
+for ss = 1:2
+    for dd = 1:3
+        
+        % Load the results file for this subject
+        filePath = fullfile(localSaveDir,'resultsFiles',[subjectNames{ss} '_mtSinai_results.mat']);
+        load(filePath,'results')
+        
+        % Find the vertices that we wish to analyze
+        goodIdx = logical( (results.R2 > r2Thresh) .* (vArea==area) .* (eccenMap > eccenRange(1)) .* (eccenMap < eccenRange(2)) );
+        
+        % Loop through the frequencies and obtain the set of values
+        vals = cell(1,nFreqs);
+        for ff = 1:nFreqs
+            subString = sprintf(['f%dHz_' directions{dd}],freqs(ff));
+            idx = find(contains(stimLabels,subString));
+            vals{ff} = mean(results.params(goodIdx,idx));
+        end
+        
+        % Prepare to plot into this subplot
+        subplot(2,3,dd+(ss-1)*3);
+        
+        % Adjust the values for the zero frequency and plot
+        for ff = 2:nFreqs
+            data{ss,dd,ff-1} = vals{ff}-vals{1};
+            semilogx(zeros(1,length(data{ss,dd,ff-1}))+freqs(ff),data{ss,dd,ff-1},'.','Color',[0.5 0.5 0.5]);
+            hold on
+        end
+        
+        % Obtain the mean across frequencies and add to the plot
+        meanVals = cellfun(@(x) mean(x),squeeze(data(ss,dd,:)));
+        semilogx(freqs(2:end),meanVals,'ob','MarkerSize',10,'MarkerFaceColor','b')
+        
+        % Clean up the plot
+        title([shortNames{ss} ' ' directions{dd}])
+        ylabel('BOLD % change');
+        xlabel('frequency [Hz]');
+        semilogx([1 64],[0 0],':k','LineWidth',1)
+        ylim([-2 8]);
+        xlim([1 128])
+        set(gca,'TickDir','out');
+        box off
+        
+    end
+end

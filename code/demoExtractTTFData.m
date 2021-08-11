@@ -37,7 +37,7 @@ subcorticalMap(1:26298)=1;
 
 % This is the threshold for the goodness of fit to the fMRI time-series
 % data
-r2Thresh = 0.1;
+r2Thresh = 0.25;
 
 % This is the visual area and eccentricity range to grab. The visual areas
 % are: V1 = 1, V2 = 2, V3 = 3, hV4/LO = [4 5], MT/MST = [8 9]
@@ -107,7 +107,7 @@ for ss = 1:2
         semilogx(freqsFit,myFit,'-r');
         
         % Clean up the plot
-        title([shortNames{ss} ' ' directions{dd}])
+        title([shortNames{ss} ' ' directions{dd} sprintf('n=%d',sum(goodIdx))])
         ylabel('BOLD % change');
         xlabel('frequency [Hz]');
         semilogx([1 64],[0 0],':k','LineWidth',1)

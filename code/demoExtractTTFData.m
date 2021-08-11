@@ -16,6 +16,11 @@ directions = {'LminusM','S','LMS'};
 freqs = [0,2,4,8,16,32,64];
 nFreqs = length(freqs);
 
+% Frequency components for model fitting
+deltaF10 = min(diff(log10(freqs(2:end))));
+fitScaleUp = 10;
+freqsFit = 10.^(log10(min(freqs(2:end)))-deltaF10+deltaF10/fitScaleUp:deltaF10/fitScaleUp:log10(max(freqs(2:end)))+deltaF10);
+
 % Load the retino maps
 tmpPath = fullfile(localSaveDir,'retinoFiles','TOME_3021_inferred_varea.dtseries.nii');
 vArea = cifti_read(tmpPath); vArea = vArea.cdata;
@@ -39,6 +44,16 @@ r2Thresh = 0.1;
 area = 1;
 eccenRange = [0 90];
 
+% Define some components for model fitting
+p0 = [2, 0.9, 0.015];
+lb = [0 0 0];
+ub = [10 1 0.025];
+
+options = optimoptions(@fmincon,...
+    'Diagnostics','off',...
+    'Display','off');
+
+
 % Create a figure
 figure;
 
@@ -54,10 +69,10 @@ for ss = 1:2
         % Load the results file for this subject
         filePath = fullfile(localSaveDir,'resultsFiles',[subjectNames{ss} '_mtSinai_results.mat']);
         load(filePath,'results')
-
+        
         % Grab the stimLabels
         stimLabels = results.model.opts{6};
-
+        
         % Find the vertices that we wish to analyze
         goodIdx = logical( (results.R2 > r2Thresh) .* (vArea==area) .* (eccenMap > eccenRange(1)) .* (eccenMap < eccenRange(2)) );
         
@@ -82,6 +97,14 @@ for ss = 1:2
         % Obtain the mean across frequencies and add to the plot
         meanVals = cellfun(@(x) mean(x),squeeze(data(ss,dd,:)));
         semilogx(freqs(2:end),meanVals,'ob','MarkerSize',10,'MarkerFaceColor','b')
+        
+        % Fit the Watson model
+        myObj = @(p) norm(meanVals' - watsonTTF(p,freqs(2:end)));
+        p = fmincon(myObj,p0,[],[],[],[],lb,ub,[],options);
+        myFit = watsonTTF(p,freqsFit);
+        
+        % Add the fitted TTF
+        semilogx(freqsFit,myFit,'-r');
         
         % Clean up the plot
         title([shortNames{ss} ' ' directions{dd}])

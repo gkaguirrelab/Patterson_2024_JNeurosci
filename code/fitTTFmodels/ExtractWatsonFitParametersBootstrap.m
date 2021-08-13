@@ -1,7 +1,6 @@
 %% ExtractTTFdataWatsonModelFit
 %
-% This function calculates Bootstrapped Watson Model fit parameters and
-% plots them
+% This function calculates Bootstrapped Watson Model fit parameters
 
 function [p] = ExtractWatsonFitParametersBootstrap(w,yVal)
 
@@ -40,57 +39,20 @@ for bb = 1:1000
     % Search
     p(:,bb) = fmincon(myObj,p0,[],[],[],[],lb,ub,[],options);
     
-    % plot the fit to check it
-    figure(500)
-    hold on
-    yFit = watsonTTF(p(:,bb),wFit);
-    plot(w,y,'ok')
-    plot(wFit,yFit,'-b','LineWidth',1)
-    ylabel('BOLD % change');
-    xlabel('frequency [Hz]');
-    semilogx([1 64],[0 0],':k','LineWidth',1)
-    ylim([-2 8]);
-    xlim([1 128])
-    set(gca,'TickDir','out');
-    box off
+%     % plot the fit to check it
+%     figure(500)
+%     hold on
+%     yFit = watsonTTF(p(:,bb),wFit);
+%     plot(w,y,'ok')
+%     plot(wFit,yFit,'-b','LineWidth',1)
+%     ylabel('BOLD % change');
+%     xlabel('frequency [Hz]');
+%     semilogx([1 64],[0 0],':k','LineWidth',1)
+%     ylim([-2 8]);
+%     xlim([1 128])
+%     set(gca,'TickDir','out');
+%     box off
     
 end
-
-% plot bootstrapped parameters
-p = sort(p,2);
-
-figure
-subplot(1,3,1)
-hold on
-errorbar(1,p(1,500),p(1,500)-p(1,25),p(1,975)-p(1,500),'ob','MarkerFaceColor','b','LineWidth',1.5)
-set(gca,'TickDir','out');
-box off
-xticks(1)
-xlim([0 2])
-ylim([0 8])
-xlabel('gain')
-ylabel('fit parameter value')
-
-subplot(1,3,2)
-hold on
-errorbar(1,p(2,500),p(2,500)-p(2,25),p(2,975)-p(2,500),'ob','MarkerFaceColor','b','LineWidth',1.5)
-set(gca,'TickDir','out');
-box off
-xticks(1)
-xlim([0 2])
-ylim([0.5 1.2])
-xlabel('surround gain')
-ylabel('fit parameter value')
-
-subplot(1,3,3)
-hold on
-errorbar(1,p(3,500),p(3,500)-p(3,25),p(3,975)-p(3,500),'ob','MarkerFaceColor','b','LineWidth',1.5)
-set(gca,'TickDir','out');
-box off
-xticks(1)
-xlim([0 2])
-ylim([0 0.03])
-xlabel('time constant')
-ylabel('fit parameter value')
 
 end

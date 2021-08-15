@@ -33,15 +33,15 @@ sigmaMap = cifti_read(tmpPath); sigmaMap = sigmaMap.cdata;
 
 % Create a "subcortical" map
 subcorticalMap = zeros(size(vArea));
-subcorticalMap(1:26298)=1;
+subcorticalMap(60000:end)=1;
 
 % This is the threshold for the goodness of fit to the fMRI time-series
 % data
-r2Thresh = 0.25;
+r2Thresh = 0.1;
 
 % This is the visual area and eccentricity range to grab. The visual areas
-% are: V1 = 1, V2 = 2, V3 = 3, hV4/LO = [4 5], MT/MST = [8 9]
-area = 1;
+% are: LGN = 0; V1 = 1, V2 = 2, V3 = 3, hV4/LO = [4 5], MT/MST = [8 9]
+area = 0;
 eccenRange = [0 90];
 
 % Define some components for model fitting
@@ -74,14 +74,18 @@ for ss = 1:2
         stimLabels = results.model.opts{6};
         
         % Find the vertices that we wish to analyze
-        goodIdx = logical( (results.R2 > r2Thresh) .* (vArea==area) .* (eccenMap > eccenRange(1)) .* (eccenMap < eccenRange(2)) );
+        if area==0
+            goodIdx = logical( (results.R2 > r2Thresh) .* (subcorticalMap==1)  );
+        else
+            goodIdx = logical( (results.R2 > r2Thresh) .* (vArea==area) .* (eccenMap > eccenRange(1)) .* (eccenMap < eccenRange(2)) );
+        end
         
         % Loop through the frequencies and obtain the set of values
         vals = cell(1,nFreqs);
         for ff = 1:nFreqs
             subString = sprintf(['f%dHz_' directions{dd}],freqs(ff));
             idx = find(contains(stimLabels,subString));
-            vals{ff} = mean(results.params(goodIdx,idx));
+            vals{ff} = mean(results.params(goodIdx,idx),'omitnan');
         end
         
         % Prepare to plot into this subplot
@@ -95,7 +99,7 @@ for ss = 1:2
         end
         
         % Obtain the mean across frequencies and add to the plot
-        meanVals = cellfun(@(x) mean(x),squeeze(data(ss,dd,:)));
+        meanVals = cellfun(@(x) mean(x,'omitnan'),squeeze(data(ss,dd,:)));
         semilogx(freqs(2:end),meanVals,'ob','MarkerSize',10,'MarkerFaceColor','b')
         
         % Fit the Watson model

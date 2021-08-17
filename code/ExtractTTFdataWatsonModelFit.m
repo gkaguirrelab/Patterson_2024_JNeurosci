@@ -141,13 +141,16 @@ for ss = 1:2
             box off
 
             % Get bootstrapped fit parameters
-            [pBoot(ee,:,:)] = ExtractWatsonFitParametersBootstrap(w,vals);
+            [pBoot(ee,:,:),Rsquared(ee,:,:)] = ExtractWatsonFitParametersBootstrap(w,vals);
+            
+            pBoot(ee,:,:) = sort(pBoot(ee,:,:),3);
+            Rsquared(ee,:,:) = sort(Rsquared(ee,:,:),3);
             title([shortNames{ss} ', ' directions{dd} ', eccentricity' eccenDivs(ee) ' to ' eccenDivs(ee+1)])
         end
         % plot bootstrapped parameters across eccentricity
 
         figure
-        subplot(1,3,1)
+        subplot(1,4,1)
         hold on
         errorbar(1:length(eccenDivs)-1,squeeze(pBoot(:,1,500)),squeeze(pBoot(:,1,500))-squeeze(pBoot(:,1,25)),squeeze(pBoot(:,1,975))-squeeze(pBoot(:,1,500)),'-o','MarkerFaceColor',Color{dd},'Color',Color{dd},'LineWidth',1.5)
         set(gca,'TickDir','out');
@@ -159,7 +162,7 @@ for ss = 1:2
         xlabel('gain')
         ylabel('fit parameter value')
 
-        subplot(1,3,2)
+        subplot(1,4,2)
         hold on
         errorbar(1:length(eccenDivs)-1,squeeze(pBoot(:,2,500)),squeeze(pBoot(:,2,500))-squeeze(pBoot(:,2,25)),squeeze(pBoot(:,2,975))-squeeze(pBoot(:,2,500)),'-o','MarkerFaceColor',Color{dd},'Color',Color{dd},'LineWidth',1.5)
         set(gca,'TickDir','out');
@@ -169,9 +172,8 @@ for ss = 1:2
         xlim([0 7])
         ylim([0.5 1.2])
         xlabel('surround gain')
-        ylabel('fit parameter value')
 
-        subplot(1,3,3)
+        subplot(1,4,3)
         hold on
         errorbar(1:length(eccenDivs)-1,squeeze(pBoot(:,3,500)),squeeze(pBoot(:,3,500))-squeeze(pBoot(:,3,25)),squeeze(pBoot(:,3,975))-squeeze(pBoot(:,3,500)),'-o','MarkerFaceColor',Color{dd},'Color',Color{dd},'LineWidth',1.5)
         set(gca,'TickDir','out');
@@ -181,8 +183,18 @@ for ss = 1:2
         xlim([0 7])
         ylim([0 0.03])
         xlabel('time constant')
-        ylabel('fit parameter value')
         
-        clear p pBoot
+        subplot(1,4,4)
+        hold on
+        errorbar(1:length(eccenDivs)-1,squeeze(Rsquared(:,2,500)),squeeze(Rsquared(:,2,500))-squeeze(Rsquared(:,2,25)),squeeze(Rsquared(:,2,975))-squeeze(Rsquared(:,2,500)),'-o','MarkerFaceColor',Color{dd},'Color',Color{dd},'LineWidth',1.5)
+        set(gca,'TickDir','out');
+        box off
+        xticks(1:length(eccenDivs))
+        xticklabels(eccenDivs(1:end-1))
+        xlim([0 7])
+        ylim([0 1])
+        xlabel('R squared')
+        
+        clear p pBoot Rsquared
     end
 end

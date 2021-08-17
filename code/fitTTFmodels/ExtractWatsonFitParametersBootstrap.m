@@ -2,8 +2,11 @@
 %
 % This function calculates Bootstrapped Watson Model fit parameters
 
-function [p] = ExtractWatsonFitParametersBootstrap(w,yVal)
+function [p,Rsquared] = ExtractWatsonFitParametersBootstrap(w,yVal)
 
+% Output:
+% p = parameter values across 1000 bootstrapped samples
+% Rsqaured = R-squared (1st row) and adjusted R-squared (2nd row) value for goodness of fit 
         
 % Adjust the values for the zero frequency, obtain bootstrapped means and 95% CI
 y0 = yVal{1}; % response at frequency = 0
@@ -27,7 +30,8 @@ options = optimoptions(@fmincon,... % The options for the search (mostly silence
 % Model guess
 p0 = [1.5, 0.8, 0.015]; lb = [0 0 0]; ub = [8 1 0.025];
 
-p = NaN*ones(3,1000); 
+p = NaN*ones(3,1000);
+Rsquared = NaN*ones(2,1000);
 
 % Obtain Watson fit for bootstrapped values
 for bb = 1:1000
@@ -39,19 +43,16 @@ for bb = 1:1000
     % Search
     p(:,bb) = fmincon(myObj,p0,[],[],[],[],lb,ub,[],options);
     
-%     % plot the fit to check it
-%     figure(500)
-%     hold on
-%     yFit = watsonTTF(p(:,bb),wFit);
-%     plot(w,y,'ok')
-%     plot(wFit,yFit,'-b','LineWidth',1)
-%     ylabel('BOLD % change');
-%     xlabel('frequency [Hz]');
-%     semilogx([1 64],[0 0],':k','LineWidth',1)
-%     ylim([-2 8]);
-%     xlim([1 128])
-%     set(gca,'TickDir','out');
-%     box off
+    % Calculated R-squared and Adjusted R-squared for bootstrapped fits
+    yFit = watsonTTF(p(:,bb),w);
+    SST = sum(abs(diff([mean(y)*ones(1,6);y]))).^2;
+    SSE = sum(abs(diff([y;yFit]))).^2;
+    
+    Rsquared(1,bb) = 1-(SSE./SST);
+    
+    n=6;
+    param=length(p0);
+    Rsquared(2,bb) = 1-(((n-1)/(n-param)).*(SSE./SST));
     
 end
 

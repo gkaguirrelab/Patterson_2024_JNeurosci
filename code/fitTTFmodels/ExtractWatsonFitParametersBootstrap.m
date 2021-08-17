@@ -12,7 +12,7 @@ yW = yVal(:,2:end); % responses to all other frequencies
 bootVals = NaN*ones(length(w),1000);
 for ff = 1:length(w)
     temp_data = yW{ff}-y0;
-    bootVals(ff,:) = sort(bootstrp(1000,@mean,temp_data));
+    bootVals(ff,:) = sort(bootstrp(1000,@median,temp_data));
 end
 
 % Create a scaled-up, log-spaced, version of the frequency domain

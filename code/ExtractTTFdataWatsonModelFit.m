@@ -64,10 +64,13 @@ for ss = 1:2
             stimLabels = results.model.opts{6};
 
             % Find the vertices that we wish to analyze
-            if length(area)==1
-                goodIdx = logical( (results.R2 > r2Thresh) .* (vArea==area) .* (eccenMap > eccenRange(1)) .* (eccenMap < eccenRange(2)) );
-            else
-                goodIdx = logical( (results.R2 > r2Thresh) .* (vArea==area(1) | vArea==area(2)) .* (eccenMap > eccenRange(1)) .* (eccenMap < eccenRange(2)) );
+            switch area(1)
+                case 0
+                    goodIdx = logical( (results.R2 > r2Thresh) .* (subcorticalMap==1)  );
+                case {1, 2, 3}
+                    goodIdx = logical( (results.R2 > r2Thresh) .* (vArea==area) .* (eccenMap > eccenRange(1)) .* (eccenMap < eccenRange(2)) );
+                otherwise
+                    goodIdx = logical( (results.R2 > r2Thresh) .* (vArea==area(1) | vArea==area(2)) .* (eccenMap > eccenRange(1)) .* (eccenMap < eccenRange(2)) );
             end
 
             % Loop through the frequencies and obtain the set of values
@@ -83,14 +86,14 @@ for ss = 1:2
             subplot(2,3,dd+(ss-1)*3);
 
             % Adjust the values for the zero frequency, obtain bootstrapped
-            % means and 95% CI
+            % medians and 95% CI
             mBoot = NaN*ones(nFreqs-1,1);
             lBoot = NaN*ones(nFreqs-1,1);
             uBoot = NaN*ones(nFreqs-1,1);
             for ff = 2:nFreqs
                 data{ss,dd,ff-1} = vals{ff}-vals{1};
                 temp_data = vals{ff}-vals{1};
-                bootVals = sort(bootstrp(1000,@mean,temp_data));
+                bootVals = sort(bootstrp(1000,@median,temp_data));
                 mBoot(ff-1,:) = bootVals(500);
                 lBoot(ff-1,:) = bootVals(25);
                 uBoot(ff-1,:) = bootVals(975);
@@ -110,14 +113,9 @@ for ss = 1:2
             upScale = 10;
             wFit = 10.^(log10(min(w))-wDelta+wDelta/upScale:wDelta/upScale:log10(max(w))+wDelta);
 
-            switch dd
-                case 1
-                    p0 = [1.5, 0.8, 0.015]; lb = [0 0 0]; ub = [8 1 0.025];  % Set up the p0 guess, and the bounds on the params based on post-receptoral channel
-                case 2
-                    p0 = [1.5, 0.8, 0.015]; lb = [0 0 0]; ub = [8 1 0.025];
-                case 3
-                    p0 = [4, 1, 0.008]; lb = [0 0 0]; ub = [8 8 0.015];
-            end
+
+            p0 = [1.5, 0.8, 0.015]; lb = [0 0 0]; ub = [8 1 0.025];  % Set up the p0 guess, and the bounds on the params based on post-receptoral channel
+
             options = optimoptions(@fmincon,... % The options for the search (mostly silence diagnostics)
                 'Diagnostics','off',...
                 'Display','off');

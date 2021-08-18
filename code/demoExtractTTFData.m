@@ -11,6 +11,7 @@ localSaveDir = getpref('mriSinaiAnalysis','localSaveDir');
 % These variables define the subject names, stimulus directions, and the
 % analysis IDs
 subjectNames = {'HEROgka1','HEROasb1'};
+analysisIDs = {'6117d4db18adcc19d6e0f820','611d158fa296f805e7a2da75'};
 shortNames = {'gka','asb'};
 directions = {'LminusM','S','LMS'};
 freqs = [0,2,4,8,16,32,64];
@@ -20,6 +21,10 @@ nFreqs = length(freqs);
 deltaF10 = min(diff(log10(freqs(2:end))));
 fitScaleUp = 10;
 freqsFit = 10.^(log10(min(freqs(2:end)))-deltaF10+deltaF10/fitScaleUp:deltaF10/fitScaleUp:log10(max(freqs(2:end)))+deltaF10);
+
+% Create a flywheel object. You need to set you flywheelAPIKey in the
+% "flywheelMRSupport" local hook.
+fw = flywheel.Flywheel(getpref('flywheelMRSupport','flywheelAPIKey'));
 
 % Load the retino maps
 tmpPath = fullfile(localSaveDir,'retinoFiles','TOME_3021_inferred_varea.dtseries.nii');
@@ -31,17 +36,24 @@ polarMap = cifti_read(tmpPath); polarMap = polarMap.cdata;
 tmpPath = fullfile(localSaveDir,'retinoFiles','TOME_3021_inferred_sigma.dtseries.nii');
 sigmaMap = cifti_read(tmpPath); sigmaMap = sigmaMap.cdata;
 
-% Create a "subcortical" map
-subcorticalMap = zeros(size(vArea));
-subcorticalMap(60000:end)=1;
+% Load the subcortical ROIs
+projectID = '5ca7803af546b60029ef118e';
+subCorticalROIsFullNames = {'LGN_bilateral.dtseries.nii','thalamus_bilateral.dtseries.nii','midbrain_bilateral.dtseries.nii'};
+subCorticalROIsLabels = {'LGN','thalamus','midbrain'};
+for rr = 1:length(subCorticalROIsFullNames)
+    tmpPath = fullfile(localSaveDir,'retinoFiles',subCorticalROIsFullNames{rr});    
+    fw.downloadFileFromProject(projectID,subCorticalROIsFullNames{rr},tmpPath);
+    tmpRegion = cifti_read(tmpPath); tmpRegion = tmpRegion.cdata;
+    str = [subCorticalROIsLabels{rr} 'ROI = tmpRegion;'];
+    eval(str);
+end
 
 % This is the threshold for the goodness of fit to the fMRI time-series
 % data
 r2Thresh = 0.1;
 
-% This is the visual area and eccentricity range to grab. The visual areas
-% are: LGN = 0; V1 = 1, V2 = 2, V3 = 3, hV4/LO = [4 5], MT/MST = [8 9]
-area = 1;
+% This is the visual area and eccentricity range to grab. 
+areaLabel = 'thalamus';
 eccenRange = [0 90];
 
 % Define some components for model fitting
@@ -53,7 +65,6 @@ options = optimoptions(@fmincon,...
     'Diagnostics','off',...
     'Display','off');
 
-
 % Create a figure
 figure;
 
@@ -63,22 +74,37 @@ figure;
 data = cell(2,3,6);
 
 % Loop through the directions
-for ss = 1:2
+for ss = 1:1
     for dd = 1:3
         
-        % Load the results file for this subject
-        filePath = fullfile(localSaveDir,'resultsFiles',[subjectNames{ss} '_mtSinai_results.mat']);
+        % Download the results file for this subject        
+        fileName = [subjectNames{ss} '_mtSinai_results.mat'];
+        filePath = fullfile(localSaveDir,'resultsFiles',fileName);
+        fw.downloadOutputFromAnalysis(analysisIDs{ss},fileName,filePath);
         load(filePath,'results')
         
         % Grab the stimLabels
-        stimLabels = results.model.opts{6};
+        stimLabels = results.model.opts{find(strcmp(results.model.opts,'stimLabels'))+1};
         
         % Find the vertices that we wish to analyze
-        if area==0
-            goodIdx = logical( (results.R2 > r2Thresh) .* (subcorticalMap==1)  );
-        else
-            goodIdx = logical( (results.R2 > r2Thresh) .* (vArea==area) .* (eccenMap > eccenRange(1)) .* (eccenMap < eccenRange(2)) );
+        switch areaLabel
+            case 'V1'
+                areaIdx = (vArea==1) .* (eccenMap > eccenRange(1)) .* (eccenMap < eccenRange(2));
+            case 'V23'
+                areaIdx = (vArea>=2) .* (vArea<=3) .* (eccenMap > eccenRange(1)) .* (eccenMap < eccenRange(2));
+            case 'hV4'
+                areaIdx = (vArea>=4) .* (vArea<=5) .* (eccenMap > eccenRange(1)) .* (eccenMap < eccenRange(2));
+            case 'MT'
+                areaIdx = (vArea>=8) .* (vArea<=9) .* (eccenMap > eccenRange(1)) .* (eccenMap < eccenRange(2));
+            case 'LGN'
+                areaIdx = LGNROI;
+            case 'midbrain'
+                areaIdx = midbrainROI;
+            case 'thalamus'
+                areaIdx = thalamusROI;
         end
+        
+        goodIdx = logical( (results.R2 > r2Thresh) .* areaIdx );
         
         % Loop through the frequencies and obtain the set of values
         vals = cell(1,nFreqs);

@@ -16,7 +16,6 @@ directions = {'LminusM','S','LMS'};
 freqs = [0,2,4,8,16,32,64];
 nFreqs = length(freqs);
 Color = {'r','b','k'};
-areaLabel = {'LGN','V1','V2','V3','hV4/LO','MT/MST'};
 
 % Frequency components for model fitting
 deltaF10 = min(diff(log10(freqs(2:end))));
@@ -66,10 +65,11 @@ data = cell(2,3,6);
 areaLabels = {'midbrain';'LGN';'thalamus';'V1'; 'V23'; 'hV4'; 'MT'};
 
 % Loop through the directions and visual areas
-p = NaN*ones(2,3,3);
+p = NaN*ones(2,3,2);
 for ss = 1:2
     for dd = 1:3
-        pBoot = NaN*ones(length(areaLabels),3,1000);
+        pBoot = NaN*ones(length(areaLabels),2,1000);
+        Rsquared = NaN*ones(length(areaLabels),1000);
         for aa = 1:length(areaLabels)
             areaLabel = areaLabels{aa};
             % Load the results file for this subject
@@ -139,21 +139,20 @@ for ss = 1:2
             upScale = 10;
             wFit = 10.^(log10(min(w))-wDelta+wDelta/upScale:wDelta/upScale:log10(max(w))+wDelta);
 
-
-            p0 = [1.5, 0.8, 0.015]; lb = [0 0 0]; ub = [8 1 0.025];  % Set up the p0 guess, and the bounds on the params based on post-receptoral channel
-
+            p0 = [1.5 0.015]; lb = [-1 0.005]; ub = [8 0.025];
+              
             options = optimoptions(@fmincon,... % The options for the search (mostly silence diagnostics)
                 'Diagnostics','off',...
                 'Display','off');
 
             % The objective function is the norm of the model fit error
-            myObj = @(p) norm(y - watsonTTF(p,w));
+            myObj = @(p) norm(y - watsonTTF2param(p,w));
 
             % Search
             p(ss,dd,:) = fmincon(myObj,p0,[],[],[],[],lb,ub,[],options);
 
             % Obtain the high-resolution model fit and plot it
-            yFit = watsonTTF(squeeze(p(ss,dd,:)),wFit);
+            yFit = watsonTTF2param(squeeze(p(ss,dd,:)),wFit);
             plot(wFit,yFit,'-b','LineWidth',1)
 
             % Clean up the plot
@@ -167,54 +166,47 @@ for ss = 1:2
             box off
 
             % Get bootstrapped fit parameters
-            [pBoot(aa,:,:),Rsquared(aa,:,:)] = ExtractWatsonFitParametersBootstrap(w,vals);
+            [pBoot(aa,:,:),Rsquared(aa,:)] = ExtractWatsonFitParametersBootstrap(w,vals);
             title([shortNames{ss} ', ' directions{dd} ', visual area ' areaLabels{aa}])
             
             pBoot(aa,:,:) = sort(pBoot(aa,:,:),3);
-            Rsquared(aa,:,:) = sort(Rsquared(aa,:,:),3);
+            Rsquared(aa,:) = sort(Rsquared(aa,:),2);
         end
         % plot bootstrapped parameters across eccentricity
-
-        figure
-        subplot(1,4,1)
+        
+                figure(10)
+        switch ss
+            case 1
+                loc = 1;
+            case 2
+                loc = 4;
+        end
+  subplot(2,3,loc)
         hold on
-        errorbar(1:length(areaLabels),squeeze(pBoot(:,1,500)),squeeze(pBoot(:,1,500))-squeeze(pBoot(:,1,25)),squeeze(pBoot(:,1,975))-squeeze(pBoot(:,1,500)),'-o','MarkerFaceColor',Color{dd},'Color',Color{dd},'LineWidth',1.5)
+        errorbar(1:length(areaLabels),squeeze(pBoot(:,1,500)),abs(diff(squeeze(pBoot(:,1,[25 500])),[],2)),abs(diff(squeeze(pBoot(:,1,[500 975])),[],2)),'o','MarkerFaceColor',Color{dd},'Color',Color{dd},'LineWidth',1.5)
         set(gca,'TickDir','out');
         box off
         xticks(1:length(areaLabels))
         xticklabels(areaLabels)
         xlim([0 7])
-        ylim([0 8])
+        ylim([-2 8])
         xlabel('gain')
         ylabel('fit parameter value')
-
-        subplot(1,4,2)
-        hold on
-        errorbar(1:length(areaLabels),squeeze(pBoot(:,2,500)),squeeze(pBoot(:,2,500))-squeeze(pBoot(:,2,25)),squeeze(pBoot(:,2,975))-squeeze(pBoot(:,2,500)),'-o','MarkerFaceColor',Color{dd},'Color',Color{dd},'LineWidth',1.5)
-        set(gca,'TickDir','out');
-        box off
-        xticks(1:length(areaLabels))
-        xticklabels(areaLabels)
-        xlim([0 7])
-        ylim([0.5 1.2])
-        xlabel('surround gain')
-        ylabel('fit parameter value')
-
-        subplot(1,4,3)
-        hold on
-        errorbar(1:length(areaLabels),squeeze(pBoot(:,3,500)),squeeze(pBoot(:,3,500))-squeeze(pBoot(:,3,25)),squeeze(pBoot(:,3,975))-squeeze(pBoot(:,3,500)),'-o','MarkerFaceColor',Color{dd},'Color',Color{dd},'LineWidth',1.5)
-        set(gca,'TickDir','out');
-        box off
-        xticks(1:length(areaLabels))
-        xticklabels(areaLabels)
-        xlim([0 7])
-        ylim([0 0.03])
-        xlabel('time constant')
-        ylabel('fit parameter value')
         
-        subplot(1,4,4)
+        subplot(2,3,loc+1)
         hold on
-        errorbar(1:length(areaLabels),squeeze(Rsquared(:,2,500)),squeeze(Rsquared(:,2,500))-squeeze(Rsquared(:,2,25)),squeeze(Rsquared(:,2,975))-squeeze(Rsquared(:,2,500)),'-o','MarkerFaceColor',Color{dd},'Color',Color{dd},'LineWidth',1.5)
+        errorbar(1:length(areaLabels),squeeze(pBoot(:,2,500)),abs(diff(squeeze(pBoot(:,2,[25 500])),[],2)),abs(diff(squeeze(pBoot(:,2,[500 975])),[],2)),'o','MarkerFaceColor',Color{dd},'Color',Color{dd},'LineWidth',1.5)
+        set(gca,'TickDir','out');
+        box off
+        xticks(1:length(areaLabels))
+        xticklabels(areaLabels)
+        xlim([0 7])
+        ylim([0 0.05])
+        xlabel('time constant')
+        
+        subplot(2,3,loc+2)
+        hold on
+        errorbar(1:length(areaLabels),Rsquared(:,500),abs(diff(Rsquared(:,[25 500]),[],2)),abs(diff(Rsquared(:,[500 975]),[],2)),'o','MarkerFaceColor',Color{dd},'Color',Color{dd},'LineWidth',1.5)
         set(gca,'TickDir','out');
         box off
         xticks(1:length(areaLabels))
@@ -223,6 +215,11 @@ for ss = 1:2
         ylim([0 1])
         xlabel('R squared')
         
-        clear p pBoot
+        p_Boot(ss,dd,:,:,:) = pBoot;
+        R_squared(ss,dd,:,:) = Rsquared;
+        
+        clear p pBoot Rsquared
     end
 end
+
+save param_by_area p_Boot R_squared areaLabels data

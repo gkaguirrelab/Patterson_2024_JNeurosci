@@ -53,10 +53,15 @@ data = cell(2,3,6);
 eccenDivs = [0 90./(2.^(5:-1:0))]; % eccentricity bins
 
 % Loop through the directions and eccentricities
-p = NaN*ones(2,3,3);
+
+p = NaN*ones(2,3,2);
+        
 for ss = 1:2
     for dd = 1:3
-        pBoot = NaN*ones(length(eccenDivs)-1,3,1000);
+        
+        pBoot = NaN*ones(length(eccenDivs)-1,2,1000);
+        Rsquared = NaN*ones(length(eccenDivs)-1,1000);
+        
         for ee = 1:length(eccenDivs)-1
             eccenRange = [eccenDivs(ee) eccenDivs(ee+1)];
         
@@ -69,7 +74,7 @@ for ss = 1:2
 
             % Find the vertices that we wish to analyze (V1 for
             % eccentricity)
-            areaIdx = (vArea==1) .* (eccenMap > eccenRange(1)) .* (eccenMap < eccenRange(2));
+            areaIdx = (vArea == 1) .* (eccenMap > eccenRange(1)) .* (eccenMap < eccenRange(2));
             goodIdx = logical( (results.R2 > r2Thresh) .* areaIdx );
             
         % Loop through the frequencies and obtain the set of values
@@ -112,21 +117,22 @@ for ss = 1:2
             upScale = 10;
             wFit = 10.^(log10(min(w))-wDelta+wDelta/upScale:wDelta/upScale:log10(max(w))+wDelta);
 
-
-            p0 = [1.5, 0.8, 0.015]; lb = [0 0 0]; ub = [8 1 0.025];  % Set up the p0 guess, and the bounds on the params based on post-receptoral channel
-
+%             p0 = [1.5, 0.8, 0.015, 9, 0.018, 10]; lb = [0 0 0 0 0 0]; ub = [8 1 0.025 20 0.03 20];  % Set up the p0 guess, and the bounds on the params based on post-receptoral channel
+%            p0 = [1.5, 0.8, 0.015]; lb = [0 0 0]; ub = [8 1 0.025];  % Set up the p0 guess, and the bounds on the params based on post-receptoral channel
+            p0 = [1.5 0.015]; lb = [-inf 0.005]; ub = [8 0.025];
+            
             options = optimoptions(@fmincon,... % The options for the search (mostly silence diagnostics)
                 'Diagnostics','off',...
                 'Display','off');
 
             % The objective function is the norm of the model fit error
-            myObj = @(p) norm(y - watsonTTF(p,w));
+            myObj = @(p) norm(y - watsonTTF2param(p,w));
 
             % Search
             p(ss,dd,:) = fmincon(myObj,p0,[],[],[],[],lb,ub,[],options);
 
             % Obtain the high-resolution model fit and plot it
-            yFit = watsonTTF(squeeze(p(ss,dd,:)),wFit);
+            yFit = watsonTTF2param(squeeze(p(ss,dd,:)),wFit);
             plot(wFit,yFit,'-b','LineWidth',1)
 
             % Clean up the plot
@@ -140,52 +146,48 @@ for ss = 1:2
             box off
 
             % Get bootstrapped fit parameters
-            [pBoot(ee,:,:),Rsquared(ee,:,:)] = ExtractWatsonFitParametersBootstrap(w,vals);
+            [pBoot(ee,:,:),Rsquared(ee,:)] = ExtractWatsonFitParametersBootstrap(w,vals);
             
             pBoot(ee,:,:) = sort(pBoot(ee,:,:),3);
-            Rsquared(ee,:,:) = sort(Rsquared(ee,:,:),3);
+            Rsquared(ee,:) = sort(Rsquared(ee,:),2);
             title([shortNames{ss} ', ' directions{dd} ', eccentricity' eccenDivs(ee) ' to ' eccenDivs(ee+1)])
         end
         % plot bootstrapped parameters across eccentricity
 
-        figure
-        subplot(1,4,1)
+        figure(10)
+        switch ss
+            case 1
+                loc = 1;
+            case 2
+                loc = 4;
+        end
+        
+        subplot(2,3,loc)
         hold on
-        errorbar(1:length(eccenDivs)-1,squeeze(pBoot(:,1,500)),squeeze(pBoot(:,1,500))-squeeze(pBoot(:,1,25)),squeeze(pBoot(:,1,975))-squeeze(pBoot(:,1,500)),'-o','MarkerFaceColor',Color{dd},'Color',Color{dd},'LineWidth',1.5)
+        errorbar(1:length(eccenDivs)-1,squeeze(pBoot(:,1,500)),abs(diff(squeeze(pBoot(:,1,[25 500])),[],2)),abs(diff(squeeze(pBoot(:,1,[500 975])),[],2)),'-o','MarkerFaceColor',Color{dd},'Color',Color{dd},'LineWidth',1.5)
         set(gca,'TickDir','out');
         box off
         xticks(1:length(eccenDivs))
         xticklabels(eccenDivs(1:end-1))
         xlim([0 7])
-        ylim([0 8])
+        ylim([-2 8])
         xlabel('gain')
         ylabel('fit parameter value')
-
-        subplot(1,4,2)
+        
+        subplot(2,3,loc+1)
         hold on
-        errorbar(1:length(eccenDivs)-1,squeeze(pBoot(:,2,500)),squeeze(pBoot(:,2,500))-squeeze(pBoot(:,2,25)),squeeze(pBoot(:,2,975))-squeeze(pBoot(:,2,500)),'-o','MarkerFaceColor',Color{dd},'Color',Color{dd},'LineWidth',1.5)
+        errorbar(1:length(eccenDivs)-1,squeeze(pBoot(:,2,500)),abs(diff(squeeze(pBoot(:,2,[25 500])),[],2)),abs(diff(squeeze(pBoot(:,2,[500 975])),[],2)),'-o','MarkerFaceColor',Color{dd},'Color',Color{dd},'LineWidth',1.5)
         set(gca,'TickDir','out');
         box off
         xticks(1:length(eccenDivs))
         xticklabels(eccenDivs(1:end-1))
         xlim([0 7])
-        ylim([0.5 1.2])
-        xlabel('surround gain')
-
-        subplot(1,4,3)
-        hold on
-        errorbar(1:length(eccenDivs)-1,squeeze(pBoot(:,3,500)),squeeze(pBoot(:,3,500))-squeeze(pBoot(:,3,25)),squeeze(pBoot(:,3,975))-squeeze(pBoot(:,3,500)),'-o','MarkerFaceColor',Color{dd},'Color',Color{dd},'LineWidth',1.5)
-        set(gca,'TickDir','out');
-        box off
-        xticks(1:length(eccenDivs))
-        xticklabels(eccenDivs(1:end-1))
-        xlim([0 7])
-        ylim([0 0.03])
+        ylim([0 0.05])
         xlabel('time constant')
         
-        subplot(1,4,4)
+        subplot(2,3,loc+2)
         hold on
-        errorbar(1:length(eccenDivs)-1,squeeze(Rsquared(:,2,500)),squeeze(Rsquared(:,2,500))-squeeze(Rsquared(:,2,25)),squeeze(Rsquared(:,2,975))-squeeze(Rsquared(:,2,500)),'-o','MarkerFaceColor',Color{dd},'Color',Color{dd},'LineWidth',1.5)
+        errorbar(1:length(eccenDivs)-1,Rsquared(:,500),abs(diff(Rsquared(:,[25 500]),[],2)),abs(diff(Rsquared(:,[500 975]),[],2)),'-o','MarkerFaceColor',Color{dd},'Color',Color{dd},'LineWidth',1.5)
         set(gca,'TickDir','out');
         box off
         xticks(1:length(eccenDivs))
@@ -194,6 +196,9 @@ for ss = 1:2
         ylim([0 1])
         xlabel('R squared')
         
-        clear p pBoot Rsquared
+        p_Boot(ss,dd,:,:,:) = pBoot;
+        R_squared(ss,dd,:,:) = Rsquared;
     end
 end
+
+save param_by_V1eccen p_Boot Rsquared eccenDivs data

@@ -53,7 +53,7 @@ end
 r2Thresh = 0.1;
 
 % This is the visual area and eccentricity range to grab. 
-areaLabel = 'thalamus';
+areaLabel = 'LGN';
 eccenRange = [0 90];
 
 % Define some components for model fitting
@@ -74,7 +74,7 @@ figure;
 data = cell(2,3,6);
 
 % Loop through the directions
-for ss = 1:1
+for ss = 1:2
     for dd = 1:3
         
         % Download the results file for this subject        

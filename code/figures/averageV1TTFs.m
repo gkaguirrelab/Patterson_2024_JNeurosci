@@ -39,6 +39,8 @@ attentionThresh = 0;
 % are: V1 = 1, V2 = 2, V3 = 3, hV4/LO = [4 5], MT/MST = [8 9]
 area = 1;
 
+eccenDivs = [0 90];
+
 % Some values used for fitting peak frequency
 freqs = [2 4 8 16 32 64];
 nFreqs = length(freqs);
@@ -94,7 +96,7 @@ for ss = 1:2
     % All vertices in V1 and
     % for which there was a response to the attention task above
     % threshold.
-    goodIdxA = ( (vArea>=1) .* (vArea<=1) .* (eccenMap > eccenDivs(ee)) .* (eccenMap < eccenDivs(ee+1)) ) .* ...
+    goodIdxA = ( (vArea>=1) .* (vArea<=1) .* (eccenMap > eccenDivs(1)) .* (eccenMap < eccenDivs(2)) ) .* ...
         ( ((allResults{1}.attention-allResults{1}.f0Hz)>attentionThresh) .* ((allResults{2}.attention-allResults{2}.f0Hz)>attentionThresh) .* ((allResults{3}.attention-allResults{3}.f0Hz)>attentionThresh) );
     
     % Also require that at least one of the three modulation directions

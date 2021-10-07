@@ -62,7 +62,7 @@ figure;
 % will have the 12 measurements
 data = cell(2,3,6);
 
-areaLabels = {'midbrain';'LGN';'thalamus';'V1'; 'V23'; 'hV4'; 'MT'};
+areaLabels = {'V1'; 'V23'; 'hV4'; 'MT'};
 
 % Loop through the directions and visual areas
 p = NaN*ones(2,3,2);
@@ -117,14 +117,14 @@ for ss = 1:2
             lBoot = NaN*ones(nFreqs-1,1);
             uBoot = NaN*ones(nFreqs-1,1);
             for ff = 2:nFreqs
-                data{ss,dd,ff-1} = vals{ff}-vals{1};
+                data{ss,dd,aa,ff-1} = vals{ff}-vals{1};
                 temp_data = vals{ff}-vals{1};
-                bootVals = sort(bootstrp(1000,@median,temp_data));
+                bootVals = sort(bootstrp(1000,@mean,temp_data));
                 mBoot(ff-1,:) = bootVals(500);
                 lBoot(ff-1,:) = bootVals(25);
                 uBoot(ff-1,:) = bootVals(975);
 
-                semilogx(zeros(1,length(data{ss,dd,ff-1}))+freqs(ff),data{ss,dd,ff-1},'.','Color',[0.9 0.9 0.9]);
+                semilogx(zeros(1,length(data{ss,dd,aa,ff-1}))+freqs(ff),data{ss,dd,aa,ff-1},'.','Color',[0.9 0.9 0.9]);
                 hold on
             end
 

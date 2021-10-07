@@ -45,12 +45,9 @@ r2Thresh = 0.1;
 % Create a figure
 figure;
 
-% Create a data variable to hold the results. This will be a 2 x 3 x 6
-% (subjects x directons x frequencies) cell array for the selected subject. Each cell
-% will have the 12 measurements
-data = cell(2,3,6);
-
 eccenDivs = [0 90./(2.^(5:-1:0))]; % eccentricity bins
+
+data = cell(2,3,length(eccenDivs)-1,6);
 
 % Loop through the directions and eccentricities
 
@@ -95,14 +92,14 @@ for ss = 1:2
             lBoot = NaN*ones(nFreqs-1,1);
             uBoot = NaN*ones(nFreqs-1,1);
             for ff = 2:nFreqs
-                data{ss,dd,ff-1} = vals{ff}-vals{1};
+                data{ss,dd,ee,ff-1} = vals{ff}-vals{1};
                 temp_data = vals{ff}-vals{1};
-                bootVals = sort(bootstrp(1000,@median,temp_data));
+                bootVals = sort(bootstrp(1000,@mean,temp_data));
                 mBoot(ff-1,:) = bootVals(500);
                 lBoot(ff-1,:) = bootVals(25);
                 uBoot(ff-1,:) = bootVals(975);
 
-                semilogx(zeros(1,length(data{ss,dd,ff-1}))+freqs(ff),data{ss,dd,ff-1},'.','Color',[0.9 0.9 0.9]);
+                semilogx(zeros(1,length(data{ss,dd,ee,ff-1}))+freqs(ff),data{ss,dd,ee,ff-1},'.','Color',[0.9 0.9 0.9]);
                 hold on
             end
 
@@ -117,8 +114,6 @@ for ss = 1:2
             upScale = 10;
             wFit = 10.^(log10(min(w))-wDelta+wDelta/upScale:wDelta/upScale:log10(max(w))+wDelta);
 
-%             p0 = [1.5, 0.8, 0.015, 9, 0.018, 10]; lb = [0 0 0 0 0 0]; ub = [8 1 0.025 20 0.03 20];  % Set up the p0 guess, and the bounds on the params based on post-receptoral channel
-%            p0 = [1.5, 0.8, 0.015]; lb = [0 0 0]; ub = [8 1 0.025];  % Set up the p0 guess, and the bounds on the params based on post-receptoral channel
             p0 = [1.5 0.015]; lb = [-inf 0.005]; ub = [8 0.025];
             
             options = optimoptions(@fmincon,... % The options for the search (mostly silence diagnostics)
@@ -201,4 +196,4 @@ for ss = 1:2
     end
 end
 
-save param_by_V1eccen p_Boot Rsquared eccenDivs data
+save param_by_V1eccen p_Boot R_squared eccenDivs data

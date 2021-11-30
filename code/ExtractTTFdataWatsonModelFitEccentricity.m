@@ -18,10 +18,16 @@ freqs = [0,2,4,8,16,32,64];
 nFreqs = length(freqs);
 Color = {'r','b','k'};
 
+% Load V1 mean surround amplitude for yolked surround
+load param_by_area p_mean
+V1_surr = squeeze(squeeze(p_mean(:,:,2,2)));
+clear p_mean
+
 % Frequency components for model fitting
 deltaF10 = min(diff(log10(freqs(2:end))));
 fitScaleUp = 10;
-freqsFit = 10.^(log10(min(freqs(2:end)))-deltaF10+deltaF10/fitScaleUp:deltaF10/fitScaleUp:log10(max(freqs(2:end)))+deltaF10);
+wFit = 10.^(log10(min(freqs(2:end)))-deltaF10+deltaF10/fitScaleUp:deltaF10/fitScaleUp:log10(max(freqs(2:end)))+deltaF10);
+
 
 % Create a flywheel object. You need to set you flywheelAPIKey in the
 % "flywheelMRSupport" local hook.
@@ -41,23 +47,27 @@ sigmaMap = cifti_read(tmpPath); sigmaMap = sigmaMap.cdata;
 % data
 r2Thresh = 0.1;
 
+p0 = [0 0 0];
 
 % Create a figure
 figure;
 
 eccenDivs = [0 90./(2.^(5:-1:0))]; % eccentricity bins
 
-data = cell(2,3,length(eccenDivs)-1,6);
+
+p_Boot = NaN*ones(2,3,length(eccenDivs)-1,length(p0),1000);
+R_squared =  NaN*ones(2,3,length(eccenDivs)-1,1000);
+data = cell(2,3,length(eccenDivs)-1,nFreqs-1);
 
 % Loop through the directions and eccentricities
-
-p = NaN*ones(2,3,2);
         
 for ss = 1:2
     for dd = 1:3
         
-        pBoot = NaN*ones(length(eccenDivs)-1,2,1000);
+        pBoot = NaN*ones(length(eccenDivs)-1,length(p0),1000);
         Rsquared = NaN*ones(length(eccenDivs)-1,1000);
+        
+        p0 = [1.5 V1_surr(ss,dd) 0.015]; lb = [-2 V1_surr(ss,dd) 0.005]; ub = [6 V1_surr(ss,dd) 0.05];
         
         for ee = 1:length(eccenDivs)-1
             eccenRange = [eccenDivs(ee) eccenDivs(ee+1)];
@@ -81,6 +91,7 @@ for ss = 1:2
             idx = find(contains(stimLabels,subString));
             vals{ff} = mean(results.params(goodIdx,idx),'omitnan');
         end
+        
 
             % Prepare to plot into this subplot
             figure(1)
@@ -107,27 +118,25 @@ for ss = 1:2
             errorbar(freqs(2:end),mBoot,abs(diff([mBoot lBoot],1,2)),abs(diff([uBoot mBoot],1,2)),'ob','MarkerSize',8,'MarkerFaceColor','b','LineWidth',2)
 
             % Obtain Watson fit for bootstrapped mean and plot it 
-            y = mBoot'; % select bootstrapped mean to be fit to the model
+            Y = mBoot'; % select bootstrapped mean to be fit to the model
             w = freqs(2:end);
+            
+            y = Y-min(Y);
 
-            wDelta = min(diff(log10(w))); % Create a scaled-up, log-spaced, version of the frequency domain
-            upScale = 10;
-            wFit = 10.^(log10(min(w))-wDelta+wDelta/upScale:wDelta/upScale:log10(max(w))+wDelta);
-
-            p0 = [1.5 0.015]; lb = [-inf 0.005]; ub = [8 0.025];
             
             options = optimoptions(@fmincon,... % The options for the search (mostly silence diagnostics)
                 'Diagnostics','off',...
                 'Display','off');
 
-            % The objective function is the norm of the model fit error
-            myObj = @(p) norm(y - watsonTTF2param(p,w));
+            myObj = @(p) norm(y - watsonTTF(p,w));
+            p0(1,1) = max(y);
+            p = fmincon(myObj,p0,[],[],[],[],lb,ub,[],options);
+            yFit = watsonTTF(p,wFit);
+            yFit(~isfinite(yFit))=nan;
+            
+            yFit = yFit-min(Y);
 
-            % Search
-            p(ss,dd,:) = fmincon(myObj,p0,[],[],[],[],lb,ub,[],options);
-
-            % Obtain the high-resolution model fit and plot it
-            yFit = watsonTTF2param(squeeze(p(ss,dd,:)),wFit);
+            
             plot(wFit,yFit,'-b','LineWidth',1)
 
             % Clean up the plot
@@ -139,27 +148,28 @@ for ss = 1:2
             xlim([1 128])
             set(gca,'TickDir','out');
             box off
+            title([shortNames{ss} ', ' directions{dd} ', eccentricity' eccenDivs(ee) ' to ' eccenDivs(ee+1)])
 
             % Get bootstrapped fit parameters
-            [pBoot(ee,:,:),Rsquared(ee,:)] = ExtractWatsonFitParametersBootstrap(w,vals);
+            [pBoot(ee,:,:),Rsquared(ee,:)] = ExtractWatsonFitParametersBootstrap(w,vals,'p0',p0,'lb',lb,'ub',ub,'SurroundAmp',V1_surr(ss,dd));
             
             pBoot(ee,:,:) = sort(pBoot(ee,:,:),3);
             Rsquared(ee,:) = sort(Rsquared(ee,:),2);
-            title([shortNames{ss} ', ' directions{dd} ', eccentricity' eccenDivs(ee) ' to ' eccenDivs(ee+1)])
+            p_mean(ss,dd,ee,:) = p;
+            clear p
         end
+        
         % plot bootstrapped parameters across eccentricity
-
         figure(10)
-        switch ss
+           switch ss
             case 1
                 loc = 1;
             case 2
-                loc = 4;
+                loc = 5;
         end
-        
-        subplot(2,3,loc)
+        subplot(2,4,loc)
         hold on
-        errorbar(1:length(eccenDivs)-1,squeeze(pBoot(:,1,500)),abs(diff(squeeze(pBoot(:,1,[25 500])),[],2)),abs(diff(squeeze(pBoot(:,1,[500 975])),[],2)),'-o','MarkerFaceColor',Color{dd},'Color',Color{dd},'LineWidth',1.5)
+        errorbar(1:length(eccenDivs(1:end-1)),squeeze(pBoot(:,1,500)),abs(diff(squeeze(pBoot(:,1,[25 500])),[],2)),abs(diff(squeeze(pBoot(:,1,[500 975])),[],2)),'o','MarkerFaceColor',Color{dd},'Color',Color{dd},'LineWidth',1.5)
         set(gca,'TickDir','out');
         box off
         xticks(1:length(eccenDivs))
@@ -169,9 +179,22 @@ for ss = 1:2
         xlabel('gain')
         ylabel('fit parameter value')
         
-        subplot(2,3,loc+1)
+        if length(p0)==3
+            subplot(2,4,loc+1)
+            hold on
+            errorbar(1:length(eccenDivs(1:end-1)),squeeze(pBoot(:,2,500)),abs(diff(squeeze(pBoot(:,2,[25 500])),[],2)),abs(diff(squeeze(pBoot(:,2,[500 975])),[],2)),'o','MarkerFaceColor',Color{dd},'Color',Color{dd},'LineWidth',1.5)
+            set(gca,'TickDir','out');
+            box off
+            xticks(1:length(eccenDivs))
+            xticklabels(eccenDivs(1:end-1))
+            xlim([0 7])
+            ylim([0 2])
+            xlabel('surround gain')
+        end
+        
+        subplot(2,4,loc+2)
         hold on
-        errorbar(1:length(eccenDivs)-1,squeeze(pBoot(:,2,500)),abs(diff(squeeze(pBoot(:,2,[25 500])),[],2)),abs(diff(squeeze(pBoot(:,2,[500 975])),[],2)),'-o','MarkerFaceColor',Color{dd},'Color',Color{dd},'LineWidth',1.5)
+        errorbar(1:length(eccenDivs(1:end-1)),squeeze(pBoot(:,end,500)),abs(diff(squeeze(pBoot(:,end,[25 500])),[],2)),abs(diff(squeeze(pBoot(:,end,[500 975])),[],2)),'o','MarkerFaceColor',Color{dd},'Color',Color{dd},'LineWidth',1.5)
         set(gca,'TickDir','out');
         box off
         xticks(1:length(eccenDivs))
@@ -180,9 +203,9 @@ for ss = 1:2
         ylim([0 0.05])
         xlabel('time constant')
         
-        subplot(2,3,loc+2)
+        subplot(2,4,loc+3)
         hold on
-        errorbar(1:length(eccenDivs)-1,Rsquared(:,500),abs(diff(Rsquared(:,[25 500]),[],2)),abs(diff(Rsquared(:,[500 975]),[],2)),'-o','MarkerFaceColor',Color{dd},'Color',Color{dd},'LineWidth',1.5)
+        errorbar(1:length(eccenDivs(1:end-1)),Rsquared(:,500),abs(diff(Rsquared(:,[25 500]),[],2)),abs(diff(Rsquared(:,[500 975]),[],2)),'o','MarkerFaceColor',Color{dd},'Color',Color{dd},'LineWidth',1.5)
         set(gca,'TickDir','out');
         box off
         xticks(1:length(eccenDivs))
@@ -193,7 +216,9 @@ for ss = 1:2
         
         p_Boot(ss,dd,:,:,:) = pBoot;
         R_squared(ss,dd,:,:) = Rsquared;
+        
+        clear pBoot Rsquared
     end
 end
 
-save param_by_V1eccen p_Boot R_squared eccenDivs data
+save param_by_V1eccen p_Boot R_squared eccenDivs data p_mean

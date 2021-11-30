@@ -1,5 +1,11 @@
-function [y,Hc,Hs] = watsonTTF2param(p,w)
+function [y,Hc,Hs] = watsonTTF2param(p,w,varargin)
 % Implements the AB Watson center-surround temporal sensitivity model
+
+% Parse input
+q = inputParser;
+q.addParameter('SurroundAmp',0.9,@isnumeric); % based on average Gs across subjects and directions V1 wide field
+q.parse(varargin{:});
+
 %
 % Syntax:
 %  [y,Hc,Hs] = watsonTTF(p,w)
@@ -68,7 +74,7 @@ function [y,Hc,Hs] = watsonTTF2param(p,w)
 
 % Decompose p to the individual params
 G = p(1);
-Gs = 0.9; % based on average Gs across subjects and directions V1 wide field
+Gs = q.Results.SurroundAmp; 
 tc = p(2);
 nc = 9;
 ts = tc.*1.33;

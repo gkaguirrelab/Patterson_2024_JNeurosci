@@ -17,10 +17,16 @@ freqs = [0,2,4,8,16,32,64];
 nFreqs = length(freqs);
 Color = {'r','b','k'};
 
+% TTF model guess
+p0 = [1.5 0.9 0.015]; 
+lb = [-2 0.5 0.005]; 
+ub = [6 2 0.05];
+
 % Frequency components for model fitting
 deltaF10 = min(diff(log10(freqs(2:end))));
 fitScaleUp = 10;
-freqsFit = 10.^(log10(min(freqs(2:end)))-deltaF10+deltaF10/fitScaleUp:deltaF10/fitScaleUp:log10(max(freqs(2:end)))+deltaF10);
+wFit = 10.^(log10(min(freqs(2:end)))-deltaF10+deltaF10/fitScaleUp:deltaF10/fitScaleUp:log10(max(freqs(2:end)))+deltaF10);
+
 
 % Create a flywheel object. You need to set you flywheelAPIKey in the
 % "flywheelMRSupport" local hook.
@@ -62,13 +68,16 @@ figure;
 % will have the 12 measurements
 data = cell(2,3,6);
 
-areaLabels = {'V1'; 'V23'; 'hV4'; 'MT'};
+areaLabels = {'LGN';'V1'; 'V23'; 'hV4'; 'MT'};
 
+p_Boot = NaN*ones(2,3,length(areaLabels),length(p0),1000);
+R_squared =  NaN*ones(2,3,length(areaLabels),1000);
+p_mean = NaN*ones(2,3,length(areaLabels),length(p0));
+        
 % Loop through the directions and visual areas
-p = NaN*ones(2,3,2);
 for ss = 1:2
     for dd = 1:3
-        pBoot = NaN*ones(length(areaLabels),2,1000);
+        pBoot = NaN*ones(length(areaLabels),length(p0),1000);
         Rsquared = NaN*ones(length(areaLabels),1000);
         for aa = 1:length(areaLabels)
             areaLabel = areaLabels{aa};
@@ -132,27 +141,30 @@ for ss = 1:2
             errorbar(freqs(2:end),mBoot,abs(diff([mBoot lBoot],1,2)),abs(diff([uBoot mBoot],1,2)),'ob','MarkerSize',8,'MarkerFaceColor','b','LineWidth',2)
 
             % Obtain Watson fit for bootstrapped mean and plot it 
-            y = mBoot'; % select bootstrapped mean to be fit to the model
+            Y = mBoot'; % select bootstrapped mean to be fit to the model
             w = freqs(2:end);
+            
+            y = Y - min(Y);
 
             wDelta = min(diff(log10(w))); % Create a scaled-up, log-spaced, version of the frequency domain
             upScale = 10;
             wFit = 10.^(log10(min(w))-wDelta+wDelta/upScale:wDelta/upScale:log10(max(w))+wDelta);
 
-            p0 = [1.5 0.015]; lb = [-1 0.005]; ub = [8 0.025];
-              
             options = optimoptions(@fmincon,... % The options for the search (mostly silence diagnostics)
                 'Diagnostics','off',...
                 'Display','off');
 
-            % The objective function is the norm of the model fit error
-            myObj = @(p) norm(y - watsonTTF2param(p,w));
+            % fits model, and provides high
+            % resolution fit
 
-            % Search
-            p(ss,dd,:) = fmincon(myObj,p0,[],[],[],[],lb,ub,[],options);
-
-            % Obtain the high-resolution model fit and plot it
-            yFit = watsonTTF2param(squeeze(p(ss,dd,:)),wFit);
+            myObj = @(p) norm(y - watsonTTF(p,w));
+            p0(1,1) = max(y);
+            p = fmincon(myObj,p0,[],[],[],[],lb,ub,[],options);
+            yFit = watsonTTF(p,wFit);
+            yFit(~isfinite(yFit))=nan;
+            
+            yFit = yFit+min(Y);
+                
             plot(wFit,yFit,'-b','LineWidth',1)
 
             % Clean up the plot
@@ -166,11 +178,13 @@ for ss = 1:2
             box off
 
             % Get bootstrapped fit parameters
-            [pBoot(aa,:,:),Rsquared(aa,:)] = ExtractWatsonFitParametersBootstrap(w,vals);
+            [pBoot(aa,:,:),Rsquared(aa,:)] = ExtractWatsonFitParametersBootstrap(w,vals,'p0',p0,'lb',lb,'ub',ub);
             title([shortNames{ss} ', ' directions{dd} ', visual area ' areaLabels{aa}])
             
             pBoot(aa,:,:) = sort(pBoot(aa,:,:),3);
             Rsquared(aa,:) = sort(Rsquared(aa,:),2);
+            p_mean(ss,dd,aa,:) = p;
+            clear p
         end
         % plot bootstrapped parameters across eccentricity
         
@@ -179,9 +193,9 @@ for ss = 1:2
             case 1
                 loc = 1;
             case 2
-                loc = 4;
+                loc = 5;
         end
-  subplot(2,3,loc)
+        subplot(2,4,loc)
         hold on
         errorbar(1:length(areaLabels),squeeze(pBoot(:,1,500)),abs(diff(squeeze(pBoot(:,1,[25 500])),[],2)),abs(diff(squeeze(pBoot(:,1,[500 975])),[],2)),'o','MarkerFaceColor',Color{dd},'Color',Color{dd},'LineWidth',1.5)
         set(gca,'TickDir','out');
@@ -189,22 +203,35 @@ for ss = 1:2
         xticks(1:length(areaLabels))
         xticklabels(areaLabels)
         xlim([0 7])
-        ylim([-2 8])
+        ylim([-2 6])
         xlabel('gain')
         ylabel('fit parameter value')
         
-        subplot(2,3,loc+1)
+        if length(p0)==3
+            subplot(2,4,loc+1)
+            hold on
+            errorbar(1:length(areaLabels),squeeze(pBoot(:,2,500)),abs(diff(squeeze(pBoot(:,2,[25 500])),[],2)),abs(diff(squeeze(pBoot(:,2,[500 975])),[],2)),'o','MarkerFaceColor',Color{dd},'Color',Color{dd},'LineWidth',1.5)
+            set(gca,'TickDir','out');
+            box off
+            xticks(1:length(areaLabels))
+            xticklabels(areaLabels)
+            xlim([0 7])
+            ylim([0 2])
+            xlabel('surround gain')
+        end
+        
+        subplot(2,4,loc+2)
         hold on
-        errorbar(1:length(areaLabels),squeeze(pBoot(:,2,500)),abs(diff(squeeze(pBoot(:,2,[25 500])),[],2)),abs(diff(squeeze(pBoot(:,2,[500 975])),[],2)),'o','MarkerFaceColor',Color{dd},'Color',Color{dd},'LineWidth',1.5)
+        errorbar(1:length(areaLabels),squeeze(pBoot(:,end,500)),abs(diff(squeeze(pBoot(:,end,[25 500])),[],2)),abs(diff(squeeze(pBoot(:,end,[500 975])),[],2)),'o','MarkerFaceColor',Color{dd},'Color',Color{dd},'LineWidth',1.5)
         set(gca,'TickDir','out');
         box off
         xticks(1:length(areaLabels))
         xticklabels(areaLabels)
         xlim([0 7])
-        ylim([0 0.05])
+        ylim([0 0.04])
         xlabel('time constant')
         
-        subplot(2,3,loc+2)
+        subplot(2,4,loc+3)
         hold on
         errorbar(1:length(areaLabels),Rsquared(:,500),abs(diff(Rsquared(:,[25 500]),[],2)),abs(diff(Rsquared(:,[500 975]),[],2)),'o','MarkerFaceColor',Color{dd},'Color',Color{dd},'LineWidth',1.5)
         set(gca,'TickDir','out');
@@ -218,8 +245,8 @@ for ss = 1:2
         p_Boot(ss,dd,:,:,:) = pBoot;
         R_squared(ss,dd,:,:) = Rsquared;
         
-        clear p pBoot Rsquared
+        clear pBoot Rsquared
     end
 end
 
-save param_by_area p_Boot R_squared areaLabels data
+save param_by_area p_mean p_Boot R_squared areaLabels data

@@ -4,8 +4,8 @@
 % the stimulus field
 
 % Stimulus distance and radius in mm
-stimDistance = 6;
-stimRadius = 6;
+stimDistance = 10;
+stimRadius = 35/2;
 
 % Strength of the contact lens
 lensDiopters = 36;

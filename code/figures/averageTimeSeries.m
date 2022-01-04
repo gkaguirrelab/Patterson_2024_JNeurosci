@@ -42,8 +42,9 @@ for ss = 1:length(subjectNames)
     % Plot the average time series and model fit
     for ii=1:3
         subplot(4,1,ii);
-        plot(results.data.avgSignal(1+(ii-1)*672:672+(ii-1)*672),'.','Color',[0.5 0.5 0.5]);
+        plot([1 672],[0 0],':k')
         hold on;
+        plot(results.data.avgSignal(1+(ii-1)*672:672+(ii-1)*672),'.','Color',[0.5 0.5 0.5]);
         plot(results.data.avgModelFit(1+(ii-1)*672:672+(ii-1)*672),['-' plotColors{ii}],'LineWidth',2);
         ylim([-3 3]);
         title(directions{ii})
@@ -56,19 +57,13 @@ for ss = 1:length(subjectNames)
 
     % Add the stimulus structure
     subplot(4,1,4)
-    Xa = results.model.inputs{2}{1}(1:7,1:336).*(7:-1:1)';
-    Xb = results.model.inputs{2}{7}(49:55,1:336).*(7:-1:1)';
-    X = flipud([Xa Xb]);
-  imagesc(X);
+    Xa = results.model.inputs{2}{1}(1:7,1:336).*(1:7)';
+    Xb = results.model.inputs{2}{7}(49:55,1:336).*(1:7)';
+    X = [nansum(Xa) nansum(Xb)];
+    plot(X,'.k');
     yticks(1:8)
-    yticklabels({'64 Hz','32 Hz','16 Hz','8 Hz','4 Hz','2 Hz','0 Hz'});
-    cmap = zeros(8,3);
-    cmap(1,:) = [1 1 1];
-    for ii=2:7
-        cmap(9-ii,:) = [0.75-(ii-1)*0.125, 0.75-(ii-1)*0.125, 1];
-    end
+    yticklabels({'0 Hz','2 Hz','4 Hz','8 Hz','16 Hz','32 Hz','64 Hz'});
 
-    colormap(cmap);
     set(gca,'XTick',[])
     set(gca,'TickDir','out');
     xlim([1 336*2]);

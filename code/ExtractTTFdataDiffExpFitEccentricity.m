@@ -16,12 +16,8 @@ shortNames = {'gka','asb'};
 directions = {'LminusM','S','LMS'};
 freqs = [0,2,4,8,16,32,64];
 nFreqs = length(freqs);
+w = freqs(2:end);
 Color = {'r','b','k'};
-
-% Load V1 mean surround amplitude for yolked surround
-load param_by_area p_mean
-V1_surr = squeeze(squeeze(p_mean(:,:,5,2)));
-clear p_mean
 
 % Frequency components for model fitting
 deltaF10 = min(diff(log10(freqs(2:end))));
@@ -46,31 +42,17 @@ sigmaMap = cifti_read(tmpPath); sigmaMap = sigmaMap.cdata;
 % data
 r2Thresh = 0.1;
 
-p0 = [0 0 0];
-
 % Create a figure
 figure;
 
 eccenDivs = [0 90./(2.^(5:-1:0))]; % eccentricity bins
 
-
-p_Boot = NaN*ones(2,3,length(eccenDivs)-1,length(p0),1000);
-p_mean = NaN*ones(2,3,length(eccenDivs)-1,length(p0));
-R_squared =  NaN*ones(2,3,length(eccenDivs)-1,1000);
 data = cell(2,3,length(eccenDivs)-1,nFreqs-1);
 
 % Loop through the directions and eccentricities
         
 for ss = 1:2
     for dd = 1:3
-        
-        pBoot = NaN*ones(length(eccenDivs)-1,length(p0),1000);
-        Rsquared = NaN*ones(length(eccenDivs)-1,1000);
-        
-        p0 = [1.5 V1_surr(ss,dd) 0.015]; lb = [-2 V1_surr(ss,dd) 0.005]; ub = [6 V1_surr(ss,dd) 0.05];
-        
-%         p0 = [1.5 V1_surr(ss,dd) 0.015]; lb = [-2 0.5 0.005]; ub = [6 2 0.05]; %3 param model
-        
         for ee = 1:length(eccenDivs)-1
             eccenRange = [eccenDivs(ee) eccenDivs(ee+1)];
         
@@ -97,8 +79,8 @@ for ss = 1:2
         
 
             % Prepare to plot into this subplot
-            figure(1)
-            subplot(2,3,dd+(ss-1)*3);
+            figure(ss)
+            subplot(3,length(eccenDivs)-1,ee+(dd-1)*(length(eccenDivs)-1));
 
             % Adjust the values for the zero frequency, obtain bootstrapped
             % medians and 95% CI
@@ -109,6 +91,7 @@ for ss = 1:2
                 data{ss,dd,ee,ff-1} = vals{ff}-vals{1};
                 temp_data = vals{ff}-vals{1};
                 bootVals = sort(bootstrp(1000,@mean,temp_data));
+                BootVals(ff-1,:) = bootVals;
                 mBoot(ff-1,:) = bootVals(500);
                 lBoot(ff-1,:) = bootVals(25);
                 uBoot(ff-1,:) = bootVals(975);
@@ -117,59 +100,90 @@ for ss = 1:2
                 hold on
             end
 
+            %fit bootstrapped values with R2 values
+            for xx = 1:1000
+                yy = BootVals(:,xx)';
+                [wFit,yFit,yFit2,pBoot(ss,dd,ee,xx,:)] = fitExp(w,yy);
+                maxBoot(ss,dd,ee,xx,:) = max(yFit);
+               if max(yFit)<0
+                   temp = wFit(find(yFit-min(yFit)>max(yFit-min(yFit))*0.95));
+                else
+                   temp = wFit(find(yFit>max(yFit)*0.95));
+               end
+               
+               if length(temp)>1
+                    temp = temp(round(length(temp)/2));
+               end
+                peakFreqBoot(ss,dd,ee,xx,:) = temp;
+                R = corrcoef(yy,yFit2);
+                r2Boot(ss,dd,ee,xx) = R(1,2)^2;
+                yFitBoot(ss,dd,ee,xx,:) = yFit;
+%                 
+%                 figure(46)
+%                 hold on
+%                 plot(w,yy,'ok')
+%                 plot(wFit,yFit)
+%                 title(sprintf('max response = %.3g, peak frequency = %.3g',[max(yFit) temp(1)]))
+%                 xlabel(sprintf('p1 = %.3g, p2 = %.3g, p3 = %.3g',squeeze(squeeze(squeeze(pBoot(ss,dd,ee,xx,:))))))
+%                 ax=gca; ax.TickDir='out'; ax.Box ='off'; ax.XScale = 'log';
+%                 pause
+%                 clf
+            end
+            
             % Plot bootstrapped mean across the frequencies
             errorbar(freqs(2:end),mBoot,abs(diff([mBoot lBoot],1,2)),abs(diff([uBoot mBoot],1,2)),'ob','MarkerSize',8,'MarkerFaceColor','b','LineWidth',2)
 
-            % Obtain Watson fit for bootstrapped mean and plot it 
+            % Obtain difference of exponentials fit for bootstrapped mean and plot it 
             Y = mBoot'; % select bootstrapped mean to be fit to the model
+    
+            [wFit,yFit,yFit2,p] = fitExp(w,Y);
+
+            plot(wFit,yFit,'-b','LineWidth',1)
+
+            % Clean up the plot
+            title([shortNames{ss} ' ' directions{dd}])
+            ylabel('BOLD % change');
+            xlabel('frequency [Hz]');
+            semilogx([1 64],[0 0],':k','LineWidth',1)
+            ylim([-2 8]);
+            xlim([1 128])
+            set(gca,'TickDir','out');
+            box off
             
-            if isnan(mean(Y))==0
-            
-                w = freqs(2:end);
-
-                y = Y-min(Y);
-
-
-                options = optimoptions(@fmincon,... % The options for the search (mostly silence diagnostics)
-                    'Diagnostics','off',...
-                    'Display','off');
-
-                myObj = @(p) norm(y - watsonTTF(p,w));
-                p0(1,1) = max(y);
-                ub(1,1) = max(y)*1.1;
-                p = fmincon(myObj,p0,[],[],[],[],lb,ub,[],options);
-                yFit = watsonTTF(p,wFit);
-                yFit(~isfinite(yFit))=nan;
-
-                yFit = yFit-(min(Y)*ones(size(yFit)));
-
-
-                plot(wFit,yFit,'-b','LineWidth',1)
-
-                % Clean up the plot
-                title([shortNames{ss} ' ' directions{dd}])
-                ylabel('BOLD % change');
-                xlabel('frequency [Hz]');
-                semilogx([1 64],[0 0],':k','LineWidth',1)
-                ylim([-2 8]);
-                xlim([1 128])
-                set(gca,'TickDir','out');
-                box off
-                title([shortNames{ss} ', ' directions{dd} ', eccentricity' eccenDivs(ee) ' to ' eccenDivs(ee+1)])
-
-                % Get bootstrapped fit parameters
-                [pBoot,Rsquared] = ExtractWatsonFitParametersBootstrap(w,vals,'p0',p0,'lb',lb,'ub',ub,'SurroundAmp',V1_surr(ss,dd));
-
-                pBoot = sort(pBoot,2);
-                Rsquared = sort(Rsquared);
-                p_mean(ss,dd,ee,:) = p;
-                R_squared(ss,dd,ee,:) = Rsquared;
-                p_Boot(ss,dd,ee,:,:) = pBoot;
-                clear p pBoot Rsquared
-                
-            end
+            P(ss,dd,ee,:) = p;
+            clear p
         end
     end
 end
 
-save param_by_V1eccenSpline p_Boot R_squared eccenDivs data p_mean
+save expFitsEcc data shortNames eccenDivs BootVals peakFreqBoot maxBoot pBoot r2Boot yFitBoot
+
+%% Local functions
+function [wFit,yFit,yFit2,p] = fitExp(w,Y)
+            
+            % TTF model guess
+            p0 = [0.5 4 1];
+            lb = [0 0 0]; 
+            ub = [Inf Inf Inf];
+            
+            % set minimum to 0
+            scaledY = Y-min(Y);
+            
+            % Find the maximum interpolated VEP response
+            wDelta = min(diff(log10(w))); % Create a scaled-up, log-spaced, version of the frequency domain
+            upScale = 10;
+            wFit = 10.^(log10(min(w))-wDelta+wDelta/upScale:wDelta/upScale:log10(max(w))+wDelta);
+    
+            % Scale the Y vector so that the max is 1
+            scaledY=scaledY./max(scaledY);
+            myObj=@(p)sqrt(sum((scaledY-watsonTemporalModelvep(w,p)).^2));
+            
+            p = fmincon(myObj,p0,[],[],[],[],lb,ub);
+            
+            % calculate model fit and undo scaling
+            yFit = (watsonTemporalModelvep(wFit,p).*(max(Y)-min(Y)))+min(Y);
+            
+            yFit(~isfinite(yFit))=nan;
+            
+            yFit2 = (watsonTemporalModelvep(w,p).*(max(Y)-min(Y)))+min(Y);
+end

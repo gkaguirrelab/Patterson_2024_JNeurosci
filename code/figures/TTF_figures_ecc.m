@@ -1,7 +1,7 @@
 % Plots TTF figures for MRI flicker paper
 % the variable data is baseline subtracted
 
-load param_by_V1eccen
+load param_by_V1eccen3param
 freqs = [2,4,8,16,32,64];
 w = freqs;
 nFreqs = length(freqs);
@@ -45,7 +45,7 @@ for ss = 1:2
                         'Diagnostics','off',...
                         'Display','off');
 
-                p0 = [1.5 V1_surr(ss,dd) 0.015]; lb = [-10 V1_surr(ss,dd) 0.005]; ub = [10 V1_surr(ss,dd) 0.04];
+                p0 = [1.5 V1_surr(ss,dd) 0.015]; lb = [-1 V1_surr(ss,dd) 0.005]; ub = [4 V1_surr(ss,dd) 0.04];
                 
                 % Frequency components for model fitting
                 deltaF10 = min(diff(log10(freqs(2:end))));
@@ -55,7 +55,7 @@ for ss = 1:2
                 y = yBoot(:,500)'-min(yBoot(:,500));
 
                 myObj = @(P) norm(y - watsonTTF(P,w));
-                p0(1,1) = max(y);
+%                 p0(1,1) = max(y)*0.7;
                 P = fmincon(myObj,p0,[],[],[],[],lb,ub,[],options);
                 myFit = watsonTTF(P,freqsFit);
                 myFit(~isfinite(myFit))=nan;
@@ -83,7 +83,7 @@ for ss = 1:2
                 axis off
 
                 % Report the parameters
-               str = {sprintf('[%2.1f, %2.3f]',p([1 3]))};
+               str = {sprintf('[%2.1f, %2.3f]',P([1 3]))};
                text(1,6,str);
 
                 % Add some chart stuff
@@ -207,6 +207,7 @@ R_sqrL = reshape(R_sqrL,36,1);
 
 Tbl = table(subject2,channel2,eccentricity,gain,timeConstant,R_sqr,R_sqrL,'VariableNames',{'Subject','Channel','Eccentricity','Gain','TimeConstant','R_squared','R_squared25'});
 Tbl = Tbl(Tbl.R_squared>0.5 & Tbl.R_squared25>0.2,:);
+
 
 
 

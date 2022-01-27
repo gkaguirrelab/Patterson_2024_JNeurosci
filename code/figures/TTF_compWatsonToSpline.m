@@ -1,5 +1,4 @@
-% Plots TTF figures for MRI flicker paper across area
-% the variable data is baseline subtracted
+% Determines max of TTF fits for LGN and V1 from Watson fit and Spline for MRI flicker paper
 
 load param_by_area
 freqs = [2,4,8,16,32,64];
@@ -49,17 +48,24 @@ for ss = 1:2
                 deltaF10 = min(diff(log10(freqs(2:end))));
                 fitScaleUp = 10;
                 freqsFit = 10.^(log10(min(freqs(2:end)))-deltaF10+deltaF10/fitScaleUp:deltaF10/fitScaleUp:log10(max(freqs(2:end)))+deltaF10);
+                freqsFit = freqsFit(1:50);
                 
                 % runs model, and gets fitted response
                 y = yBoot(:,500)'-min(yBoot(:,500));
+                
                 myObj = @(P) norm(y - watsonTTF(P,w));
                 p0(1,1) = max(yBoot(:,500));
                 P = fmincon(myObj,p0,[],[],[],[],lb,ub,[],options);
-                myFit = watsonTTF(P,freqsFit);
-                myFit(~isfinite(myFit))=nan;
+                watFit = watsonTTF(P,freqsFit);
+                watFit(~isfinite(watFit))=nan;
+                max_wat = max(watFit);
+                max_wat_freq = freqsFit(watFit==max_wat);
 
-                myFit = myFit+(min(yBoot(:,500)));
+                watFit = watFit+(min(yBoot(:,500)));
                 
+                splineFit = pchip(w,y,freqsFit)+(min(yBoot(:,500)));
+                max_spline = max(splineFit);
+                max_spline_freq = freqsFit(splineFit==max_spline);
 
                 % Add this fit to the plot
                 subplot(3,length(areaLabels),aa+((dd-1)*(length(areaLabels))))
@@ -68,7 +74,8 @@ for ss = 1:2
                 YY = [yBoot(:,25)' fliplr(yBoot(:,975)')];
                 fill(XX,YY,[0.9 0.9 0.9],'LineStyle','none')
                 plot(freqs,yBoot(:,500),'.k')
-                plot(freqsFit,myFit,'-r')
+                plot(freqsFit,watFit,'-r')
+                plot(freqsFit,splineFit,'-b')
                 plot([1 64],[0 0],':k','LineWidth',1)
                 ylim([-1 7]);
                 xlim([0.5 70])
@@ -78,8 +85,11 @@ for ss = 1:2
                 axis off
 
                 % Report the parameters
-               str = {sprintf('[%2.1f, %2.2f, %2.3f]',p(1:end))};
-               text(1,6,str);
+               strSpline = {sprintf('[Spline: %2.2f, %2.1f]',[max_spline max_spline_freq])};
+               text(1,6,strSpline);
+               
+               strWat = {sprintf('[Watson: %2.2f, %2.1f]',[max_wat max_wat_freq])};
+               text(1,7,strWat);
 
                 % Add some chart stuff
                 if dd==1
@@ -98,49 +108,3 @@ for ss = 1:2
 
         end
 end
-
-% Create an average params plot
-plotColors = {'r','b','k'};
-plotColors2 = [1 0.9 0.9 ; 0.9 0.9 1; 0.9 0.9 0.9];
-subject_tic = 1:length(shortNames);
-subject_tic_shift = [-0.2 0.2];
-paramNames = {'amplitude','surround amplitude','time constant [secs]'};
-Y_lim = [0 1.5;0.6 1.2;0 0.05];
-figure
-for pp = 1:length(p0)
-    for aa=1:length(areaLabels)
-        for dd=1:3
-            subplot(length(p0),3,pp+((dd-1)*(length(p0))))
-            hold on
-            Rsq = squeeze(squeeze(squeeze(R_squared(:,dd,aa,500))));
-            Rsq_lo = squeeze(squeeze(squeeze(R_squared(:,dd,aa,25))));
-            yy = squeeze(squeeze(squeeze(p_Boot(:,dd,aa,pp,:))));
-            xx = subject_tic+subject_tic_shift(aa);
-            
-            % Normalize amplitude by sum of squares
-            if pp == 1
-                lm = squeeze(squeeze(squeeze(p_Boot(:,1,aa,pp,500))));
-                s = squeeze(squeeze(squeeze(p_Boot(:,2,aa,pp,500))));
-                lms = squeeze(squeeze(squeeze(p_Boot(:,3,aa,pp,500))));
-                norm = sqrt(lm.^2+s.^2+lms.^2);
-                for YY = 1:2
-                    yy(YY,:) = yy(YY,:)./norm(YY);
-                end
-            end
-
-            errorbar(xx,yy(:,500),abs(diff(yy(:,[25 500]),[],2)),abs(diff(yy(:,[500 975]),[],2)),'o','Color',plotColors{dd},'MarkerFaceColor',plotColors{dd},'Linewidth',1.5)
-            title(analysisLabels{dd});
-            xlabel('Subject');
-            ylabel(paramNames{pp});
-            set(gca,'Box','off')
-            set(gca,'TickDir','out')
-            set(gca,'XLim',[0 length(shortNames)+1])
-            set(gca,'YLim',Y_lim(pp,:))
-            set(gca,'XTick',subject_tic)
-            set(gca,'XTickLabel',shortNames);
-        end
-        
-    end
-end
-
-

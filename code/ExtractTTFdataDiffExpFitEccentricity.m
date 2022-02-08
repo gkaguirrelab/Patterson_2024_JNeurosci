@@ -99,6 +99,7 @@ for ss = 1:2
                 semilogx(zeros(1,length(data{ss,dd,ee,ff-1}))+freqs(ff),data{ss,dd,ee,ff-1},'.','Color',[0.9 0.9 0.9]);
                 hold on
             end
+            Boot_Vals(ss,dd,ee,:,:) = BootVals;
 
             %fit bootstrapped values with R2 values
             for xx = 1:1000
@@ -118,7 +119,7 @@ for ss = 1:2
                 R = corrcoef(yy,yFit2);
                 r2Boot(ss,dd,ee,xx) = R(1,2)^2;
                 yFitBoot(ss,dd,ee,xx,:) = yFit;
-%                 
+                
 %                 figure(46)
 %                 hold on
 %                 plot(w,yy,'ok')
@@ -156,7 +157,7 @@ for ss = 1:2
     end
 end
 
-save expFitsEcc data shortNames eccenDivs BootVals peakFreqBoot maxBoot pBoot r2Boot yFitBoot
+save expFitsEcc data shortNames eccenDivs Boot_Vals peakFreqBoot maxBoot pBoot r2Boot yFitBoot
 
 %% Local functions
 function [wFit,yFit,yFit2,p] = fitExp(w,Y)
@@ -164,7 +165,7 @@ function [wFit,yFit,yFit2,p] = fitExp(w,Y)
             % TTF model guess
             p0 = [0.5 4 1];
             lb = [0 0 0]; 
-            ub = [Inf Inf Inf];
+            ub = [10 10 2];
             
             % set minimum to 0
             scaledY = Y-min(Y);

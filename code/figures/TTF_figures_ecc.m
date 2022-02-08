@@ -100,7 +100,6 @@ for ss = 1:2
                     semilogx([1 1],[0 7],'-k','LineWidth',1)
                 end
 
-                % Normalize the set of responses across the three channels to have
                 
             end
             

@@ -157,7 +157,8 @@ for ss = 1:2
 %                 pause
 %                 clf
             end
-
+            Boot_Vals(ss,dd,aa,:,:) = BootVals;
+            
             % Plot bootstrapped mean across the frequencies
             errorbar(freqs(2:end),mBoot,abs(diff([mBoot lBoot],1,2)),abs(diff([uBoot mBoot],1,2)),'ob','MarkerSize',8,'MarkerFaceColor','b','LineWidth',2)
 
@@ -183,7 +184,7 @@ for ss = 1:2
     end
 end
 
-save expFitsArea data areaLabels BootVals peakFreqBoot maxBoot pBoot r2Boot yFitBoot
+save expFitsArea data areaLabels Boot_Vals peakFreqBoot maxBoot pBoot r2Boot yFitBoot
 
 %% Local functions
 function [wFit,yFit,yFit2,p] = fitExp(w,Y)
@@ -191,7 +192,7 @@ function [wFit,yFit,yFit2,p] = fitExp(w,Y)
             % TTF model guess
             p0 = [0.5 4 1];
             lb = [0 0 0]; 
-            ub = [Inf Inf Inf];
+            ub = [10 10 2];
             
             % set minimum to 0
             scaledY = Y-min(Y);

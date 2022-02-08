@@ -6,15 +6,34 @@ freqs = [2,4,8,16,32,64];
 w = freqs;
 nFreqs = length(freqs);
 
+wDelta = min(diff(log10(w))); % Create a scaled-up, log-spaced, version of the frequency domain
+upScale = 500;
+wFit = 10.^(log10(min(w))-wDelta+wDelta/upScale:wDelta/upScale:log10(max(w))+wDelta);
+
 % These variables define the subject names, stimulus directions, and the
 % analysis IDs
 subjectNames = {'HEROgka1','HEROasb1'};
 shortNames = {'gka','asb'};
 analysisLabels = {'L-M','S','LF'};
 
-% Load V1 mean surround amplitude for yolked surround
-load param_by_area p_mean
-V1_surr = squeeze(squeeze(p_mean(:,:,2,2)));
+for ss = 1:2
+    for dd = 1:3
+        for ee = 1:length(eccenDivs)-1
+            for xx = 1:1000
+                Y = squeeze(squeeze(squeeze(Boot_Vals(ss,dd,ee,:,xx))))';
+                P = pBoot(ss,dd,ee,xx,:);
+                yFit = (watsonTemporalModelvep(wFit,P).*(max(Y)-min(Y)))+min(Y);
+                maxBoot(ss,dd,ee,xx,:) = max(yFit);
+
+                temp = wFit(find(yFit==max(yFit)));
+                peakFreqBoot(ss,dd,ee,xx,:) = temp(end);
+            end
+        end
+    end
+end
+
+maxBoot = sort(maxBoot,4);
+peakFreqBoot = sort(peakFreqBoot,4);
 
 % Loop through the subjects and directions
 for ss = 1:2
@@ -87,18 +106,19 @@ end
 
 % Create an average params plot
 plotColors = {'r','b','k'};
-plotColors2 = {'r','b','k';'w','w','w'};
+plotColors2 = [1 0.9 0.9 ; 0.9 0.9 1; 0.9 0.9 0.9];
 Y_lim = [0 5.5; 0 1; 0 0.03];
 paramNames = {'maximum response','peak frequency'};
 P1 = 1:2;
 P2 = 3:4;
 xx = 1:length(eccenDivs)-1;
 
-
 figHandle = figure();
 for pp = 1:2
     for ss=1:2
         for dd = 1:3
+           
+            
 
             switch pp
                 case 1
@@ -108,26 +128,32 @@ for pp = 1:2
                     set(gca,'YLim',[0.1 10])
                     set(gca,'YScale','log')
                     set(gca,'YTick',[0.2:0.2:1 2:2:10])
-
                     
                 case 2
-                    yy = squeeze(squeeze(peakFreqBoot(ss,dd,:,:)));
+                    yy = squeeze(squeeze(peakFreqBoot(ss,dd,:,:)));                   
                     subplot(2,2,P2(ss))
                     hold on
-                    set(gca,'XLim',[0 length(shortNames)+1])
-                    set(gca,'YLim',[0.8 64])
-                    set(gca,'YScale','log')
-                    set(gca,'YTick',freqs)
+                    set(gca,'YLim',[2 25])
+                    set(gca,'YScale','linear')
+                    set(gca,'YTick',5:5:25)
             end
+            meanVal = yy(:,500);
+            rangeVal = abs(diff(yy(:,[25 975]),[],2));   
+            f = fit(eccenDivs(2:end)',meanVal,'smoothingspline','Weights',1./rangeVal);
+            xx = eccenDivs(2:end);
+            yy(yy<0) = 0.001;
+            xxFit = linspace(1,91,60);
+            yyFit = f(xxFit);
             
-            errorbar(xx,yy(:,500),abs(diff(yy(:,[25 500]),[],2)),abs(diff(yy(:,[500 975]),[],2)),'-o','Color',plotColors{dd},'MarkerFaceColor',plotColors{dd},'Linewidth',1.5)
-
+            errorbar(xx,yy(:,500),abs(diff(yy(:,[25 500]),[],2)),abs(diff(yy(:,[500 975]),[],2)),'o','Color',plotColors{dd},'MarkerFaceColor',plotColors{dd},'Linewidth',1.5)
+            plot(xxFit,yyFit,'-','Color',plotColors{dd});
             title(shortNames{ss});
             xlabel('Eccentricity');
             ylabel(paramNames{pp});
             set(gca,'Box','off')
             set(gca,'TickDir','out')
-            set(gca,'XLim',[0 length(eccenDivs)])
+            set(gca,'XLim',[2.5 95])
+            set(gca,'XScale','log')
             set(gca,'XTick',xx)
             set(gca,'XTickLabel',ecc_tick_labels);
         end 
@@ -142,15 +168,15 @@ function [wFit,yFit,yFit2,p] = fitExp(w,Y)
             
             % TTF model guess
             p0 = [0.5 4 1];
-            lb = [-Inf 0 0]; 
-            ub = [Inf Inf Inf];
+            lb = [0 0 0]; 
+            ub = [10 10 2];
             
             % set minimum to 0
             scaledY = Y-min(Y);
             
             % Find the maximum interpolated VEP response
             wDelta = min(diff(log10(w))); % Create a scaled-up, log-spaced, version of the frequency domain
-            upScale = 10;
+            upScale = 500;
             wFit = 10.^(log10(min(w))-wDelta+wDelta/upScale:wDelta/upScale:log10(max(w))+wDelta);
     
             % Scale the Y vector so that the max is 1

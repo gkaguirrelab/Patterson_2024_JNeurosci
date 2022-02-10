@@ -157,7 +157,8 @@ for ss = 1:2
     end
 end
 
-save expFitsEcc data shortNames eccenDivs Boot_Vals peakFreqBoot maxBoot pBoot r2Boot yFitBoot
+save_file = [localSaveDir '/expFitsEcc.mat'];
+save(save_file,'data','eccenDivs','Boot_Vals','peakFreqBoot','maxBoot','pBoot','r2Boot','yFitBoot');
 
 %% Local functions
 function [wFit,yFit,yFit2,p] = fitExp(w,Y)

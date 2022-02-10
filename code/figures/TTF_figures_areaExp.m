@@ -1,30 +1,13 @@
 % Plots TTF figures for MRI flicker paper across area
 % the variable data is baseline subtracted
 
-load expFitsArea
+localSaveDir = getpref('mriSinaiAnalysis','localSaveDir');
+open_file = [localSaveDir '/expFitsArea.mat'];
+load(open_file)
+
 freqs = [2,4,8,16,32,64];
 w = freqs;
 nFreqs = length(freqs);
-
-wDelta = min(diff(log10(w))); % Create a scaled-up, log-spaced, version of the frequency domain
-upScale = 500;
-wFit = 10.^(log10(min(w))-wDelta+wDelta/upScale:wDelta/upScale:log10(max(w))+wDelta);
-
-for ss = 1:2
-    for dd = 1:3
-        for aa = 1:size(pBoot,3)
-            for xx = 1:1000
-                Y = squeeze(squeeze(squeeze(Boot_Vals(ss,dd,aa,:,xx))))';
-                P = pBoot(ss,dd,aa,xx,:);
-                yFit = (watsonTemporalModelvep(wFit,P).*(max(Y)-min(Y)))+min(Y);
-                maxBoot(ss,dd,aa,xx,:) = max(yFit);
-
-                temp = wFit(find(yFit==max(yFit)));
-                peakFreqBoot(ss,dd,aa,xx,:) = temp(end);
-            end
-        end
-    end
-end
 
 maxBoot = sort(maxBoot,4);
 peakFreqBoot = sort(peakFreqBoot,4);
@@ -157,7 +140,7 @@ function [wFit,yFit,yFit2,p] = fitExp(w,Y)
             
             % Find the maximum interpolated VEP response
             wDelta = min(diff(log10(w))); % Create a scaled-up, log-spaced, version of the frequency domain
-            upScale = 100;
+            upScale = 500;
             wFit = 10.^(log10(min(w))-wDelta+wDelta/upScale:wDelta/upScale:log10(max(w))+wDelta);
     
             % Scale the Y vector so that the max is 1

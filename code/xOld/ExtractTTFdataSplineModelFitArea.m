@@ -14,9 +14,13 @@ subjectNames = {'HEROgka1','HEROasb1'};
 shortNames = {'gka','asb'};
 directions = {'LminusM','S','LMS'};
 freqs = [0,2,4,8,16,32,64];
-w = freqs(2:end);
 nFreqs = length(freqs);
 Color = {'r','b','k'};
+
+% TTF model guess
+p0 = [1.5 0.9 0.015]; 
+lb = [-2 0.5 0.005]; 
+ub = [6 2 0.05];
 
 % Frequency components for model fitting
 deltaF10 = min(diff(log10(freqs(2:end))));
@@ -59,16 +63,20 @@ eccenRange = [0 90];
 % Create a figure
 figure;
 
-% Create a data variable to hold the results. This will be a 2 x 3 x 2
-% (subjects x directons x areas) cell array for the selected subject. Each cell
+% Create a data variable to hold the results. This will be a 2 x 3 x 6
+% (subjects x directons x frequencies) cell array for the selected subject. Each cell
 % will have the 12 measurements
-data = cell(2,3,2);
+data = cell(2,3,6);
 
-areaLabels = {'LGN';'V1'};
+areaLabels = {'LGN';'V1'; 'V23'; 'hV4'; 'MT'};
+
+R_squared =  NaN*ones(2,3,length(areaLabels),1000);
         
-% Loop through the directions and visual areas g
+% Loop through the directions and visual areas
 for ss = 1:2
     for dd = 1:3
+        pBoot = NaN*ones(length(areaLabels),length(p0),1000);
+        Rsquared = NaN*ones(length(areaLabels),1000);
         for aa = 1:length(areaLabels)
             areaLabel = areaLabels{aa};
             % Load the results file for this subject
@@ -107,11 +115,8 @@ for ss = 1:2
         end
 
             % Prepare to plot into this subplot
-            figure(aa)
+            figure(1)
             subplot(2,3,dd+(ss-1)*3);
-            if ss ==1 && dd ==1
-                title(areaLabels(aa))
-            end
 
             % Adjust the values for the zero frequency, obtain bootstrapped
             % medians and 95% CI
@@ -122,46 +127,32 @@ for ss = 1:2
                 data{ss,dd,aa,ff-1} = vals{ff}-vals{1};
                 temp_data = vals{ff}-vals{1};
                 bootVals = sort(bootstrp(1000,@mean,temp_data));
-                BootVals(ff-1,:) = bootVals;
                 mBoot(ff-1,:) = bootVals(500);
                 lBoot(ff-1,:) = bootVals(25);
                 uBoot(ff-1,:) = bootVals(975);
+
                 semilogx(zeros(1,length(data{ss,dd,aa,ff-1}))+freqs(ff),data{ss,dd,aa,ff-1},'.','Color',[0.9 0.9 0.9]);
                 hold on
             end
-            
-            %fit bootstrapped values
-            for xx = 1:1000
-                yy = BootVals(:,xx)';
-                [wFit,yFit,yFit2,P] = fitExp(w,yy);
-                pBoot(ss,dd,aa,xx,:) = P;
-                maxBoot(ss,dd,aa,xx,:) = max(yFit); 
-                temp = wFit(yFit==max(yFit));
-                peakFreqBoot(ss,dd,aa,xx,:) = temp(end);
-                R = corrcoef(yy,yFit2);
-                r2Boot(ss,dd,aa,xx) = R(1,2)^2;
-                yFitBoot(ss,dd,aa,xx,:) = yFit;
-                
-%                 figure(46)
-%                 hold on
-%                 plot(w,yy,'ok')
-%                 plot(wFit,yFit)
-%                 title(sprintf('max response = %.3g, peak frequency = %.3g',[max(yFit) temp]))
-%                 xlabel(sprintf('p1 = %.3g, p2 = %.3g, p3 = %.3g',squeeze(squeeze(squeeze(pBoot(ss,dd,aa,xx,:))))))
-%                 ax=gca; ax.TickDir='out'; ax.Box ='off'; ax.XScale = 'log';
-%                 pause
-%                 clf
-            end
-            Boot_Vals(ss,dd,aa,:,:) = BootVals;
-            
+
             % Plot bootstrapped mean across the frequencies
             errorbar(freqs(2:end),mBoot,abs(diff([mBoot lBoot],1,2)),abs(diff([uBoot mBoot],1,2)),'ob','MarkerSize',8,'MarkerFaceColor','b','LineWidth',2)
 
-            % Obtain difference of exponentials fit for bootstrapped mean and plot it 
+            % Obtain Spline fit for bootstrapped mean and plot it 
             Y = mBoot'; % select bootstrapped mean to be fit to the model
-    
-            [wFit,yFit,p] = fitExp(w,Y);
+            w = freqs(2:end);
+            
+            y = Y - min(Y);
 
+            wDelta = min(diff(log10(w))); % Create a scaled-up, log-spaced, version of the frequency domain
+            upScale = 10;
+            wFit = 10.^(log10(min(w))-wDelta+wDelta/upScale:wDelta/upScale:log10(max(w))+wDelta);
+
+            yFit = spline(w,y,wFit);
+            yFit(~isfinite(yFit))=nan;
+            
+            yFit = yFit+min(Y);
+                
             plot(wFit,yFit,'-b','LineWidth',1)
 
             % Clean up the plot
@@ -173,41 +164,39 @@ for ss = 1:2
             xlim([1 128])
             set(gca,'TickDir','out');
             box off
+
+            % Get bootstrapped fit parameters
+            y0 = vals{1}; % response at frequency = 0
+            yW = vals(:,2:end); % responses to all other frequencies
+            bootVals = NaN*ones(length(w),1000);
+            for ff = 1:length(w)
+                temp_data = yW{ff}-y0;
+                bootVals(ff,:) = sort(bootstrp(1000,@median,temp_data));
+            end
+
+            Rsquared = NaN*ones(1,1000);
+
+            % Obtain Spline fit for bootstrapped means
+            for bb = 1:1000
+                y = bootVals(:,bb)';
+
+                % shift so that if min(y)=0
+                y = y - min(y);
+
+
+               % Spline
+                yFit_boot = spline(w,y,w);
+
+                R = corrcoef(y,yFit_boot);
+                Rsquared(1,bb) = R(1,2)^2;
+            end
+
+            title([shortNames{ss} ', ' directions{dd} ', visual area ' areaLabels{aa}])
             
-            clear p
+            R_squared(ss,dd,aa,:) = sort(Rsquared,2);
+            clear Rsquared
         end
     end
 end
 
-save_file = [localSaveDir '/expFitsArea.mat'];
-save(save_file,'data','areaLabels','Boot_Vals','peakFreqBoot','maxBoot','pBoot','r2Boot','yFitBoot');
-
-%% Local functions
-function [wFit,yFit,yFit2,p] = fitExp(w,Y)
-            
-            % TTF model guess
-            p0 = [0.5 4 1];
-            lb = [0 0 0]; 
-            ub = [10 10 2];
-            
-            % set minimum to 0
-            scaledY = Y-min(Y);
-            
-            % Find the maximum interpolated VEP response
-            wDelta = min(diff(log10(w))); % Create a scaled-up, log-spaced, version of the frequency domain
-            upScale = 10;
-            wFit = 10.^(log10(min(w))-wDelta+wDelta/upScale:wDelta/upScale:log10(max(w))+wDelta);
-    
-            % Scale the Y vector so that the max is 1
-            scaledY=scaledY./max(scaledY);
-            myObj=@(p)sqrt(sum((scaledY-watsonTemporalModelvep(w,p)).^2));
-            
-            p = fmincon(myObj,p0,[],[],[],[],lb,ub);
-            
-            % calculate model fit and undo scaling
-            yFit = (watsonTemporalModelvep(wFit,p).*(max(Y)-min(Y)))+min(Y);
-            
-            yFit(~isfinite(yFit))=nan;
-            
-            yFit2 = (watsonTemporalModelvep(w,p).*(max(Y)-min(Y)))+min(Y);
-end
+save param_by_areaSpline R_squared areaLabels data

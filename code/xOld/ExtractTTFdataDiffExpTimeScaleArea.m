@@ -1,5 +1,3 @@
-%% ExtractTTFdataWatsonModelFit
-%
 % This script downloads the "results" files Flywheel and
 % extracts BOLD fMRI response amplitudes for each of the stimulus temporal
 % frequencies, plots them, and calculates 95% CI and Watson model fits
@@ -135,8 +133,8 @@ for ss = 1:2
                 yy = BootVals(:,xx)';
                 [wFit,yFit,yFit2,P] = fitExp(w,yy);
                 pBoot(ss,dd,aa,xx,:) = P;
-                maxBoot(ss,dd,aa,xx,:) = max(yFit); 
-                temp = wFit(yFit==max(yFit));
+                maxBoot(ss,dd,aa,xx,:) = max(yFit);
+                temp = wFit(find(yFit==max(yFit)));
                 peakFreqBoot(ss,dd,aa,xx,:) = temp(end);
                 R = corrcoef(yy,yFit2);
                 r2Boot(ss,dd,aa,xx) = R(1,2)^2;
@@ -147,7 +145,7 @@ for ss = 1:2
 %                 plot(w,yy,'ok')
 %                 plot(wFit,yFit)
 %                 title(sprintf('max response = %.3g, peak frequency = %.3g',[max(yFit) temp]))
-%                 xlabel(sprintf('p1 = %.3g, p2 = %.3g, p3 = %.3g',squeeze(squeeze(squeeze(pBoot(ss,dd,aa,xx,:))))))
+%                 xlabel(sprintf('p1 = %.3g, p2 = %.3g, p3 = %.3g, p4 = %.3g',squeeze(squeeze(squeeze(pBoot(ss,dd,aa,xx,:))))))
 %                 ax=gca; ax.TickDir='out'; ax.Box ='off'; ax.XScale = 'log';
 %                 pause
 %                 clf
@@ -179,35 +177,34 @@ for ss = 1:2
     end
 end
 
-save_file = [localSaveDir '/expFitsArea.mat'];
-save(save_file,'data','areaLabels','Boot_Vals','peakFreqBoot','maxBoot','pBoot','r2Boot','yFitBoot');
+save expFitsArea data areaLabels Boot_Vals peakFreqBoot maxBoot pBoot r2Boot yFitBoot
 
 %% Local functions
 function [wFit,yFit,yFit2,p] = fitExp(w,Y)
             
             % TTF model guess
-            p0 = [0.5 4 1];
-            lb = [0 0 0]; 
-            ub = [10 10 2];
+            p0 = [0.5 4 1 0];
+            lb = [0 0 0 -0.1]; 
+            ub = [10 10 2 0.1];
             
             % set minimum to 0
             scaledY = Y-min(Y);
             
             % Find the maximum interpolated VEP response
             wDelta = min(diff(log10(w))); % Create a scaled-up, log-spaced, version of the frequency domain
-            upScale = 10;
+            upScale = 500;
             wFit = 10.^(log10(min(w))-wDelta+wDelta/upScale:wDelta/upScale:log10(max(w))+wDelta);
     
             % Scale the Y vector so that the max is 1
             scaledY=scaledY./max(scaledY);
-            myObj=@(p)sqrt(sum((scaledY-watsonTemporalModelvep(w,p)).^2));
+            myObj=@(p)sqrt(sum((scaledY-watsonTemporalModelTimeScale(w,p)).^2));
             
             p = fmincon(myObj,p0,[],[],[],[],lb,ub);
             
             % calculate model fit and undo scaling
-            yFit = (watsonTemporalModelvep(wFit,p).*(max(Y)-min(Y)))+min(Y);
+            yFit = (watsonTemporalModelTimeScale(wFit,p).*(max(Y)-min(Y)))+min(Y);
             
             yFit(~isfinite(yFit))=nan;
             
-            yFit2 = (watsonTemporalModelvep(w,p).*(max(Y)-min(Y)))+min(Y);
+            yFit2 = (watsonTemporalModelTimeScale(w,p).*(max(Y)-min(Y)))+min(Y);
 end

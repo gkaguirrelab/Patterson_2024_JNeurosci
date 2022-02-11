@@ -64,8 +64,8 @@ for ss = 1:2
                 axis off
 
                 % Report the parameters
-                temp = wFit(find(yFit>max(yFit)*0.95)); 
-                temp = temp(round(length(temp)/2));
+                temp = wFit(find(yFit==max(yFit))); 
+                temp = temp(end);
                str = {sprintf('[%2.1f, %2.0f]',[max(yFit) temp])};
                text(1,6,str);
 

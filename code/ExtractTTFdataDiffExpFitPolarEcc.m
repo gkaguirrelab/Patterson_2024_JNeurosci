@@ -48,7 +48,6 @@ eccenDivs = [0 22.5;22.5 90]; % eccentricity bins
 
 polarDivs = [-22.5 22.5;22.5 67.5;67.5 112.5;112.5 157.5;157.5 180;-157.5 -112.5;-112.5 -67.5;-67.5 -22.5]; % Polar angle
 
-data = cell(2,3,length(eccenDivs)-1,nFreqs-1);
 
 % Loop through the directions and eccentricities
         
@@ -96,7 +95,7 @@ for ss = 1:2
                 lBoot = NaN*ones(nFreqs-1,1);
                 uBoot = NaN*ones(nFreqs-1,1);
                 for ff = 2:nFreqs
-                    data{ss,dd,ee,ff-1} = vals{ff}-vals{1};
+                    data{ss,dd,ee,pp,ff-1} = vals{ff}-vals{1};
                     temp_data = vals{ff}-vals{1};
                     bootVals = sort(bootstrp(1000,@mean,temp_data));
                     BootVals(ff-1,:) = bootVals;

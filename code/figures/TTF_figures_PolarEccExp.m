@@ -15,8 +15,8 @@ subjectNames = {'HEROgka1','HEROasb1'};
 shortNames = {'gka','asb'};
 analysisLabels = {'L-M','S','LF'};
 
-maxBoot = sort(maxBoot,4);
-peakFreqBoot = sort(peakFreqBoot,4);
+maxBoot = sort(maxBoot,5);
+peakFreqBoot = sort(peakFreqBoot,5);
 
 % Loop through the subjects and directions
 for ss = 1:2
@@ -65,9 +65,8 @@ for ss = 1:2
                             ylabel(analysisLabels{dd});
                             semilogx([1 1],[0 7],'-k','LineWidth',1)
                         end
-
-                end
-
+                    polar_tick_labels(pp) = {sprintf('%2.1f-%2.1f°',polarDivs(pp,:))};
+                    end
                 
             end
         
@@ -84,8 +83,8 @@ P2 = 3:4;
 xx = 1:length(eccenDivs)-1;
 ft = fittype('smoothingspline');
 
-polar_tick_labels = {'superior meridian','superior nasal','nasal meridian','inferior nasal','inferior meridian','inferior temporal',...
-    'temporal meridian','superior temporal'}; 
+% polar_tick_labels = {'superior meridian','superior nasal','nasal meridian','inferior nasal','inferior meridian','inferior temporal',...
+%     'temporal meridian','superior temporal'}; 
 
 figHandle = figure();
 for ee = 1:length(eccenDivs)

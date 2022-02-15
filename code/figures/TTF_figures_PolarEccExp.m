@@ -18,62 +18,62 @@ analysisLabels = {'L-M','S','LF'};
 maxBoot = sort(maxBoot,5);
 peakFreqBoot = sort(peakFreqBoot,5);
 
-% Loop through the subjects and directions
-for ss = 1:2
-        for ee = 1:length(eccenDivs)
-            figHandle0 = figure();
-            for dd = 1:3
-                    for pp = 1:size(polarDivs,1)
+%% Loop through the subjects and directions to create TSFs with fits
+% for ss = 1:2
+%         for ee = 1:length(eccenDivs)
+%             figHandle0 = figure();
+%             for dd = 1:3
+%                     for pp = 1:size(polarDivs,1)
+% 
+% 
+%                         yBoot = squeeze(squeeze(squeeze(squeeze(Boot_Vals(ss,dd,ee,pp,:,:)))));
+% 
+%                         [wFit,yFit,yFit2,p] = fitExp(w,yBoot(:,500)');
+% 
+%                         % Add this fit to the plot
+%                         subplot(3,length(polarDivs),pp+((dd-1)*(length(polarDivs))))
+%                         hold on
+%                         XX = [freqs fliplr(freqs)];
+%                         YY = [yBoot(:,25)' fliplr(yBoot(:,975)')];
+%                         fill(XX,YY,[0.9 0.9 0.9],'LineStyle','none')
+%                         plot(freqs,yBoot(:,500),'.k')
+%                         plot(wFit,yFit,'-r')
+%                         plot([1 64],[0 0],':k','LineWidth',1)
+%                         ylim([-1 7]);
+%                         xlim([0.5 70])
+%                         set(gca,'Box','off')
+%                         set(gca,'XScale','log')
+%                         set(gca,'TickDir','out')
+%                         axis off
+% 
+%                         % Report the parameters
+%                         temp = wFit(find(yFit==max(yFit))); 
+%                         temp = temp(end);
+%                        str = {sprintf('[%2.1f, %2.0f]',[max(yFit) temp])};
+%                        text(1,6,str);
+% 
+%                         % Add some chart stuff
+%                         if dd==1
+%                             ax = gca;
+%                             ax.Title.Visible = 'on';
+%                             str = {sprintf('%2.1f-%2.1f°',polarDivs(pp,:))};
+%                             title(str);
+%                         end
+%                         if ee==1
+%                             ax = gca;
+%                             ax.YLabel.Visible = 'on';
+%                             ylabel(analysisLabels{dd});
+%                             semilogx([1 1],[0 7],'-k','LineWidth',1)
+%                         end
+%                     polar_tick_labels(pp) = {sprintf('%2.1f-%2.1f°',polarDivs(pp,:))};
+%                     end
+%                 
+%             end
+%         
+%         end
+% end
 
-
-                        yBoot = squeeze(squeeze(squeeze(squeeze(Boot_Vals(ss,dd,ee,pp,:,:)))));
-
-                        [wFit,yFit,yFit2,p] = fitExp(w,yBoot(:,500)');
-
-                        % Add this fit to the plot
-                        subplot(3,length(polarDivs),pp+((dd-1)*(length(polarDivs))))
-                        hold on
-                        XX = [freqs fliplr(freqs)];
-                        YY = [yBoot(:,25)' fliplr(yBoot(:,975)')];
-                        fill(XX,YY,[0.9 0.9 0.9],'LineStyle','none')
-                        plot(freqs,yBoot(:,500),'.k')
-                        plot(wFit,yFit,'-r')
-                        plot([1 64],[0 0],':k','LineWidth',1)
-                        ylim([-1 7]);
-                        xlim([0.5 70])
-                        set(gca,'Box','off')
-                        set(gca,'XScale','log')
-                        set(gca,'TickDir','out')
-                        axis off
-
-                        % Report the parameters
-                        temp = wFit(find(yFit==max(yFit))); 
-                        temp = temp(end);
-                       str = {sprintf('[%2.1f, %2.0f]',[max(yFit) temp])};
-                       text(1,6,str);
-
-                        % Add some chart stuff
-                        if dd==1
-                            ax = gca;
-                            ax.Title.Visible = 'on';
-                            str = {sprintf('%2.1f-%2.1f°',polarDivs(pp,:))};
-                            title(str);
-                        end
-                        if ee==1
-                            ax = gca;
-                            ax.YLabel.Visible = 'on';
-                            ylabel(analysisLabels{dd});
-                            semilogx([1 1],[0 7],'-k','LineWidth',1)
-                        end
-                    polar_tick_labels(pp) = {sprintf('%2.1f-%2.1f°',polarDivs(pp,:))};
-                    end
-                
-            end
-        
-        end
-end
-
-% Create an average params plot
+%% Create an average params plot
 colors = {'r','b','k'};
 linetype = {'-','--'};
 Y_lim = [0 5.5; 0 1; 0 0.03];
@@ -83,44 +83,40 @@ P2 = 3:4;
 xx = 1:length(eccenDivs)-1;
 ft = fittype('smoothingspline');
 
-% polar_tick_labels = {'superior meridian','superior nasal','nasal meridian','inferior nasal','inferior meridian','inferior temporal',...
-%     'temporal meridian','superior temporal'}; 
+polar_tick_labels2 = {'0','45','90','135','180','-135','-90','-45'};
+
+polarTics = [0 45 90 135 180 225 270 315];
+
+polarTics2 = 0:1:359;
 
 figHandle = figure();
 for ee = 1:length(eccenDivs)
     for pp = 1:2
         for ss=1:2
-            for dd = 1:3
+            for dd = 3
 
                 switch pp
                     case 1
                         subplot(2,2,P1(ss))
-                        hold on
-                        set(gca,'TickDir','out')
-                        set(gca,'Box','off')
-                        for ff = 1:8
+                        for ff = 1:length(polarTics)
                             sortVals = sort(squeeze(squeeze(maxBoot(ss,dd,ee,ff,:))));
                             meanVal(ff) = mean(sortVals);
                             lowVal(ff) = sortVals(round(length(sortVals)*0.025));
                             hiVal(ff) = sortVals(round(length(sortVals)*0.975));
                             rangeVal(ff) = hiVal(ff) - lowVal(ff);
                         end
-                        semilogy(meanVal,['o' colors{dd}])
+                        polarplot(deg2rad(polarTics),meanVal,[linetype{ee} 'o' colors{dd}])
                         hold on
-                        for ff = 1:8
-                            semilogy([ff, ff],[lowVal(ff), hiVal(ff)],['-' colors{dd}],'LineWidth',2)
-                        end
-                        f = fit([1:8]',log10(meanVal'),ft,'Weights',1./rangeVal);
-                        semilogy(1:0.1:8,10.^(f(1:0.1:8)),[linetype{ee} colors{dd}])
-                        set(gca,'YLim',[0.1 10])
-                        set(gca,'Yscale','log')
-                        set(gca,'XTick',1:8)
-                        set(gca,'XTickLabel',polar_tick_labels)
+                        set(gca,'RLim',[0.1 10])
+                        set(gca,'ThetaTick',polarTics)
+                        set(gca,'ThetaTickLabels',polar_tick_labels2)
+                        set(gca,'Box','off')
+                        set(gca,'ThetaZeroLocation','top')
 
                     case 2                  
                         subplot(2,2,P2(ss))
-                        hold on
-                        for ff = 1:8
+                        
+                        for ff = 1:length(polarTics)
                             sortVals = sort(squeeze(squeeze(peakFreqBoot(ss,dd,ee,ff,:))));
                             meanVal(ff) = mean(sortVals);
                             lowVal(ff) = sortVals(round(length(sortVals)*0.025));
@@ -128,16 +124,13 @@ for ee = 1:length(eccenDivs)
                             rangeVal(ff) = hiVal(ff) - lowVal(ff);
                         end
                         rangeVal(rangeVal==0) = 1;       
-                        plot(meanVal,['o' colors{dd}])
-                        for ff = 1:8
-                            plot([ff, ff],[lowVal(ff), hiVal(ff)],['-' colors{dd}],'LineWidth',2)
-                        end
-                        f = fit([1:8]',meanVal',ft,'Weights',1./rangeVal);
-                        plot(1:0.1:8,f(1:0.1:8),[linetype{ee} colors{dd}])
-                        set(gca,'YLim',[2 25])
-                        set(gca,'TickDir','out')
-                        set(gca,'XTick',1:8)
-                        set(gca,'XTickLabel',polar_tick_labels)
+                        polarplot(deg2rad(polarTics),meanVal,[linetype{ee} 'o' colors{dd}])
+                        hold on
+                        set(gca,'RLim',[2 25])
+                        set(gca,'ThetaTick',polarTics)
+                        set(gca,'ThetaTickLabels',polar_tick_labels2)
+                        set(gca,'Box','off')
+                        set(gca,'ThetaZeroLocation','top')
                 end
             end 
         end

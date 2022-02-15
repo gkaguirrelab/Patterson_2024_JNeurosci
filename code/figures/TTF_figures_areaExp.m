@@ -17,6 +17,8 @@ peakFreqBoot = sort(peakFreqBoot,4);
 subjectNames = {'HEROgka1','HEROasb1'};
 shortNames = {'gka','asb'};
 analysisLabels = {'L-M','S','LF'};
+plotColors = {'r','b','k'};
+plotColors2 = [1 0.9 0.9;0.9 0.9 1;0.9 0.9 0.9];
 
 % Loop through the subjects and directions
 for ss = 1:2
@@ -43,9 +45,9 @@ for ss = 1:2
                 hold on
                 XX = [freqs fliplr(freqs)];
                 YY = [yBoot(:,25)' fliplr(yBoot(:,975)')];
-                fill(XX,YY,[0.9 0.9 0.9],'LineStyle','none')
-                plot(freqs,yBoot(:,500),'.k')
-                plot(wFit,yFit,'-r')
+                fill(XX,YY,plotColors2(dd,:),'LineStyle','none')
+                plot(freqs,yBoot(:,500),['.' plotColors{dd}])
+                plot(wFit,yFit,plotColors{dd})
                 plot([1 64],[0 0],':k','LineWidth',1)
                 ylim([-1 7]);
                 xlim([0.5 70])
@@ -79,8 +81,6 @@ for ss = 1:2
 end
 
 % Create an average peak frequency and maximum response plot
-plotColors = {'r','b','k'};
-plotColors2 = {'w','w','w';'r','b','k'};
 Xtic = 1:length(areaLabels);
 Xtic_shift = [-0.2 0 0.2];
 paramNames = {'maximum response','peak frequency'};

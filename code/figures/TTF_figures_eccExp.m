@@ -18,6 +18,8 @@ wFit = 10.^(log10(min(w))-wDelta+wDelta/upScale:wDelta/upScale:log10(max(w))+wDe
 subjectNames = {'HEROgka1','HEROasb1'};
 shortNames = {'gka','asb'};
 analysisLabels = {'L-M','S','LF'};
+plotColors = {'r','b','k'};
+plotColors2 = [1 0.9 0.9;0.9 0.9 1;0.9 0.9 0.9];
 
 maxBoot = sort(maxBoot,4);
 peakFreqBoot = sort(peakFreqBoot,4);
@@ -52,9 +54,9 @@ for ss = 1:2
                 hold on
                 XX = [freqs fliplr(freqs)];
                 YY = [yBoot(:,25)' fliplr(yBoot(:,975)')];
-                fill(XX,YY,[0.9 0.9 0.9],'LineStyle','none')
-                plot(freqs,yBoot(:,500),'.k')
-                plot(wFit,yFit,'-r')
+                fill(XX,YY,plotColors2(dd,:),'LineStyle','none')
+                plot(freqs,yBoot(:,500),['.' plotColors{dd}])
+                plot(wFit,yFit,['-' plotColors{dd}])
                 plot([1 64],[0 0],':k','LineWidth',1)
                 ylim([-1 7]);
                 xlim([0.5 70])

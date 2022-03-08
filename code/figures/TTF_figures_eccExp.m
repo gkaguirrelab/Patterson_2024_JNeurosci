@@ -161,9 +161,9 @@ end
 function [wFit,yFit,yFit2,p] = fitExp(w,Y)
             
             % TTF model guess
-            p0 = [0.5 4 1 0];
-            lb = [0 0 0 0]; 
-            ub = [10 10 2 0];
+            p0 = [0.5 4 1];
+            lb = [0 0 0]; 
+            ub = [10 10 2];
             
             % set minimum to 0
             scaledY = Y-min(Y);
@@ -175,14 +175,14 @@ function [wFit,yFit,yFit2,p] = fitExp(w,Y)
     
             % Scale the Y vector so that the max is 1
             scaledY=scaledY./max(scaledY);
-            myObj=@(p)sqrt(sum((scaledY-watsonTemporalModelTimeScale(w,p)).^2));
+            myObj=@(p)sqrt(sum((scaledY-watsonTemporalModelvep(w,p)).^2));
             
             p = fmincon(myObj,p0,[],[],[],[],lb,ub);
             
             % calculate model fit and undo scaling
-            yFit = (watsonTemporalModelTimeScale(wFit,p).*(max(Y)-min(Y)))+min(Y);
+            yFit = (watsonTemporalModelvep(wFit,p).*(max(Y)-min(Y)))+min(Y);
             
             yFit(~isfinite(yFit))=nan;
             
-            yFit2 = (watsonTemporalModelTimeScale(w,p).*(max(Y)-min(Y)))+min(Y);
+            yFit2 = (watsonTemporalModelvep(w,p).*(max(Y)-min(Y)))+min(Y);
 end

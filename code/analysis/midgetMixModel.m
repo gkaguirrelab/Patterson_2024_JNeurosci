@@ -34,12 +34,12 @@ a = find(yfit<1,1);
 yfit(a:end)=1;
 
 % Store the fit
-midgetFit = yfit;
+midgetFit = yfit./max(yfit);
 
 % plot
-loglog(f,y,'or')
+loglog(f,y./max(yfit),'or')
 hold on
-loglog(finterp,yfit,'-r')
+loglog(finterp,yfit./max(yfit),'-r')
 
 
 %% Parasol
@@ -52,11 +52,39 @@ a = find(yfit<1,1);
 yfit(a:end)=1;
 
 % Store the fit
-parasolFit = yfit;
-
+parasolFit = yfit./max(yfit);
 
 % plot
-loglog(f,y,'ok')
+loglog(f,y./max(yfit),'ok')
 hold on
-loglog(finterp,yfit,'-k')
-ylim([1 500])
+loglog(finterp,yfit./max(yfit),'-k')
+ylim([0 1.2])
+
+%% Wool 2018
+LminusMResponse = [0.539083557951483, 90.6832298136646
+4.582210242587602, 69.25465838509317
+12.331536388140162, 44.09937888198756
+21.765498652291104, 28.881987577639748
+38.67924528301887, 18.944099378881972
+49.46091644204853, 16.149068322981364];
+
+LplusMResponse = [0.6064690026954187, 65.21739130434781
+4.851752021563343, 75.15527950310559
+9.636118598382751, 82.91925465838509
+14.285714285714288, 88.19875776397515
+19.676549865229113, 92.2360248447205
+29.31266846361186, 95.96273291925466
+39.42048517520217, 97.51552795031056
+49.595687331536396, 97.20496894409938];
+% 
+% semilogx(LminusMResponse(:,1),LminusMResponse(:,2),'-r');
+% hold on
+% semilogx(LplusMResponse(:,1),LplusMResponse(:,2),'-k');
+
+
+% Make some mixes
+for mRatio = 0:0.1:0.5
+    myFit = parasolFit.*(1-mRatio) + midgetFit.*mRatio;
+    finterp(find(myFit==max(myFit)))
+end
+

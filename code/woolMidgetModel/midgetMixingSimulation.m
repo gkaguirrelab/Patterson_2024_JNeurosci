@@ -19,11 +19,17 @@
 
 % Housekeeping
 clear
-close all
 
 % Set a flag that forces the routine to re-run the cell simulation, even if
 % the simulation results are present.
 forceRecalc = false;
+
+% Conduct the sim for P1 or P2?
+subjects = {'P1','P2'};
+
+% The exponent of the expansive non-linearity of the chromatic midget
+% component
+epsilon = 4;
 
 % Define a set of eccentricities in degrees, log spaced and centered within
 % each of the bins of the Mt Sinai data
@@ -88,15 +94,25 @@ lumIntrusionRelToFovea = (lumIntrusionRelToFovea./lumIntrusionRelToFovea(1));
 
 % Subject the luminance intrusion to an expansive non-linearity. This is a
 % "boost" of the chromatic component.
-epsilon = 4;
 lumIntrusionRelToFoveaExpansiveNonLin = lumIntrusionRelToFovea.^epsilon;
 lumIntrusionRelToFoveaExpansiveNonLin = (lumIntrusionRelToFoveaExpansiveNonLin-1)./max(lumIntrusionRelToFoveaExpansiveNonLin-1);
 lumIntrusionRelToFoveaExpansiveNonLin = lumIntrusionRelToFoveaExpansiveNonLin.*max(lumIntrusionRelToFovea-1)+1;
 chromaticBoost = lumIntrusionRelToFovea./lumIntrusionRelToFoveaExpansiveNonLin;
 
+% Load the amplitude and temporal response functions across subjects
+maxRespData = zeros(3,6);
+peakFreqData = zeros(3,6);
+nSubjects = length(subjects);
+for ss=1:length(subjects)
+    v1DataFile = fullfile(fileparts(mfilename('fullpath')),'mtSinaiData','V1ecc_Mean_and_Fits_fMRIflicker.mat');
+    tmpLoader=load(v1DataFile,[subjects{ss} '_maxResp'],[subjects{ss} '_peakFreq']);
+    maxRespData = maxRespData+(1/nSubjects).*tmpLoader.([subjects{ss} '_maxResp']);
+    peakFreqData = peakFreqData+(1/nSubjects).*tmpLoader.([subjects{ss} '_peakFreq']);
+end
+
 % Plot the response to chromatic contrast as a function of eccentricity
 figure
-subplot(2,1,1)
+subplot(3,1,1)
 tmp = LMDiffResponse ./ max(LMDiffResponse);
 loglog(eD,tmp,'-k','LineWidth',2);
 hold on
@@ -112,38 +128,41 @@ yticks([0.125 0.25 0.5 1])
 yticklabels({'0.125','0.25','0.5','1'})
 title('Midget L-M sensitivity as a function of eccentricity')
 
-% Plot the intrusion of luminance signals into the midget pathway
-subplot(2,1,2)
+% Add the subject L-M response sensitivities across eccentricity
+dataEccSupport = eD(2:2:12);
+loglog(dataEccSupport,maxRespData(1,:)./max(maxRespData(1,:)),'-r','LineWidth',2)
+
+% Plot the proportion of luminance signal in the midget pathway, relative
+% to fovea
+subplot(3,1,2)
 semilogx(eD,lumIntrusionRelToFovea,'-k','LineWidth',2);
 hold on
 semilogx(eD,lumIntrusionRelToFoveaExpansiveNonLin,':k','LineWidth',2);
 semilogx(eD,ones(size(eD)),':k');
 semilogx([21.5 21.5],[0 7],':k');
-ylabel('L+M intrusion relative to fovea')
+ylabel({'midget L+M signal component','relative to fovea'})
 xlim([0.9 70])
-xlabel('Eccentricity')
+xlabel('Eccentricity [deg]')
 xticks([1 2 4 8 16 32 64])
-xticklabels({'1','2','4','8','16','32','64'})
+yticks([0 1 2 4 8])
 
 % Load the TSFs for P1 for the fovea
+foveaFitTSFs = zeros(3,3500);
 v1DataFile = fullfile(fileparts(mfilename('fullpath')),'mtSinaiData','V1fovea_Mean_and_Fits_fMRIflicker.mat');
-load(v1DataFile,'P1_fovea_fit');
+for ss=1:length(subjects)
+    tmpLoader = load(v1DataFile,[subjects{ss} '_fovea_fit']);
+    foveaFitTSFs = foveaFitTSFs + (1/nSubjects).*tmpLoader.([subjects{ss} '_fovea_fit']);
+end
 
 % Pull out the luminance and L-M fits
-fitLum = P1_fovea_fit(3,:)';
-fitRG = P1_fovea_fit(1,:)';
+fitLum = foveaFitTSFs(3,:)';
+fitRG = foveaFitTSFs(1,:)';
 
 % Define the frequency support for the TSFs
-freqSupport = logspace(log10(1),log10(128),3500);
-
-% Plot the TSFs
-figure
-semilogx(freqSupport,fitLum,'-k','LineWidth',2)
-hold on
-semilogx(freqSupport,fitRG,'-r','LineWidth',2)
+freqSupport = logspace(log10(2),log10(100),3500);
 
 % Create a mix of the lum and RG TSFs
-for mm=1:length(eM)
+for mm=1:length(eD)
     k = fitLum + (lumIntrusionRelToFovea(mm)-1).*fitRG;
     k = k./(max(k));
     [~,idx] = max(k);
@@ -156,12 +175,23 @@ for mm=1:length(eM)
 end
 
 % Plot these
-figure
+subplot(3,1,3)
 semilogx(eD,peakTTF,'-k','LineWidth',2);
 hold on
 semilogx(eD,peakTTFExpanded,':k','LineWidth',2);
-ylabel('Peak temporal sensitivity [Hz]')
+ylabel({'Peak temporal','sensitivity [Hz]'})
 xlim([0.9 70])
-xlabel('Eccentricity')
+xlabel('Eccentricity [deg]')
 xticks([1 2 4 8 16 32 64])
 xticklabels({'1','2','4','8','16','32','64'})
+
+% Add the subject TSFs
+semilogx(dataEccSupport,peakFreqData(3,:),'-r','LineWidth',2)
+
+
+% Plot the TSFs
+figure
+semilogx(freqSupport,fitLum./max(fitLum),'-k','LineWidth',2)
+hold on
+semilogx(freqSupport,fitRG./max(fitRG),'-r','LineWidth',2)
+ylim([0 1])

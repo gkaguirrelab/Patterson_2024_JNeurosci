@@ -5,7 +5,7 @@ function Cell=DoG(Em)
 %%%%%%%%%% MODEL UNIVERSE %%%%%%%%%%%%%%
 
 Fs=512; %Sampling rate
-numdeg=512;
+numdeg=64;
 x=-numdeg/2:1/Fs:numdeg/2-(1/Fs);
 
 Ed=(Em*1000)/223; %Eccentricity in degrees (M. mulatta, Perry & Cowey 1985)
@@ -77,7 +77,7 @@ CellResp=Lc+Ls+Mc+Ms+Sc+Ss;
 
 %%%%%%%%%% STIMULUS %%%%%%%%%%%%%%%%%%%%
 
-Freqs=[1/128];
+Freqs=[1/16];
 %SFLabels={'SF=1/128' 'SF=1/64' 'SF=1/32' 'SF=1/16' 'SF=1/8' 'SF=1/4' 'SF=1/2' 'SF=1' 'SF=2' 'SF=4' 'SF=8' 'SF=16' 'SF=32' 'SF=64' 'SF=128'};
 
 for t=1:length(Freqs)

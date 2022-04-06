@@ -23,7 +23,7 @@ close all
 
 % Set a flag that forces the routine to re-run the cell simulation, even if
 % the simulation results are present.
-forceRecalc = true;
+forceRecalc = false;
 
 % Define a set of eccentricities in degrees, log spaced and centered within
 % each of the bins of the Mt Sinai data
@@ -31,7 +31,7 @@ eD = logspace(log10(1),log10(64),13); % eccentricities in degrees,
 
 % The Wool model operates in units of mm in the macaque retina, so convert
 % ecentricity to macaque mm.
-eM = (eD.*223)./10000; % convert to macaque mm (M. mulatta, Perry & Cowey 1985)
+eM = (eD.*223)./1000; % convert to macaque mm (M. mulatta, Perry & Cowey 1985)
 
 % The cellSim results filename
 cellSimResultsFile = fullfile(fileparts(mfilename('fullpath')),'midgetMixingSimResults.mat');
@@ -50,7 +50,7 @@ if isfile(cellSimResultsFile) && ~forceRecalc
 else
 
     % The number of cells in the simulation
-    nCells = 1000;
+    nCells = 5000;
 
     % Loop through the eccentricities
     for ee=1:length(eM)
@@ -98,10 +98,10 @@ chromaticBoost = lumIntrusionRelToFovea./lumIntrusionRelToFoveaExpansiveNonLin;
 figure
 subplot(2,1,1)
 tmp = LMDiffResponse ./ max(LMDiffResponse);
-loglog(eD,tmp,'-k');
+loglog(eD,tmp,'-k','LineWidth',2);
 hold on
 tmp = tmp.*chromaticBoost;
-loglog(eD,tmp,'-r');
+loglog(eD,tmp,':k','LineWidth',2);
 ylabel({'Midget L-M sensitivity','[relative to fovea]'})
 xlabel('Eccentricity [deg]')
 ylim([0.1 1.1])
@@ -114,9 +114,9 @@ title('Midget L-M sensitivity as a function of eccentricity')
 
 % Plot the intrusion of luminance signals into the midget pathway
 subplot(2,1,2)
-semilogx(eD,lumIntrusionRelToFovea,'-k');
+semilogx(eD,lumIntrusionRelToFovea,'-k','LineWidth',2);
 hold on
-semilogx(eD,lumIntrusionRelToFoveaExpansiveNonLin,'-r');
+semilogx(eD,lumIntrusionRelToFoveaExpansiveNonLin,':k','LineWidth',2);
 semilogx(eD,ones(size(eD)),':k');
 semilogx([21.5 21.5],[0 7],':k');
 ylabel('L+M intrusion relative to fovea')
@@ -138,12 +138,11 @@ freqSupport = logspace(log10(1),log10(128),3500);
 
 % Plot the TSFs
 figure
-semilogx(freqSupport,fitLum,'-k')
+semilogx(freqSupport,fitLum,'-k','LineWidth',2)
 hold on
-semilogx(freqSupport,fitRG,'-r')
+semilogx(freqSupport,fitRG,'-r','LineWidth',2)
 
 % Create a mix of the lum and RG TSFs
-figure
 for mm=1:length(eM)
     k = fitLum + (lumIntrusionRelToFovea(mm)-1).*fitRG;
     k = k./(max(k));
@@ -158,9 +157,9 @@ end
 
 % Plot these
 figure
-semilogx(eD,peakTTF,'-k');
+semilogx(eD,peakTTF,'-k','LineWidth',2);
 hold on
-semilogx(eD,peakTTFExpanded,'-r');
+semilogx(eD,peakTTFExpanded,':k','LineWidth',2);
 ylabel('Peak temporal sensitivity [Hz]')
 xlim([0.9 70])
 xlabel('Eccentricity')

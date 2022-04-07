@@ -35,6 +35,9 @@ epsilon = 4;
 % each of the bins of the Mt Sinai data
 eD = logspace(log10(1),log10(64),13); % eccentricities in degrees,
 
+% A high-rez version of eD for plotting interpolated fits
+eDFit = logspace(log10(1),log10(64),130);
+
 % The Wool model operates in units of mm in the macaque retina, so convert
 % ecentricity to macaque mm.
 eM = (eD.*223)./1000; % convert to macaque mm (M. mulatta, Perry & Cowey 1985)
@@ -114,10 +117,13 @@ end
 figure
 subplot(3,1,1)
 tmp = LMDiffResponse ./ max(LMDiffResponse);
-loglog(eD,tmp,'-k','LineWidth',2);
+tmpFitObj = fit(eD',tmp','gauss3');
+loglog(eDFit,tmpFitObj(eDFit),'-','Color',[0.5 0.5 0.5],'LineWidth',2);
 hold on
 tmp = tmp.*chromaticBoost;
-loglog(eD,tmp,':k','LineWidth',2);
+tmpFitObj = fit(eD',tmp','gauss3');
+loglog(eDFit,tmpFitObj(eDFit),':','Color',[0.5 0.5 0.5],'LineWidth',2);
+loglog([21.5 21.5],[0.1 1.1],':k');
 ylabel({'Midget L-M sensitivity','[relative to fovea]'})
 xlabel('Eccentricity [deg]')
 ylim([0.1 1.1])
@@ -127,31 +133,41 @@ xticklabels({'1','2','4','8','16','32','64'})
 yticks([0.125 0.25 0.5 1])
 yticklabels({'0.125','0.25','0.5','1'})
 title('Midget L-M sensitivity as a function of eccentricity')
+box off
 
 % Add the subject L-M response sensitivities across eccentricity
 dataEccSupport = eD(2:2:12);
-loglog(dataEccSupport,maxRespData(1,:)./max(maxRespData(1,:)),'-r','LineWidth',2)
+loglog(dataEccSupport,maxRespData(1,:)./max(maxRespData(1,:)),'om','LineWidth',2)
 
 % Plot the proportion of luminance signal in the midget pathway, relative
 % to fovea
 subplot(3,1,2)
-semilogx(eD,lumIntrusionRelToFovea,'-k','LineWidth',2);
+tmpFitObj = fit(eD',lumIntrusionRelToFovea','cubicinterp');
+loglog(eDFit,tmpFitObj(eDFit),'-','Color',[0.5 0.5 0.5],'LineWidth',2);
 hold on
-semilogx(eD,lumIntrusionRelToFoveaExpansiveNonLin,':k','LineWidth',2);
-semilogx(eD,ones(size(eD)),':k');
-semilogx([21.5 21.5],[0 7],':k');
-ylabel({'midget L+M signal component','relative to fovea'})
+tmpFitObj = fit(eD',lumIntrusionRelToFoveaExpansiveNonLin','exp2');
+loglog(eDFit,tmpFitObj(eDFit),':','Color',[0.5 0.5 0.5],'LineWidth',2);
+loglog([21.5 21.5],[1 10],':k');
+ylabel({'midget L+M','signal component','relative to fovea'})
 xlim([0.9 70])
 xlabel('Eccentricity [deg]')
 xticks([1 2 4 8 16 32 64])
 yticks([0 1 2 4 8])
+h = gca; h.XAxis.Visible = 'off';
+box off
 
-% Load the TSFs for P1 for the fovea
+% Load the TSFs for the fovea
 foveaFitTSFs = zeros(3,3500);
+tsfFreqSupportFile = fullfile(fileparts(mfilename('fullpath')),'mtSinaiData','wFit.mat');
+load(tsfFreqSupportFile,'wFit');
 v1DataFile = fullfile(fileparts(mfilename('fullpath')),'mtSinaiData','V1fovea_Mean_and_Fits_fMRIflicker.mat');
 for ss=1:length(subjects)
     tmpLoader = load(v1DataFile,[subjects{ss} '_fovea_fit']);
-    foveaFitTSFs = foveaFitTSFs + (1/nSubjects).*tmpLoader.([subjects{ss} '_fovea_fit']);
+    tmpMat = tmpLoader.([subjects{ss} '_fovea_fit']);
+    % Scale each TSF to have a maximum value of unity
+    tmpMat = tmpMat ./ max(tmpMat,[],2);
+    % Build the average set of TSFs across subjects
+    foveaFitTSFs = foveaFitTSFs + (1/nSubjects).*tmpMat;
 end
 
 % Pull out the luminance and L-M fits
@@ -159,7 +175,7 @@ fitLum = foveaFitTSFs(3,:)';
 fitRG = foveaFitTSFs(1,:)';
 
 % Define the frequency support for the TSFs
-freqSupport = logspace(log10(2),log10(100),3500);
+freqSupport = wFit; % Produced by Carlyn's code
 
 % Create a mix of the lum and RG TSFs
 for mm=1:length(eD)
@@ -176,22 +192,27 @@ end
 
 % Plot these
 subplot(3,1,3)
-semilogx(eD,peakTTF,'-k','LineWidth',2);
+tmpFitObj = fit(eD',peakTTF','cubicinterp');
+semilogx(eDFit,tmpFitObj(eDFit),'-','Color',[0.5 0.5 0.5],'LineWidth',2);
 hold on
-semilogx(eD,peakTTFExpanded,':k','LineWidth',2);
+tmpFitObj = fit(eD',peakTTFExpanded','spline');
+semilogx(eDFit,tmpFitObj(eDFit),':','Color',[0.5 0.5 0.5],'LineWidth',2);
+semilogx([21.5 21.5],[10 20],':k');
 ylabel({'Peak temporal','sensitivity [Hz]'})
 xlim([0.9 70])
 xlabel('Eccentricity [deg]')
 xticks([1 2 4 8 16 32 64])
 xticklabels({'1','2','4','8','16','32','64'})
+h = gca; h.XAxis.Visible = 'off';
+box off
 
 % Add the subject TSFs
-semilogx(dataEccSupport,peakFreqData(3,:),'-r','LineWidth',2)
+semilogx(dataEccSupport,peakFreqData(3,:),'om','LineWidth',2)
 
 
 % Plot the TSFs
-figure
-semilogx(freqSupport,fitLum./max(fitLum),'-k','LineWidth',2)
-hold on
-semilogx(freqSupport,fitRG./max(fitRG),'-r','LineWidth',2)
-ylim([0 1])
+% figure
+% semilogx(freqSupport,fitLum./max(fitLum),'-k','LineWidth',2)
+% hold on
+% semilogx(freqSupport,fitRG./max(fitRG),'-r','LineWidth',2)
+% ylim([0 1])

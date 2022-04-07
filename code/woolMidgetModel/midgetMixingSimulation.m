@@ -139,6 +139,13 @@ box off
 dataEccSupport = eD(2:2:12);
 loglog(dataEccSupport,maxRespData(1,:)./max(maxRespData(1,:)),'om','LineWidth',2)
 
+% Add a line that summarizes the Barnett 2020 results. These are the 6
+% slope values reported in Table 1
+minorAxisRatioSlope =mean([-1.19e-3, -4.17e-4, -7.54e-6, -2.51e-3, -3.27e-3, -3.9e-4]);
+barnettLine = @(x) 1+x.*minorAxisRatioSlope;
+loglog([0.1 19],barnettLine([0.1 19]),'-.b','LineWidth',1)
+
+
 % Plot the proportion of luminance signal in the midget pathway, relative
 % to fovea
 subplot(3,1,2)

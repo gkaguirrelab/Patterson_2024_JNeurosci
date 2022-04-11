@@ -115,7 +115,6 @@ end
 
 % Plot the response to chromatic contrast as a function of eccentricity
 figure
-subplot(3,1,1)
 tmp = LMDiffResponse ./ max(LMDiffResponse);
 tmpFitObj = fit(eD',tmp','gauss3');
 loglog(eDFit,tmpFitObj(eDFit),'-','Color',[0.5 0.5 0.5],'LineWidth',2);
@@ -145,15 +144,13 @@ minorAxisRatioSlope =mean([-1.19e-3, -4.17e-4, -7.54e-6, -2.51e-3, -3.27e-3, -3.
 barnettLine = @(x) 1+x.*minorAxisRatioSlope;
 loglog([0.1 19],barnettLine([0.1 19]),'-.b','LineWidth',1)
 
-
 % Plot the proportion of luminance signal in the midget pathway, relative
 % to fovea
-subplot(3,1,2)
+figure
+subplot(3,1,1)
 tmpFitObj = fit(eD',lumIntrusionRelToFovea','cubicinterp');
 loglog(eDFit,tmpFitObj(eDFit),'-','Color',[0.5 0.5 0.5],'LineWidth',2);
 hold on
-tmpFitObj = fit(eD',lumIntrusionRelToFoveaExpansiveNonLin','exp2');
-loglog(eDFit,tmpFitObj(eDFit),':','Color',[0.5 0.5 0.5],'LineWidth',2);
 loglog([21.5 21.5],[1 10],':k');
 ylabel({'midget L+M','signal component','relative to fovea'})
 xlim([0.9 70])
@@ -184,26 +181,43 @@ fitRG = foveaFitTSFs(1,:)';
 % Define the frequency support for the TSFs
 freqSupport = wFit; % Produced by Carlyn's code
 
-% Create a mix of the lum and RG TSFs
-for mm=1:length(eD)
-    k = fitLum + (lumIntrusionRelToFovea(mm)-1).*fitRG;
-    k = k./(max(k));
-    [~,idx] = max(k);
-    peakTTF(mm) = freqSupport(idx);
+% Modify the luminance intrusion vectors to be a relative effect and ready
+% for mixing with the parasol luminance component.
+lumIntrusionRelToFovea = lumIntrusionRelToFovea-1;
+lumIntrusionRelToFovea = (lumIntrusionRelToFovea./max(lumIntrusionRelToFovea));
 
-    k = fitLum + (lumIntrusionRelToFoveaExpansiveNonLin(mm)-1).*fitRG;
-    k = k./(max(k));
-    [~,idx] = max(k);
-    peakTTFExpanded(mm) = freqSupport(idx);
+% Get ready to plot these functions
+
+% Create a mix of the lum and RG TSFs, under the control of varying levels
+% of a factor that controls the relative influence of the achromatic midget
+% signal for the cortical TSF. A value of unity leads the maximum
+% achromatic midget signal to be equal to the parasol signal at the
+% farthest eccentricity
+for midgetInfluenceParam = [2]
+    for mm=1:length(eD)
+        k = fitLum + midgetInfluenceParam.*lumIntrusionRelToFovea(mm).*fitRG;
+        k = k./(max(k));
+        [~,idx] = max(k);
+        peakTTF(mm) = freqSupport(idx);
+
+            subplot(3,1,3)
+    semilogx(freqSupport,k)
+    hold on
+
+    end
+
+    % Plot this function
+    tmpFitObj = fit(eD',peakTTF','cubicinterp');
+%    color = repmat(1-sqrt(midgetInfluenceParam)/2,1,3);
+    color = [0.5 0.5 0.5];
+    subplot(3,1,2)
+    semilogx(eDFit,tmpFitObj(eDFit),'-','Color',color,'LineWidth',2);
+    hold on
+
 end
 
-% Plot these
-subplot(3,1,3)
-tmpFitObj = fit(eD',peakTTF','cubicinterp');
-semilogx(eDFit,tmpFitObj(eDFit),'-','Color',[0.5 0.5 0.5],'LineWidth',2);
-hold on
-tmpFitObj = fit(eD',peakTTFExpanded','spline');
-semilogx(eDFit,tmpFitObj(eDFit),':','Color',[0.5 0.5 0.5],'LineWidth',2);
+% Add some chart decoration
+    subplot(3,1,2)
 semilogx([21.5 21.5],[10 20],':k');
 ylabel({'Peak temporal','sensitivity [Hz]'})
 xlim([0.9 70])
@@ -215,11 +229,3 @@ box off
 
 % Add the subject TSFs
 semilogx(dataEccSupport,peakFreqData(3,:),'om','LineWidth',2)
-
-
-% Plot the TSFs
-% figure
-% semilogx(freqSupport,fitLum./max(fitLum),'-k','LineWidth',2)
-% hold on
-% semilogx(freqSupport,fitRG./max(fitRG),'-r','LineWidth',2)
-% ylim([0 1])

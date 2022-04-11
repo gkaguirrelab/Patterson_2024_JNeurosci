@@ -75,7 +75,7 @@ else
 
     % Save
     save(cellSimResultsFile,'Data');
-    
+
 end
 
 % Extract the L+M and L-M responses of the cells
@@ -114,7 +114,7 @@ for ss=1:length(subjects)
 end
 
 % Plot the response to chromatic contrast as a function of eccentricity
-figure
+subplot(3,1,1)
 tmp = LMDiffResponse ./ max(LMDiffResponse);
 tmpFitObj = fit(eD',tmp','gauss3');
 loglog(eDFit,tmpFitObj(eDFit),'-','Color',[0.5 0.5 0.5],'LineWidth',2);
@@ -146,8 +146,7 @@ loglog([0.1 19],barnettLine([0.1 19]),'-.b','LineWidth',1)
 
 % Plot the proportion of luminance signal in the midget pathway, relative
 % to fovea
-figure
-subplot(3,1,1)
+subplot(3,1,2)
 tmpFitObj = fit(eD',lumIntrusionRelToFovea','cubicinterp');
 loglog(eDFit,tmpFitObj(eDFit),'-','Color',[0.5 0.5 0.5],'LineWidth',2);
 hold on
@@ -187,6 +186,7 @@ lumIntrusionRelToFovea = lumIntrusionRelToFovea-1;
 lumIntrusionRelToFovea = (lumIntrusionRelToFovea./max(lumIntrusionRelToFovea));
 
 % Get ready to plot these functions
+subplot(3,1,3)
 
 % Create a mix of the lum and RG TSFs, under the control of varying levels
 % of a factor that controls the relative influence of the achromatic midget
@@ -199,25 +199,19 @@ for midgetInfluenceParam = [2]
         k = k./(max(k));
         [~,idx] = max(k);
         peakTTF(mm) = freqSupport(idx);
-
-            subplot(3,1,3)
-    semilogx(freqSupport,k)
-    hold on
-
     end
 
     % Plot this function
     tmpFitObj = fit(eD',peakTTF','cubicinterp');
-%    color = repmat(1-sqrt(midgetInfluenceParam)/2,1,3);
+    %    color = repmat(1-sqrt(midgetInfluenceParam)/2,1,3);
     color = [0.5 0.5 0.5];
-    subplot(3,1,2)
     semilogx(eDFit,tmpFitObj(eDFit),'-','Color',color,'LineWidth',2);
     hold on
 
 end
 
 % Add some chart decoration
-    subplot(3,1,2)
+subplot(3,1,3)
 semilogx([21.5 21.5],[10 20],':k');
 ylabel({'Peak temporal','sensitivity [Hz]'})
 xlim([0.9 70])

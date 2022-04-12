@@ -113,36 +113,24 @@ for ss=1:length(subjects)
     peakFreqData = peakFreqData+(1/nSubjects).*tmpLoader.([subjects{ss} '_peakFreq']);
 end
 
-% Plot the response to chromatic contrast as a function of eccentricity
+% Plot the response to L+M and L-M as a function of eccentricity
+figure
 subplot(3,1,1)
-tmp = LMDiffResponse ./ max(LMDiffResponse);
-tmpFitObj = fit(eD',tmp','gauss3');
-loglog(eDFit,tmpFitObj(eDFit),'-','Color',[0.5 0.5 0.5],'LineWidth',2);
+tmpFitObj = fit(eD',LMDiffResponse','cubicinterp');
+loglog(eDFit,tmpFitObj(eDFit),'-','Color',[0.75 0 0],'LineWidth',2);
 hold on
-tmp = tmp.*chromaticBoost;
-tmpFitObj = fit(eD',tmp','gauss3');
-loglog(eDFit,tmpFitObj(eDFit),':','Color',[0.5 0.5 0.5],'LineWidth',2);
+tmpFitObj = fit(eD',LMSumResponse','cubicinterp');
+loglog(eDFit,tmpFitObj(eDFit),'-','Color',[0.5 0.5 0.5],'LineWidth',2);
 loglog([21.5 21.5],[0.1 1.1],':k');
-ylabel({'Midget L-M sensitivity','[relative to fovea]'})
+ylabel({'Midget response','amplitude [a.u.]'})
 xlabel('Eccentricity [deg]')
-ylim([0.1 1.1])
 xlim([0.9 70])
 xticks([1 2 4 8 16 32 64])
 xticklabels({'1','2','4','8','16','32','64'})
-yticks([0.125 0.25 0.5 1])
-yticklabels({'0.125','0.25','0.5','1'})
-title('Midget L-M sensitivity as a function of eccentricity')
+ylim([10 100])
+yticks([10 100])
+yticklabels({'10','100'});
 box off
-
-% Add the subject L-M response sensitivities across eccentricity
-dataEccSupport = eD(2:2:12);
-loglog(dataEccSupport,maxRespData(1,:)./max(maxRespData(1,:)),'om','LineWidth',2)
-
-% Add a line that summarizes the Barnett 2020 results. These are the 6
-% slope values reported in Table 1
-minorAxisRatioSlope =mean([-1.19e-3, -4.17e-4, -7.54e-6, -2.51e-3, -3.27e-3, -3.9e-4]);
-barnettLine = @(x) 1+x.*minorAxisRatioSlope;
-loglog([0.1 19],barnettLine([0.1 19]),'-.b','LineWidth',1)
 
 % Plot the proportion of luminance signal in the midget pathway, relative
 % to fovea
@@ -151,7 +139,7 @@ tmpFitObj = fit(eD',lumIntrusionRelToFovea','cubicinterp');
 loglog(eDFit,tmpFitObj(eDFit),'-','Color',[0.5 0.5 0.5],'LineWidth',2);
 hold on
 loglog([21.5 21.5],[1 10],':k');
-ylabel({'midget L+M','signal component','relative to fovea'})
+ylabel({'L+M response component','relative to fovea'})
 xlim([0.9 70])
 xlabel('Eccentricity [deg]')
 xticks([1 2 4 8 16 32 64])
@@ -199,6 +187,9 @@ for midgetInfluenceParam = [2]
         k = k./(max(k));
         [~,idx] = max(k);
         peakTTF(mm) = freqSupport(idx);
+        if round(eD(mm))==16
+            exampleMixedTSF = k;
+        end
     end
 
     % Plot this function
@@ -213,7 +204,7 @@ end
 % Add some chart decoration
 subplot(3,1,3)
 semilogx([21.5 21.5],[10 20],':k');
-ylabel({'Peak temporal','sensitivity [Hz]'})
+ylabel({'Peak luminance','frequency [Hz]'})
 xlim([0.9 70])
 xlabel('Eccentricity [deg]')
 xticks([1 2 4 8 16 32 64])
@@ -222,4 +213,18 @@ h = gca; h.XAxis.Visible = 'off';
 box off
 
 % Add the subject TSFs
+dataEccSupport = eD(2:2:12);
 semilogx(dataEccSupport,peakFreqData(3,:),'om','LineWidth',2)
+
+% Plot the TSFs
+figure
+fitLum(fitLum<0)=nan;
+fitRG(fitRG<0)=nan;
+semilogx(freqSupport,fitLum,'-','Color',[0.5 0.5 0.5],'LineWidth',2);
+hold on
+semilogx(freqSupport,fitRG,'-','Color',[0.75 0 0],'LineWidth',2);
+semilogx(freqSupport,exampleMixedTSF,'-','Color',[0.75 0.25 0.25],'LineWidth',2);
+
+axis square
+box off
+axis off

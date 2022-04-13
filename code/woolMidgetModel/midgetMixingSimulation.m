@@ -27,9 +27,10 @@ forceRecalc = false;
 % Conduct the sim for P1 or P2?
 subjects = {'P1','P2'};
 
-% The exponent of the expansive non-linearity of the chromatic midget
-% component
-epsilon = 4;
+% THis factor controls the relative influence of the achromatic midget
+% signal for the cortical TSF. A value of unity leads the maximum
+% achromatic midget signal to be equal to the parasol signal at 90°
+midgetInfluenceParam = 3;
 
 % Define a set of eccentricities in degrees, log spaced and centered within
 % each of the bins of the Mt Sinai data
@@ -42,11 +43,13 @@ eDFit = logspace(log10(1),log10(64),130);
 % ecentricity to macaque mm.
 eM = (eD.*223)./1000; % convert to macaque mm (M. mulatta, Perry & Cowey 1985)
 
+% Add a final calculation for 90° eccentricity
+eM(end+1) = (90.*223)./1000;
+
 % The cellSim results filename
 cellSimResultsFile = fullfile(fileparts(mfilename('fullpath')),'midgetMixingSimResults.mat');
 
 % Check if we already have results
-
 if isfile(cellSimResultsFile) && ~forceRecalc
 
     % Load the previous simulation
@@ -87,20 +90,18 @@ for ee=1:length(eM)
         thisEccLMSumResponse(cc) = Data.(EccentricityLabel).(CellLabel).ResponseFunctions.LMSumResponse.Amplitude;
         thisEccLMDiffResponse(cc) = Data.(EccentricityLabel).(CellLabel).ResponseFunctions.LMDiffResponse.Amplitude;
     end
-    LMSumResponse(ee) = mean(thisEccLMSumResponse);
-    LMDiffResponse(ee) = mean(thisEccLMDiffResponse);
+    if ee~=length(eM)
+        LMSumResponse(ee) = mean(thisEccLMSumResponse);
+        LMDiffResponse(ee) = mean(thisEccLMDiffResponse);
+    else
+        LMSum90 = mean(thisEccLMSumResponse);
+        LMDiff90 = mean(thisEccLMDiffResponse);
+    end
 end
 
 % Calculate the relative L+M vs L-M response
 lumIntrusionRelToFovea = LMSumResponse./LMDiffResponse;
 lumIntrusionRelToFovea = (lumIntrusionRelToFovea./lumIntrusionRelToFovea(1));
-
-% Subject the luminance intrusion to an expansive non-linearity. This is a
-% "boost" of the chromatic component.
-lumIntrusionRelToFoveaExpansiveNonLin = lumIntrusionRelToFovea.^epsilon;
-lumIntrusionRelToFoveaExpansiveNonLin = (lumIntrusionRelToFoveaExpansiveNonLin-1)./max(lumIntrusionRelToFoveaExpansiveNonLin-1);
-lumIntrusionRelToFoveaExpansiveNonLin = lumIntrusionRelToFoveaExpansiveNonLin.*max(lumIntrusionRelToFovea-1)+1;
-chromaticBoost = lumIntrusionRelToFovea./lumIntrusionRelToFoveaExpansiveNonLin;
 
 % Load the amplitude and temporal response functions across subjects
 maxRespData = zeros(3,6);
@@ -170,36 +171,32 @@ freqSupport = wFit; % Produced by Carlyn's code
 
 % Modify the luminance intrusion vectors to be a relative effect and ready
 % for mixing with the parasol luminance component.
+lumIntrusionRelToFovea90 = (LMSum90/LMDiff90) / (LMSumResponse(1)/LMDiffResponse(1));
+lumIntrusionRelToFovea90 = lumIntrusionRelToFovea90 -1;
 lumIntrusionRelToFovea = lumIntrusionRelToFovea-1;
-lumIntrusionRelToFovea = (lumIntrusionRelToFovea./max(lumIntrusionRelToFovea));
+lumIntrusionRelToFovea = lumIntrusionRelToFovea./lumIntrusionRelToFovea90;
 
 % Get ready to plot these functions
 subplot(3,1,3)
 
-% Create a mix of the lum and RG TSFs, under the control of varying levels
-% of a factor that controls the relative influence of the achromatic midget
-% signal for the cortical TSF. A value of unity leads the maximum
-% achromatic midget signal to be equal to the parasol signal at the
-% farthest eccentricity
-for midgetInfluenceParam = [2]
-    for mm=1:length(eD)
-        k = fitLum + midgetInfluenceParam.*lumIntrusionRelToFovea(mm).*fitRG;
-        k = k./(max(k));
-        [~,idx] = max(k);
-        peakTTF(mm) = freqSupport(idx);
-        if round(eD(mm))==16
-            exampleMixedTSF = k;
-        end
+% Create a mix of the lum and RG TSFs
+for mm=1:length(eD)
+    k = fitLum + midgetInfluenceParam.*lumIntrusionRelToFovea(mm).*fitRG;
+    k = k./(max(k));
+    [~,idx] = max(k);
+    peakTTF(mm) = freqSupport(idx);
+    if round(eD(mm))==16
+        exampleMixedTSF = k;
     end
-
-    % Plot this function
-    tmpFitObj = fit(eD',peakTTF','cubicinterp');
-    %    color = repmat(1-sqrt(midgetInfluenceParam)/2,1,3);
-    color = [0.5 0.5 0.5];
-    semilogx(eDFit,tmpFitObj(eDFit),'-','Color',color,'LineWidth',2);
-    hold on
-
 end
+
+% Plot this function
+tmpFitObj = fit(eD',peakTTF','cubicinterp');
+%    color = repmat(1-sqrt(midgetInfluenceParam)/2,1,3);
+color = [0.5 0.5 0.5];
+semilogx(eDFit,tmpFitObj(eDFit),'-','Color',color,'LineWidth',2);
+hold on
+
 
 % Add some chart decoration
 subplot(3,1,3)

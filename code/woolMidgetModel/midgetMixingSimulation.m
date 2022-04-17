@@ -30,7 +30,7 @@ subjects = {'P1','P2'};
 % THis factor controls the relative influence of the achromatic midget
 % signal for the cortical TSF. A value of unity leads the maximum
 % achromatic midget signal to be equal to the parasol signal at 90°
-midgetInfluenceParam = 3;
+midgetInfluenceParam = 2;
 
 % Define a set of eccentricities in degrees, log spaced and centered within
 % each of the bins of the Mt Sinai data
@@ -197,7 +197,6 @@ color = [0.5 0.5 0.5];
 semilogx(eDFit,tmpFitObj(eDFit),'-','Color',color,'LineWidth',2);
 hold on
 
-
 % Add some chart decoration
 subplot(3,1,3)
 semilogx([21.5 21.5],[10 20],':k');
@@ -210,7 +209,7 @@ h = gca; h.XAxis.Visible = 'off';
 box off
 
 % Add the subject TSFs
-dataEccSupport = eD(2:2:12);
+dataEccSupport = eD(3:2:13);
 semilogx(dataEccSupport,peakFreqData(3,:),'om','LineWidth',2)
 
 % Plot the TSFs

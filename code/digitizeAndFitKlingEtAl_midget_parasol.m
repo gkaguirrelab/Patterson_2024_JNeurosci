@@ -57,23 +57,24 @@ title('OFF midget')
 
 % Send frequencies through parasol and midget filters
 
-w = [1 2 3 4 6 8 12 16 24 32 48 64];
-t = 0:0.001:1.2;
+w = [0.5 1 2 4 6 8 12 16 24 32 48 64];
+t = 0:0.001:2.4;
+PP = 200; %size of parsing bins, must be 200 or less
 
 for x=1:length(w)
     stimulus = sin(2*pi*w(x)*t);
     
-    parse = 1:200:1001;
+    parse = 1:PP:1001;
     
     for y = 1:length(parse)-1
-        ONp = ON_parasol_y(1:201).*stimulus(parse(y):parse(y)+200);
-        OFFp = OFF_parasol_y(1:201).*stimulus(parse(y):parse(y)+200);
+        ONp = ON_parasol_y(1:PP+1).*stimulus(parse(y):parse(y)+PP);
+        OFFp = OFF_parasol_y(1:PP+1).*stimulus(parse(y):parse(y)+PP);
         temp = sum(ONp + OFFp);
         temp(temp<0) = 0;
         parasol(x,y) = temp;
         
-        ONm = ON_midget_y(1:201).*stimulus(parse(y):parse(y)+200);
-        OFFm = OFF_midget_y(1:201).*stimulus(parse(y):parse(y)+200);
+        ONm = ON_midget_y(1:PP+1).*stimulus(parse(y):parse(y)+PP);
+        OFFm = OFF_midget_y(1:PP+1).*stimulus(parse(y):parse(y)+PP);
         temp = sum(ONm + OFFm);
         temp(temp<0) = 0;
         midget(x,y) = temp;
@@ -97,14 +98,17 @@ hold on
 plot(w,parasol,'.k','MarkerSize',12)
 plot(wFit,yFit_parasol,'-k')
 title('parasol')
-ax = gca; ax.Box = 'off'; ax.XScale = 'log';
+ax = gca; ax.Box = 'off'; ax.XScale = 'log'; ax.TickDir = 'out';
+xlabel(sprintf('%1.2g, %1.2g, %1.2g',p1))
 
 subplot(1,2,2)
 hold on
 plot(w,midget,'.k','MarkerSize',12)
 plot(wFit,yFit_midget,'-k')
 title('midget')
-ax = gca; ax.Box = 'off'; ax.XScale = 'log';
+ax = gca; ax.Box = 'off'; ax.XScale = 'log'; ax.TickDir = 'out';
+xlabel(sprintf('%1.2g, %1.2g, %1.2g',p2))
+
 
 %% Local functions
 function [wFit,yFit,yFit2,p] = fitExp(w,Y)
@@ -114,24 +118,19 @@ function [wFit,yFit,yFit2,p] = fitExp(w,Y)
             lb = [0 0 0]; 
             ub = [10 10 2];
             
-            % set minimum to 0
-            scaledY = Y-min(Y);
             
-            % Find the maximum interpolated VEP response
             wDelta = min(diff(log10(w))); % Create a scaled-up, log-spaced, version of the frequency domain
             upScale = 500;
             wFit = 10.^(log10(min(w))-wDelta+wDelta/upScale:wDelta/upScale:log10(max(w))+wDelta);
     
-            % Scale the Y vector so that the max is 1
-            scaledY=scaledY./max(scaledY);
-            myObj=@(p)sqrt(sum((scaledY-watsonTemporalModelvep(w,p)).^2));
+            myObj=@(p)sqrt(sum((Y-watsonTemporalModelvep(w,p)).^2));
             
             p = fmincon(myObj,p0,[],[],[],[],lb,ub);
             
             % calculate model fit and undo scaling
-            yFit = (watsonTemporalModelvep(wFit,p).*(max(Y)-min(Y)))+min(Y);
+            yFit = watsonTemporalModelvep(wFit,p);
             
             yFit(~isfinite(yFit))=nan;
             
-            yFit2 = (watsonTemporalModelvep(w,p).*(max(Y)-min(Y)))+min(Y);
+            yFit2 = watsonTemporalModelvep(w,p);
 end

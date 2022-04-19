@@ -29,9 +29,6 @@ for ss = 1:2
     
     % Create a figure
     figHandle0 = figure();
-    
-    dkl = [];
-    rgb=[];
         
         y = [];
         for ee = 1:length(eccenDivs)-1
@@ -64,6 +61,10 @@ for ss = 1:2
                 set(gca,'XScale','log')
                 set(gca,'TickDir','out')
                 axis off
+
+                yFit_all(ss,dd,ee,:) = yFit;
+                meanResp_all(ss,dd,ee,:) = yBoot(:,500);
+
 
                 % Report the parameters
                 temp = wFit(find(yFit==max(yFit))); 
@@ -130,6 +131,9 @@ for pp = 1:2
                     set(gca,'YLim',[0.1 10])
                     set(gca,'Yscale','log')
 
+                    maxResp(ss,dd,:) = meanVal;
+                    maxRespFit(ss,dd,:) = f(1:0.1:6);
+
                 case 2                  
                     subplot(2,2,P2(ss))
                     hold on
@@ -149,6 +153,9 @@ for pp = 1:2
                     plot(1:0.1:6,f(1:0.1:6),['-' colors{dd}])
                     set(gca,'YLim',[2 25])
                     set(gca,'TickDir','out')
+
+                    peakFreq(ss,dd,:) = meanVal;
+                    peakFreqFit(ss,dd,:) = f(1:0.1:6);
             end
         end 
     end

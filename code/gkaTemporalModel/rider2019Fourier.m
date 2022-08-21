@@ -6,9 +6,10 @@
 %   sensitivity by adjusting the speed and gain of the response to light.
 %   PloS one. 2019 Aug 7;14(8):e0220358.
 %
-% Specifically, the Fourier form of the core model in the appendix (page 2,
-% equation "B"), then transformed to the time domain. Compare the output to
-% the plots at the bottom right of Figure 8 of the main manuscript.
+% Specifically, the Fourier transform of the core model in the appendix
+% (page 2, equation "B"), then transformed to the time domain. Compare the
+% output to the plots at the bottom right of Figure 8 of the main
+% manuscript.
 
 fc = 15; % corner frequency in Hz for 6 stages
 fcl = 30; % corner frequency in Hz for 2 stages
@@ -23,7 +24,7 @@ mySymFourierF = g * ...         % Overall gain
     ( (1i.*f+fc).^6 .* ...      % 6 low-pass stages with corner fc
     (1i .* f + fcl).^2 );       % 2 low-pass stages with corner fcl
 
-% Convert units from frequency to w
+% Convert units from frequency to radians/sec (w)
 mySymFourierW = subs(mySymFourierF,w / (2*pi));
 
 % Use the inverse fourier transform to obtain the response in time

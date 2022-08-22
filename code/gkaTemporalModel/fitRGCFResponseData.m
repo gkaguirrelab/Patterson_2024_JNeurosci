@@ -1,69 +1,75 @@
 % fitRGCFResponseData
 %
 
+
+
+%% Load the flicker response data
+[midgetData, parasolData] = rgcFlickerResponseData();
+
+
+%% Set the p0 values
 g = 5; % Overall gain
-k = 0.85; % relative strength of the "lead compensators" (feedback stages)
-cfLowPass = 12; % Corner frequency of the "cone" low-pass stage
+k = 0.75; % relative strength of the "lead compensators" (feedback stages)
+cfLowPass = 17; % Corner frequency of the "cone" low-pass stage
 cfInhibit = 28; % Corner frequency of the inhibitory stage
 cf2ndStage = 60; % Corner frequency of 2nd order filter
 Q = 1.5; % The "quality" parameter of the 2nd order filter
 surroundWeight = 0.9; % Weight of the surround relative to center
 surroundDelay = 3; % Delay (in msecs) of the surround relative to center
-
-% Create the set of chromatic weights by eccentricity
-%{
-eccDegs = [5, 25, mean([30 47])];
-for ee = 1:3
-    for rr = 1:100
-        LogLMDistribution=makedist('Normal','mu',0.47,'sigma',0.74); %Mu and sigma computed from a fit of Dacey et al. (2000) JOSA 17:589-596, Fig 5A
-        LMratio=exp(random(LogLMDistribution));
-        for cc = 1:1000
-            [tmpCenterWeight(rr,cc),tmpSurroundWeight(rr,cc)] = ...
-                returnChromaticWeights(eccDegs(ee),LMratio);
-        end
-    end
-    chromaticCenterWeight(ee) = mean(abs(tmpCenterWeight(:)));
-    chromaticSurroundWeight(ee) = mean(abs(tmpSurroundWeight(:)));
-end
-%}
-chromaticCenterWeight = [0.9974    0.3943    0.3354];
-chromaticSurroundWeight = [0.3259    0.3292    0.3037];
+LMRatio = 1.5;
 
 
-%% Cell
-[midgetData, parasolData] = rgcFlickerResponseData();
-
-
+%% Define the bounds
 p0Block = [g, k, cfLowPass, cfInhibit, cf2ndStage, Q, surroundWeight, surroundDelay];
-lbBlock = [0, 0.75, 10, 10, 50, 1, 0.5, 2];
-ubBlock = [inf, 0.85, 20, 30, 70, 2, 1.5, 15];
+lbBlock = [0, 0.6, 5, 5, 20, 1, 0.5, 1];
+plbBlock = [3, 0.65, 10, 10, 50, 0.75, 0.75, 2];
+pubBlock = [6, 0.85, 20, 25, 90, 1.25, 1, 15];
+ubBlock = [10, 0.9, 25, 30, 100, 1.5, 1, 20];
 shrinkParams = [false true false true true true true false];
 
+p0 = [p0Block p0Block p0Block LMRatio];
+lb = [lbBlock lbBlock lbBlock 0.1];
+plb = [plbBlock plbBlock plbBlock 0.33];
+pub = [pubBlock pubBlock pubBlock 3];
+ub = [ubBlock ubBlock ubBlock 10];
 
-p0 = [p0Block p0Block p0Block];
-lb = [lbBlock lbBlock lbBlock];
-ub = [ubBlock ubBlock ubBlock];
 
-myObj = @(p) rgcFitObjective(p,chromaticCenterWeight,chromaticSurroundWeight,midgetData,shrinkParams);
+%% Define the objective
+myObj = @(p) rgcFitObjective(p,midgetData,shrinkParams);
 
-p = fmincon(myObj,p0,[],[],[],[],lb,ub,[],[]);
 
-% Plot the results
+%% Search
+p = bads(myObj,p0,lb,ub,plb,pub);
+
+
+%% Plot the results
 eccFields = {'e0','e20','e30'};
-p = reshape(p,[8,3]);
+eccDegs = [5, 25, mean([30 47])];
+
+LMRatio = p(end);
+p = reshape(p(1:24),[8,3]);
 
 for ee = 1:3
+
+    for cc = 1:1000
+        [tmpCenterWeight(cc),tmpSurroundWeight(cc)] = ...
+            returnChromaticWeights(eccDegs(ee),LMRatio);
+    end
+    chromaticCenterWeight = mean(abs(tmpCenterWeight));
+    chromaticSurroundWeight = mean(abs(tmpSurroundWeight));
 
     pBlock = p(:,ee);
 
     g = pBlock(1); k = pBlock(2);
-    cfLowPass = pBlock(3); cfInhibit = pBlock(4); cf2ndStage = p(5); Q = p(6);
-    surroundWeight = p(7); surroundDelay = p(8);
+    cfLowPass = pBlock(3); cfInhibit = pBlock(4); 
+    cf2ndStage = pBlock(5); Q = pBlock(6);
+    surroundWeight = pBlock(7); surroundDelay = pBlock(8);
+
 
     [rfMidgetChrom, rfMidgetLum] = assembleMidgetRFs(...
         g, k, cfLowPass, cfInhibit, cf2ndStage, Q, ...
         surroundWeight, surroundDelay, ...
-        chromaticCenterWeight(ee), chromaticSurroundWeight(ee));
+        chromaticCenterWeight, chromaticSurroundWeight);
 
     figHandle = figure();
     plotRF(rfMidgetLum,figHandle,'-k');
@@ -82,14 +88,23 @@ end
 
 % Local functions
 
-function fVal = rgcFitObjective(p,chromaticCenterWeight,chromaticSurroundWeight,midgetData,shrinkParams)
+function fVal = rgcFitObjective(p,midgetData,shrinkParams)
 
-fVal = [];
 eccFields = {'e0','e20','e30'};
+eccDegs = [5, 25, mean([30 47])];
 
-p = reshape(p,[8,3]);
+LMRatio = p(end);
+p = reshape(p(1:24),[8,3]);
+fVal = [];
 
 for ee = 1:3
+
+    for cc = 1:1000
+        [tmpCenterWeight(cc),tmpSurroundWeight(cc)] = ...
+                returnChromaticWeights(eccDegs(ee),LMRatio);
+    end
+    chromaticCenterWeight = mean(abs(tmpCenterWeight));
+    chromaticSurroundWeight = mean(abs(tmpSurroundWeight));
 
     pBlock = p(:,ee);
     g = pBlock(1); k = pBlock(2);
@@ -100,7 +115,7 @@ for ee = 1:3
     [rfMidgetChrom, rfMidgetLum] = assembleMidgetRFs(...
         g, k, cfLowPass, cfInhibit, cf2ndStage, Q, ...
         surroundWeight, surroundDelay, ...
-        chromaticCenterWeight(ee), chromaticSurroundWeight(ee));
+        chromaticCenterWeight, chromaticSurroundWeight);
 
     fVal = [ fVal, ...
         norm(midgetData.(eccFields{ee}).chromatic.g - abs(eval(subs(rfMidgetChrom,midgetData.(eccFields{ee}).chromatic.f)))), ...

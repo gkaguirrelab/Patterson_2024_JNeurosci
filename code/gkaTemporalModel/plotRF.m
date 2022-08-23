@@ -29,7 +29,7 @@ if ~newFigure
     hold on
 end
 
-loglog(myFreqs,abs(ttfComplex),lineStyle);
+semilogx(myFreqs,abs(ttfComplex),lineStyle);
 ylim([1e-2 1e1]);
 %    axHandle.YTick = [1e-3 1e-2 1e-1 1e0];
 xlabel('frequency [Hz]'); ylabel('gain');

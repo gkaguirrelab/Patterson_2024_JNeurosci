@@ -4,137 +4,215 @@
 
 
 %% Load the flicker response data
-[midgetData, parasolData] = rgcFlickerResponseData();
+[midgetData, parasolData] = loadRGCResponseData();
 
+
+%% Set model constants
+eccFields = {'e0','e20','e30'};
+eccBins = {[0 10],[20 30],[30 47]};
+phaseErrorScale = 1/400;
+shrinkErrorScale = 20;
 
 %% Set the p0 values
-g = 5; % Overall gain
-k = 0.75; % relative strength of the "lead compensators" (feedback stages)
-cfLowPass = 17; % Corner frequency of the "cone" low-pass stage
-cfInhibit = 28; % Corner frequency of the inhibitory stage
-cf2ndStage = 60; % Corner frequency of 2nd order filter
-Q = 1.5; % The "quality" parameter of the 2nd order filter
+g = 4; % Overall gain
+k = 0.67; % relative strength of the "lead compensators" (feedback stages)
+cfLowPass = 15; % Corner frequency of the "bipolar" low-pass stage
+cfInhibit = 25; % Corner frequency of the inhibitory stage
+cf2ndStage = 40; % Corner frequency of 2nd order filter
+Q = 1.0; % The "quality" parameter of the 2nd order filter
 surroundWeight = 0.9; % Weight of the surround relative to center
 surroundDelay = 3; % Delay (in msecs) of the surround relative to center
-LMRatio = 1.5;
+eccProportion = 0.25; % Position within the eccentricity bin to calculate LM ratios
+
+cfCone = 12; % Corner frequency of the "cone" low-pass stage
+coneDelay = 14; % Delay (in msecs) impposed by the "cone" stage
+LMRatio = 1.0; % Ratio of L to M cones
 
 
 %% Define the bounds
-p0Block = [g, k, cfLowPass, cfInhibit, cf2ndStage, Q, surroundWeight, surroundDelay];
-lbBlock = [0, 0.6, 5, 5, 20, 1, 0.5, 1];
-plbBlock = [3, 0.65, 10, 10, 50, 0.75, 0.75, 2];
-pubBlock = [6, 0.85, 20, 25, 90, 1.25, 1, 15];
-ubBlock = [10, 0.9, 25, 30, 100, 1.5, 1, 20];
-shrinkParams = [false true false true true true true false];
+p0Block = [g, k, cfLowPass, cfInhibit, cf2ndStage, Q, surroundWeight, surroundDelay, eccProportion];
+lbBlock =  [0, 0.40, 05, 05, 020, 0.50, 0.0, 01, 0.05];
+plbBlock = [3, 0.50, 10, 10, 050, 0.75, 0.5, 02, 0.10];
+pubBlock = [6, 0.85, 40, 70, 090, 2.50, 1.0, 08, 0.90];
+ubBlock = [10, 0.90, 50, 80, 100, 3.00, 1.5, 10, 0.95];
+shrinkParams = [false false false false false false true false false];
 
-p0 = [p0Block p0Block p0Block LMRatio];
-lb = [lbBlock lbBlock lbBlock 0.1];
-plb = [plbBlock plbBlock plbBlock 0.33];
-pub = [pubBlock pubBlock pubBlock 3];
-ub = [ubBlock ubBlock ubBlock 10];
+p0 = [p0Block p0Block p0Block cfCone coneDelay LMRatio];
+lb = [lbBlock lbBlock lbBlock 05 5 0.1];
+plb = [plbBlock plbBlock plbBlock 10 10 0.33];
+pub = [pubBlock pubBlock pubBlock 20 20 3];
+ub = [ubBlock ubBlock ubBlock 25 25 10];
 
 
 %% Define the objective
-myObj = @(p) rgcFitObjective(p,midgetData,shrinkParams);
+myFit = @(p,verbose) rgcFitObjective(p,midgetData,shrinkParams,eccFields,eccBins,phaseErrorScale,shrinkErrorScale,verbose);
+myObj = @(p) myFit(p,false);
+
+
+%% Options
+% Our objective function is deterministic
+options.UncertaintyHandling = 0;
 
 
 %% Search
-p = bads(myObj,p0,lb,ub,plb,pub);
+p = bads(myObj,p0,lb,ub,plb,pub,@nonbcon,options); 
+
+% Call the objective at the solution to report the fVals
+myFit(p,true);
 
 
 %% Plot the results
-eccFields = {'e0','e20','e30'};
-eccDegs = [5, 25, mean([30 47])];
-
 LMRatio = p(end);
-p = reshape(p(1:24),[8,3]);
+coneDelay = p(end-1);
+cfCone = p(end-2);
+p = reshape(p(1:27),[9,3]);
 
+% Report the common params
+fprintf('cfCone: %2.2f, coneDelay: %2.2f, LMRatio: %2.2f \n',cfCone,coneDelay,LMRatio)
+
+% Dump out the fixed params
+p
+
+% Loop across eccentricity bands
 for ee = 1:3
 
-    for cc = 1:1000
-        [tmpCenterWeight(cc),tmpSurroundWeight(cc)] = ...
-            returnChromaticWeights(eccDegs(ee),LMRatio);
-    end
-    chromaticCenterWeight = mean(abs(tmpCenterWeight));
-    chromaticSurroundWeight = mean(abs(tmpSurroundWeight));
-
+    % Extract the parameter values for this eccentricity band
     pBlock = p(:,ee);
+    eccBin = eccBins{ee};
+    eccField = eccFields{ee};
 
-    g = pBlock(1); k = pBlock(2);
-    cfLowPass = pBlock(3); cfInhibit = pBlock(4); 
-    cf2ndStage = pBlock(5); Q = pBlock(6);
-    surroundWeight = pBlock(7); surroundDelay = pBlock(8);
+    % Get the temporal RFs defined by these parameters
+    [rfMidgetChrom, rfMidgetLum] = parseParams(pBlock, LMRatio, cfCone, coneDelay, eccBin);
 
-
-    [rfMidgetChrom, rfMidgetLum] = assembleMidgetRFs(...
-        g, k, cfLowPass, cfInhibit, cf2ndStage, Q, ...
-        surroundWeight, surroundDelay, ...
-        chromaticCenterWeight, chromaticSurroundWeight);
-
+    % Plot the temporal RFs
     figHandle = figure();
     plotRF(rfMidgetLum,figHandle,'-k');
     plotRF(rfMidgetChrom,figHandle,'-r');
     subplot(3,1,1);
-    loglog(midgetData.(eccFields{ee}).chromatic.f,midgetData.(eccFields{ee}).chromatic.g,'*r');
-    loglog(midgetData.(eccFields{ee}).luminance.f,midgetData.(eccFields{ee}).luminance.g,'*k');
+    loglog(midgetData.(eccField).chromatic.f,midgetData.(eccField).chromatic.g,'*r');
+    loglog(midgetData.(eccField).luminance.f,midgetData.(eccField).luminance.g,'*k');
     subplot(3,1,2);
-    semilogx(midgetData.(eccFields{ee}).chromatic.f,midgetData.(eccFields{ee}).chromatic.p,'*r');
-    semilogx(midgetData.(eccFields{ee}).luminance.f,midgetData.(eccFields{ee}).luminance.p,'*k');
+    semilogx(midgetData.(eccField).chromatic.f,midgetData.(eccField).chromatic.p,'*r');
+    semilogx(midgetData.(eccField).luminance.f,midgetData.(eccField).luminance.p,'*k');
 
 end
-
-
 
 
 % Local functions
 
-function fVal = rgcFitObjective(p,midgetData,shrinkParams)
+function c = nonbcon(p)
 
-eccFields = {'e0','e20','e30'};
-eccDegs = [5, 25, mean([30 47])];
+if isempty(p)
+    c=1;
+end
 
-LMRatio = p(end);
-p = reshape(p(1:24),[8,3]);
-fVal = [];
-
-for ee = 1:3
-
-    for cc = 1:1000
-        [tmpCenterWeight(cc),tmpSurroundWeight(cc)] = ...
-                returnChromaticWeights(eccDegs(ee),LMRatio);
+% Enforce that some parameters, such as delay and filter frequency,
+% increase or decrease in value across eccentricity
+for ii=1:size(p,1)
+    tempP = reshape( squeeze(p(ii,1:27)),[9,3]);
+    if ...
+            any(diff(tempP(3,:))<0) || ... % force cfLowPass to increase with eccentricity
+            any(diff(tempP(5,:))<0) || ... % force cf2ndStage to increase with eccentricity
+            any(diff(tempP(6,:))<0) || ... % force 2nd stage Q to increase with eccentricity
+            any(diff(tempP(7,:))<0) || ... % force surroundWeight to increase with eccentricity
+            any(diff(tempP(8,:))<0)        % force surroundDelay to increase with eccentricity
+        c(ii)=1;
+    else
+        c(ii)=0;
     end
-    chromaticCenterWeight = mean(abs(tmpCenterWeight));
-    chromaticSurroundWeight = mean(abs(tmpSurroundWeight));
+end
+c=c';
+end
 
-    pBlock = p(:,ee);
-    g = pBlock(1); k = pBlock(2);
-    cfLowPass = pBlock(3); cfInhibit = pBlock(4); 
-    cf2ndStage = pBlock(5); Q = pBlock(6);
-    surroundWeight = pBlock(7); surroundDelay = pBlock(8);
+%            any(diff(tempP(4,:))<0) || ... % force cfInhibit to increase with eccentricity
 
-    [rfMidgetChrom, rfMidgetLum] = assembleMidgetRFs(...
-        g, k, cfLowPass, cfInhibit, cf2ndStage, Q, ...
-        surroundWeight, surroundDelay, ...
-        chromaticCenterWeight, chromaticSurroundWeight);
 
-    fVal = [ fVal, ...
-        norm(midgetData.(eccFields{ee}).chromatic.g - abs(eval(subs(rfMidgetChrom,midgetData.(eccFields{ee}).chromatic.f)))), ...
-        norm(midgetData.(eccFields{ee}).luminance.g - abs(eval(subs(rfMidgetLum,midgetData.(eccFields{ee}).luminance.f)))) ...
-        ];
+function [rfMidgetChrom, rfMidgetLum] = parseParams(pBlock, LMRatio, cfCone, coneDelay, eccBin)
+
+g = pBlock(1); k = pBlock(2);
+cfLowPass = pBlock(3); cfInhibit = pBlock(4);
+cf2ndStage = pBlock(5); Q = pBlock(6);
+surroundWeight = pBlock(7); surroundDelay = pBlock(8);
+eccProportion = pBlock(9);
+
+eccDegs = eccBin(1)+eccProportion*(range(eccBin));
+
+tmpCenterWeight = [];
+tmpSurroundWeight = [];
+
+for cc = 1:1000
+    [tmpC,tmpS] = ...
+        returnChromaticWeights(eccDegs,LMRatio);
+    tmpCenterWeight(cc) = tmpC;
+    tmpSurroundWeight(cc) = tmpS;
+end
+chromaticCenterWeight = mean(abs(tmpCenterWeight));
+chromaticSurroundWeight = mean(abs(tmpSurroundWeight));
+
+[rfMidgetChrom, rfMidgetLum] = assembleMidgetRFs(...
+    cfCone, coneDelay, ...
+    g, k, cfLowPass, cfInhibit, cf2ndStage, Q, ...
+    surroundWeight, surroundDelay, ...
+    chromaticCenterWeight, chromaticSurroundWeight);
 
 end
 
-% Take the L2 norm of all of the model fits
-fVal = norm(fVal);
 
-% Add a regularization that will attempt to get the parameter sets to match
+function fVal = rgcFitObjective(p,midgetData,shrinkParams,eccFields,eccBins,phaseErrorScale,shrinkErrorScale,verbose)
+
+LMRatio = p(end);
+coneDelay = p(end-1);
+cfCone = p(end-2);
+p = reshape(p(1:27),[9,3]);
+
+chromGainError = [];
+lumGainError = [];
+chromPhaseError = [];
+lumPhaseError = [];
+
+% Loop across eccentricity bands
+parfor ee = 1:3
+
+    % Extract the parameter values for this eccentricity band
+    pBlock = p(:,ee);
+    eccBin = eccBins{ee};
+    eccField = eccFields{ee};
+
+    % Get the temporal RFs defined by these parameters
+    [rfMidgetChrom, rfMidgetLum] = parseParams(pBlock, LMRatio, cfCone, coneDelay, eccBin);
+
+    % Derive the complex fourier domain TTF from the symbolic equations
+    chromTTF = double(subs(rfMidgetChrom,midgetData.(eccField).chromatic.f));
+    lumTTF = double(subs(rfMidgetLum,midgetData.(eccField).luminance.f));
+
+    % Error in fitting the gain values
+    chromGainError(ee) = norm(midgetData.(eccField).chromatic.g - abs(chromTTF));
+    lumGainError(ee) = norm(midgetData.(eccField).luminance.g - abs(lumTTF));
+
+    % Error in fitting the phase values
+    chromPhaseError(ee) = norm(midgetData.(eccField).chromatic.p - unwrap(angle(chromTTF))*(180/pi));
+    lumPhaseError(ee) = norm(midgetData.(eccField).luminance.p - unwrap(angle(lumTTF))*(180/pi));
+
+end
+
+% Take the L2 norm of all of the model fits, scaling the phase values
+fValGain = norm([lumGainError chromGainError]);
+fValPhase = norm([lumPhaseError chromPhaseError])*phaseErrorScale;
+
+% Calculate a regularization that attempts to match parameter values
 % across eccentricity
-shrink = norm(std(p(shrinkParams,:),[],2)./mean(p(shrinkParams,:),2));
-fprintf('fVal: %2.2f, shrink: %2.2f \n',fVal,shrink);
-fVal = fVal + shrink;
+fValShrink = shrinkErrorScale * norm(std(p(shrinkParams,:),[],2)./mean(p(shrinkParams,:),2));
+
+% Report the values
+if verbose
+    fprintf('fValGain: %2.2f, fValPhase: %2.2f, shrink: %2.2f \n',fValGain,fValPhase,fValShrink);
+end
+
+% Combine errors
+fVal = fValGain + fValPhase + fValShrink;
 
 if isnan(fVal)
-    foo=1;
+    error('Encountered a nan value in the objective function');
 end
 
 end

@@ -1,7 +1,7 @@
 % fitRGCFResponseData
 %
 
-
+rng;
 
 %% Load the flicker response data
 [midgetData, parasolData] = loadRGCResponseData();
@@ -13,14 +13,15 @@ eccBins = {[0 10],[20 30],[30 47]};
 phaseErrorScale = 1/400;
 shrinkErrorScale = 20;
 
+
 %% Set the p0 values
 g = 4; % Overall gain
 k = 0.67; % relative strength of the "lead compensators" (feedback stages)
-cfLowPass = 15; % Corner frequency of the "bipolar" low-pass stage
-cfInhibit = 25; % Corner frequency of the inhibitory stage
+cfLowPass = 20; % Corner frequency of the "bipolar" low-pass stage
+cfInhibit = 20; % Corner frequency of the inhibitory stage
 cf2ndStage = 40; % Corner frequency of 2nd order filter
 Q = 1.0; % The "quality" parameter of the 2nd order filter
-surroundWeight = 0.9; % Weight of the surround relative to center
+surroundWeight = 0.8667; % Weight of the surround relative to center
 surroundDelay = 3; % Delay (in msecs) of the surround relative to center
 eccProportion = 0.25; % Position within the eccentricity bin to calculate LM ratios
 
@@ -82,7 +83,7 @@ for ee = 1:3
     eccField = eccFields{ee};
 
     % Get the temporal RFs defined by these parameters
-    [rfMidgetChrom, rfMidgetLum] = parseParams(pBlock, LMRatio, cfCone, coneDelay, eccBin);
+    [rfMidgetChrom, rfMidgetLum, eccDegs] = parseParams(pBlock, LMRatio, cfCone, coneDelay, eccBin);
 
     % Plot the temporal RFs
     figHandle = figure();
@@ -91,6 +92,7 @@ for ee = 1:3
     subplot(3,1,1);
     loglog(midgetData.(eccField).chromatic.f,midgetData.(eccField).chromatic.g,'*r');
     loglog(midgetData.(eccField).luminance.f,midgetData.(eccField).luminance.g,'*k');
+    title(sprintf('Eccentricity = %2.1f',eccDegs));
     subplot(3,1,2);
     semilogx(midgetData.(eccField).chromatic.f,midgetData.(eccField).chromatic.p,'*r');
     semilogx(midgetData.(eccField).luminance.f,midgetData.(eccField).luminance.p,'*k');
@@ -127,7 +129,7 @@ end
 %            any(diff(tempP(4,:))<0) || ... % force cfInhibit to increase with eccentricity
 
 
-function [rfMidgetChrom, rfMidgetLum] = parseParams(pBlock, LMRatio, cfCone, coneDelay, eccBin)
+function [rfMidgetChrom, rfMidgetLum, eccDegs] = parseParams(pBlock, LMRatio, cfCone, coneDelay, eccBin)
 
 g = pBlock(1); k = pBlock(2);
 cfLowPass = pBlock(3); cfInhibit = pBlock(4);

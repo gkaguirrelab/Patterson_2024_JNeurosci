@@ -17,7 +17,6 @@ shrinkErrorScale = 20;
 %% Set the p0 values
 g = 4; % Overall gain
 k = 0.67; % relative strength of the "lead compensators" (feedback stages)
-cfLowPass = 20; % Corner frequency of the "bipolar" low-pass stage
 cfInhibit = 20; % Corner frequency of the inhibitory stage
 cf2ndStage = 40; % Corner frequency of 2nd order filter
 Q = 1.0; % The "quality" parameter of the 2nd order filter
@@ -25,18 +24,18 @@ surroundWeight = 0.8667; % Weight of the surround relative to center
 surroundDelay = 3; % Delay (in msecs) of the surround relative to center
 eccProportion = 0.25; % Position within the eccentricity bin to calculate LM ratios
 
-cfCone = 12; % Corner frequency of the "cone" low-pass stage
+cfCone = 15; % Corner frequency of the "cone" low-pass stage
 coneDelay = 14; % Delay (in msecs) impposed by the "cone" stage
 LMRatio = 1.0; % Ratio of L to M cones
 
 
 %% Define p0 and bounds
-p0Block = [g, k, cfLowPass, cfInhibit, cf2ndStage, Q, surroundWeight, surroundDelay, eccProportion];
-lbBlock =  [0, 0.40, 05, 05, 020, 0.50, 0.0, 01, 0.05];
-plbBlock = [3, 0.50, 10, 10, 050, 0.75, 0.5, 02, 0.10];
-pubBlock = [6, 0.85, 40, 70, 090, 2.50, 1.0, 08, 0.90];
-ubBlock = [10, 0.90, 50, 80, 100, 3.00, 1.5, 10, 0.95];
-shrinkParams = [false false true false false false true false false];
+p0Block = [g, k, cfInhibit, cf2ndStage, Q, surroundWeight, surroundDelay, eccProportion];
+lbBlock =  [0, 0.40, 05, 020, 0.50, 0.0, 01, 0.05];
+plbBlock = [3, 0.50, 10, 050, 0.75, 0.5, 02, 0.10];
+pubBlock = [6, 0.85, 70, 090, 2.50, 1.0, 08, 0.90];
+ubBlock = [10, 0.90, 80, 100, 3.00, 1.5, 10, 0.95];
+shrinkParams = [false false false false false true false false];
 
 p0 = [p0Block p0Block p0Block cfCone coneDelay LMRatio];
 lb = [lbBlock lbBlock lbBlock 05 5 0.1];
@@ -44,22 +43,27 @@ plb = [plbBlock plbBlock plbBlock 10 10 0.33];
 pub = [pubBlock pubBlock pubBlock 20 20 3];
 ub = [ubBlock ubBlock ubBlock 25 25 10];
 
+nBlockParams = length(p0Block);
+nEccBands = length(eccFields);
+
 % Could replace the default p0 here with a seed from a prior search
-p0 = [ 3.2428, 0.5920, 20.2840, 6.5189, 41.4429, 1.1746, 0.8646, 2.1941, 0.6054, 3.8758, 0.6809, 20.2869, 18.3447, 41.4600, 1.1795, 0.8647, 2.1946, 0.0501, 4.0142, 0.7000, 20.2882, 31.0958, 51.7202, 2.4805, 0.8647, 4.3085, 0.2639, 11.3229, 13.7054, 1.0001 ];
+% fValGain: 1.61, fValPhase: 0.68, shrink: 0.00  
+p0 = [ 3.4416, 0.5812, 6.6298, 40.0833, 1.1608, 0.8618, 2.1016, 0.7928, 3.8775, 0.6818, 19.3453, 41.1886, 1.2086, 0.8618, 2.1189, 0.0500, 4.0063, 0.7101, 31.3832, 52.0082, 2.5065, 0.8619, 4.3378, 0.4555, 15.1184, 13.6459, 1.0022 ];
 
 
-%% Define the objective
-myFit = @(p,verbose) rgcFitObjective(p,midgetData,shrinkParams,eccFields,eccBins,phaseErrorScale,shrinkErrorScale,verbose);
+%% Define the objective and non-linear bound
+myFit = @(p,verbose) rgcFitObjective(p,midgetData,shrinkParams,nBlockParams,eccFields,eccBins,phaseErrorScale,shrinkErrorScale,verbose);
 myObj = @(p) myFit(p,false);
+myNonbcon = @(p) nonbcon(p,nBlockParams,nEccBands);
 
 
 %% Options
-% Our objective function is deterministic
+% The objective function is deterministic
 options.UncertaintyHandling = 0;
 
 
 %% Search
-p = bads(myObj,p0,lb,ub,plb,pub,@nonbcon,options); 
+p = bads(myObj,p0,lb,ub,plb,pub,myNonbcon,options); 
 
 % Call the objective at the solution to report the fVals
 myFit(p,true);
@@ -75,7 +79,7 @@ fprintf(str);
 LMRatio = p(end);
 coneDelay = p(end-1);
 cfCone = p(end-2);
-p = reshape(p(1:27),[9,3]);
+p = reshape(p(1:nBlockParams*3),[nBlockParams,nEccBands]);
 
 % Report the common params
 fprintf('cfCone: %2.2f, coneDelay: %2.2f, LMRatio: %2.2f \n',cfCone,coneDelay,LMRatio)
@@ -83,12 +87,8 @@ fprintf('cfCone: %2.2f, coneDelay: %2.2f, LMRatio: %2.2f \n',cfCone,coneDelay,LM
 % Dump out the reshaped p values
 p
 
-% Plot the temporal receptive fields at the "cone" and "bipolar" stages
-figHandle = figure();
-
-
 % Plot each eccentricity band
-for ee = 1:3
+for ee = 1:nEccBands
 
     % Extract the parameter values for this eccentricity band
     pBlock = p(:,ee);
@@ -115,9 +115,9 @@ for ee = 1:3
 end
 
 
-% Local functions
+%% Local functions
 
-function c = nonbcon(p)
+function c = nonbcon(p,nBlockParams,nEccBands)
 
 if isempty(p)
     c=1;
@@ -126,14 +126,13 @@ end
 % Enforce that some parameters, such as delay and filter frequency,
 % increase or decrease in value across eccentricity
 for ii=1:size(p,1)
-    tempP = reshape( squeeze(p(ii,1:27)),[9,3]);
+    tempP = reshape( squeeze(p(ii,1:nBlockParams*nEccBands)),[nBlockParams,nEccBands]);
     if ...
-            any(diff(tempP(3,:))<0) || ... % force cfLowPass to increase with eccentricity
-            any(diff(tempP(4,:))<0) || ... % force cfInhibit to increase with eccentricity
-            any(diff(tempP(5,:))<0) || ... % force cf2ndStage to increase with eccentricity
-            any(diff(tempP(6,:))<0) || ... % force 2nd stage Q to increase with eccentricity
-            any(diff(tempP(7,:))<0) || ... % force surroundWeight to increase with eccentricity
-            any(diff(tempP(8,:))<0)        % force surroundDelay to increase with eccentricity
+            any(diff(tempP(3,:))<0) || ... % force cfInhibit to increase with eccentricity
+            any(diff(tempP(4,:))<0) || ... % force cf2ndStage to increase with eccentricity
+            any(diff(tempP(5,:))<0) || ... % force 2nd stage Q to increase with eccentricity
+            any(diff(tempP(6,:))<0) || ... % force surroundWeight to increase with eccentricity
+            any(diff(tempP(7,:))<0)        % force surroundDelay to increase with eccentricity
         c(ii)=1;
     else
         c(ii)=0;
@@ -147,10 +146,9 @@ end
 function [rfMidgetChrom, rfMidgetLum, eccDegs, rfLMCone, rfBipolar] = parseParams(pBlock, LMRatio, cfCone, coneDelay, eccBin)
 
 g = pBlock(1); k = pBlock(2);
-cfLowPass = pBlock(3); cfInhibit = pBlock(4);
-cf2ndStage = pBlock(5); Q = pBlock(6);
-surroundWeight = pBlock(7); surroundDelay = pBlock(8);
-eccProportion = pBlock(9);
+cfInhibit = pBlock(3); cf2ndStage = pBlock(4); Q = pBlock(5);
+surroundWeight = pBlock(6); surroundDelay = pBlock(7);
+eccProportion = pBlock(8);
 
 eccDegs = eccBin(1)+eccProportion*(range(eccBin));
 
@@ -168,19 +166,20 @@ chromaticSurroundWeight = mean(abs(tmpSurroundWeight));
 
 [rfLMCone, rfBipolar, rfMidgetChrom, rfMidgetLum] = assembleMidgetRFs(...
     cfCone, coneDelay, ...
-    g, k, cfLowPass, cfInhibit, cf2ndStage, Q, ...
+    g, k, cfInhibit, cf2ndStage, Q, ...
     surroundWeight, surroundDelay, ...
     chromaticCenterWeight, chromaticSurroundWeight);
 
 end
 
 
-function fVal = rgcFitObjective(p,midgetData,shrinkParams,eccFields,eccBins,phaseErrorScale,shrinkErrorScale,verbose)
+function fVal = rgcFitObjective(p,midgetData,shrinkParams,nBlockParams,eccFields,eccBins,phaseErrorScale,shrinkErrorScale,verbose)
+
 
 LMRatio = p(end);
 coneDelay = p(end-1);
 cfCone = p(end-2);
-p = reshape(p(1:27),[9,3]);
+p = reshape(p(1:nBlockParams*3),[nBlockParams,3]);
 
 chromGainError = [];
 lumGainError = [];
@@ -188,7 +187,7 @@ chromPhaseError = [];
 lumPhaseError = [];
 
 % Loop across eccentricity bands
-parfor ee = 1:3
+parfor ee = 1:length(eccFields)
 
     % Extract the parameter values for this eccentricity band
     pBlock = p(:,ee);

@@ -45,7 +45,7 @@ pub = [pubBlock pubBlock pubBlock 20 20 3];
 ub = [ubBlock ubBlock ubBlock 25 25 10];
 
 % Could replace the default p0 here with a seed from a prior search
-p0 = [ 3.2349, 0.5602, 20.3459, 6.7656, 37.0300, 1.1764, 0.8660, 2.1559, 0.5666, 3.8874, 0.6698, 20.3507, 18.4279, 41.1618, 1.1836, 0.8660, 2.1697, 0.0539, 4.0221, 0.7045, 20.3529, 30.9465, 51.8262, 2.4282, 0.8661, 4.3276, 0.0784, 12.1493, 13.8350, 0.9980 ];
+p0 = [ 3.2428, 0.5920, 20.2840, 6.5189, 41.4429, 1.1746, 0.8646, 2.1941, 0.6054, 3.8758, 0.6809, 20.2869, 18.3447, 41.4600, 1.1795, 0.8647, 2.1946, 0.0501, 4.0142, 0.7000, 20.2882, 31.0958, 51.7202, 2.4805, 0.8647, 4.3085, 0.2639, 11.3229, 13.7054, 1.0001 ];
 
 
 %% Define the objective
@@ -101,10 +101,9 @@ for ee = 1:3
 
     % Plot the temporal RFs
     figHandle = figure();
-    plotRF(rfLMCone,figHandle,'-g');
-    plotRF(rfBipolar,figHandle,'-b');
     plotRF(rfMidgetLum,figHandle,'-k');
     plotRF(rfMidgetChrom,figHandle,'-r');
+    plotRF(rfLMCone,figHandle,'-g',3);
     subplot(3,1,1);
     loglog(midgetData.(eccField).chromatic.f,midgetData.(eccField).chromatic.g,'*r');
     loglog(midgetData.(eccField).luminance.f,midgetData.(eccField).luminance.g,'*k');

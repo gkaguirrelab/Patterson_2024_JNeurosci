@@ -30,19 +30,22 @@ coneDelay = 14; % Delay (in msecs) impposed by the "cone" stage
 LMRatio = 1.0; % Ratio of L to M cones
 
 
-%% Define the bounds
+%% Define p0 and bounds
 p0Block = [g, k, cfLowPass, cfInhibit, cf2ndStage, Q, surroundWeight, surroundDelay, eccProportion];
 lbBlock =  [0, 0.40, 05, 05, 020, 0.50, 0.0, 01, 0.05];
 plbBlock = [3, 0.50, 10, 10, 050, 0.75, 0.5, 02, 0.10];
 pubBlock = [6, 0.85, 40, 70, 090, 2.50, 1.0, 08, 0.90];
 ubBlock = [10, 0.90, 50, 80, 100, 3.00, 1.5, 10, 0.95];
-shrinkParams = [false false false false false false true false false];
+shrinkParams = [false false true false false false true false false];
 
 p0 = [p0Block p0Block p0Block cfCone coneDelay LMRatio];
 lb = [lbBlock lbBlock lbBlock 05 5 0.1];
 plb = [plbBlock plbBlock plbBlock 10 10 0.33];
 pub = [pubBlock pubBlock pubBlock 20 20 3];
 ub = [ubBlock ubBlock ubBlock 25 25 10];
+
+% Could replace the default p0 here with a seed from a prior search
+p0 = [ 3.2349, 0.5602, 20.3459, 6.7656, 37.0300, 1.1764, 0.8660, 2.1559, 0.5666, 3.8874, 0.6698, 20.3507, 18.4279, 41.1618, 1.1836, 0.8660, 2.1697, 0.0539, 4.0221, 0.7045, 20.3529, 30.9465, 51.8262, 2.4282, 0.8661, 4.3276, 0.0784, 12.1493, 13.8350, 0.9980 ];
 
 
 %% Define the objective
@@ -61,8 +64,14 @@ p = bads(myObj,p0,lb,ub,plb,pub,@nonbcon,options);
 % Call the objective at the solution to report the fVals
 myFit(p,true);
 
+% Print the parameters in a format to be used as a seed in future searches 
+str = 'p0 = [ ';
+for ss=1:length(p); str = [str sprintf('%2.4f, ',p(ss))]; end
+str = [str(1:end-2) ' ];\n'];
+fprintf(str);
 
-%% Plot the results
+
+%% Report the results
 LMRatio = p(end);
 coneDelay = p(end-1);
 cfCone = p(end-2);
@@ -71,10 +80,14 @@ p = reshape(p(1:27),[9,3]);
 % Report the common params
 fprintf('cfCone: %2.2f, coneDelay: %2.2f, LMRatio: %2.2f \n',cfCone,coneDelay,LMRatio)
 
-% Dump out the fixed params
+% Dump out the reshaped p values
 p
 
-% Loop across eccentricity bands
+% Plot the temporal receptive fields at the "cone" and "bipolar" stages
+figHandle = figure();
+
+
+% Plot each eccentricity band
 for ee = 1:3
 
     % Extract the parameter values for this eccentricity band
@@ -83,10 +96,13 @@ for ee = 1:3
     eccField = eccFields{ee};
 
     % Get the temporal RFs defined by these parameters
-    [rfMidgetChrom, rfMidgetLum, eccDegs] = parseParams(pBlock, LMRatio, cfCone, coneDelay, eccBin);
+    [rfMidgetChrom, rfMidgetLum, eccDegs, rfLMCone, rfBipolar] = ...
+        parseParams(pBlock, LMRatio, cfCone, coneDelay, eccBin);
 
     % Plot the temporal RFs
     figHandle = figure();
+    plotRF(rfLMCone,figHandle,'-g');
+    plotRF(rfBipolar,figHandle,'-b');
     plotRF(rfMidgetLum,figHandle,'-k');
     plotRF(rfMidgetChrom,figHandle,'-r');
     subplot(3,1,1);
@@ -114,6 +130,7 @@ for ii=1:size(p,1)
     tempP = reshape( squeeze(p(ii,1:27)),[9,3]);
     if ...
             any(diff(tempP(3,:))<0) || ... % force cfLowPass to increase with eccentricity
+            any(diff(tempP(4,:))<0) || ... % force cfInhibit to increase with eccentricity
             any(diff(tempP(5,:))<0) || ... % force cf2ndStage to increase with eccentricity
             any(diff(tempP(6,:))<0) || ... % force 2nd stage Q to increase with eccentricity
             any(diff(tempP(7,:))<0) || ... % force surroundWeight to increase with eccentricity
@@ -126,10 +143,9 @@ end
 c=c';
 end
 
-%            any(diff(tempP(4,:))<0) || ... % force cfInhibit to increase with eccentricity
 
 
-function [rfMidgetChrom, rfMidgetLum, eccDegs] = parseParams(pBlock, LMRatio, cfCone, coneDelay, eccBin)
+function [rfMidgetChrom, rfMidgetLum, eccDegs, rfLMCone, rfBipolar] = parseParams(pBlock, LMRatio, cfCone, coneDelay, eccBin)
 
 g = pBlock(1); k = pBlock(2);
 cfLowPass = pBlock(3); cfInhibit = pBlock(4);
@@ -151,7 +167,7 @@ end
 chromaticCenterWeight = mean(abs(tmpCenterWeight));
 chromaticSurroundWeight = mean(abs(tmpSurroundWeight));
 
-[rfMidgetChrom, rfMidgetLum] = assembleMidgetRFs(...
+[rfLMCone, rfBipolar, rfMidgetChrom, rfMidgetLum] = assembleMidgetRFs(...
     cfCone, coneDelay, ...
     g, k, cfLowPass, cfInhibit, cf2ndStage, Q, ...
     surroundWeight, surroundDelay, ...

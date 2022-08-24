@@ -1,8 +1,13 @@
 % fitRGCFResponseData
 %
+% Loads RGC temporal sensitivity data from Solomon et al (2002, 2005) and
+% then fits these data in the complex fourier domain using a cascading
+% low-pass filter model. 
+%
 
+% Reset the random number generator to provide co
 rng;
-searchFlag = false;
+searchFlag = true;
 
 
 %% Load the flicker response data
@@ -34,28 +39,32 @@ LMRatio = 1.0; % Ratio of L to M cones
 %% Define p0 and bounds
 blockParamNames = {'g','k','cfInhibit', 'cf2ndStage', 'Q', 'surroundWeight', 'surroundDelay', 'eccProportion'};
 p0Block = [g, k, cfInhibit, cf2ndStage, Q, surroundWeight, surroundDelay, eccProportion];
-lbBlock =  [0, 0.40, 05, 020, 0.50, 0.0, 01, 0.05];
-plbBlock = [3, 0.50, 10, 050, 0.75, 0.5, 02, 0.10];
-pubBlock = [6, 0.85, 70, 090, 2.50, 1.0, 08, 0.90];
-ubBlock = [10, 0.90, 80, 100, 3.00, 1.5, 10, 0.95];
-shrinkParams = [false false false false false true false false];
+lbBlock =  [2, 0.01, 01, 20, 0.25, 0.7, 01, 0.05];
+plbBlock = [3, 0.40, 02, 30, 0.50, 0.8, 02, 0.10];
+pubBlock = [5, 0.80, 40, 60, 2.50, 1.0, 05, 0.90];
+ubBlock =  [6, 0.90, 60, 90, 3.00, 1.1, 10, 0.95];
+shrinkParams = {...
+    [false false false false false true false false], ... % midget shrink
+    [true true true false false true true true] ...       % parasol shrink
+    };
 
-p0 = [p0Block p0Block p0Block cfCone coneDelay LMRatio];
-lb = [lbBlock lbBlock lbBlock 05 5 0.1];
-plb = [plbBlock plbBlock plbBlock 10 10 0.33];
-pub = [pubBlock pubBlock pubBlock 20 20 3];
-ub = [ubBlock ubBlock ubBlock 25 25 10];
+p0 = [p0Block p0Block p0Block p0Block p0Block p0Block cfCone coneDelay LMRatio];
+lb = [lbBlock lbBlock lbBlock lbBlock lbBlock lbBlock 10 10 0.50];
+plb = [plbBlock plbBlock plbBlock plbBlock plbBlock plbBlock 12 12 0.90];
+pub = [pubBlock pubBlock pubBlock pubBlock pubBlock pubBlock 18 15 1.10];
+ub = [ubBlock ubBlock ubBlock ubBlock ubBlock ubBlock 20 18 2.00];
 
 nBlockParams = length(p0Block);
 nEccBands = length(eccFields);
+nCellClasses = 2;
 
 % Here is a seed from a prior search with good performance
-% fValGain: 1.60, fValPhase: 0.67, shrink: 0.00
-p0 = [ 3.4397165179, 0.5859245405, 6.7901217937, 40.0400388241, 1.1437500417, 0.8688447177, 2.0883977413, 0.7998218775, 3.8780929148, 0.6806570783, 19.3246120214, 40.4715168476, 1.2194156796, 0.8688532561, 2.1265215874, 0.0543420553, 4.0079992712, 0.7113094196, 31.2511581182, 51.9151723385, 2.5076012462, 0.8688690066, 4.3271616101, 0.3479259253, 15.1120990515, 13.7365531921, 1.0085806677 ];
+% fValGain: 4.53, fValPhase: 0.63, shrinkMidget: 0.00, shrinkParasol: 0.10 
+p0 = [ 3.2832766771, 0.5869017720, 5.6224342804, 38.6179661751, 1.2765139937, 0.8945801139, 2.2711495161, 0.7119268656, 3.7975504398, 0.6717520714, 15.9822773454, 41.3446515799, 1.3080786467, 0.8946221888, 2.2795695066, 0.1550450563, 4.0466696024, 0.7272899985, 32.5966460044, 51.7450073361, 2.5190134645, 0.8946240008, 3.9494566917, 0.4883407354, 4.0075089931, 0.4785271406, 4.5361354048, 33.8026463985, 0.6534774899, 0.9341797292, 3.7295443416, 0.4988916636, 4.0461232066, 0.4786982656, 4.5361491743, 55.3475332260, 0.6540495753, 0.9343281448, 3.7301388979, 0.4995038033, 4.0255140662, 0.4789317966, 4.5378192406, 58.7253302336, 2.4650032520, 0.9344518602, 3.7305910289, 0.4999736309, 14.1357336044, 13.6896866262, 0.9967510045 ];
 
 
 %% Define the objective and non-linear bound
-myFit = @(p,verbose) rgcFitObjective(p,midgetData,shrinkParams,nBlockParams,eccFields,eccBins,phaseErrorScale,shrinkErrorScale,verbose);
+myFit = @(p,verbose) rgcFitObjective(p,midgetData,parasolData,shrinkParams,nBlockParams,eccFields,eccBins,phaseErrorScale,shrinkErrorScale,verbose);
 myObj = @(p) myFit(p,false);
 myNonbcon = @(p) nonbcon(p,nBlockParams,nEccBands);
 
@@ -86,7 +95,7 @@ fprintf(str);
 LMRatio = p(end);
 coneDelay = p(end-1);
 cfCone = p(end-2);
-p = reshape(p(1:nBlockParams*3),[nBlockParams,nEccBands]);
+p = reshape(p(1:nBlockParams*nEccBands*nCellClasses),[nBlockParams,nEccBands,nCellClasses]);
 
 % Report the common params
 fprintf('cfCone: %2.2f, coneDelay: %2.2f, LMRatio: %2.2f \n',cfCone,coneDelay,LMRatio)
@@ -97,16 +106,16 @@ p
 % Plot each eccentricity band
 for ee = 1:nEccBands
 
-    % Extract the parameter values for this eccentricity band
-    pBlock = p(:,ee);
+    % Extract the midget parameter values for this eccentricity band
+    pBlock = squeeze(p(:,ee,1));
     eccBin = eccBins{ee};
     eccField = eccFields{ee};
 
-    % Get the temporal RFs defined by these parameters
-    [rfMidgetChrom, rfMidgetLum, eccDegs(ee), rfLMCone, rfBipolar] = ...
-        parseParams(pBlock, LMRatio, cfCone, coneDelay, eccBin);
+    % Get the midget temporal RFs defined by these parameters
+    [rfMidgetChrom, rfMidgetLum, eccDegs(ee), rfLMCone] = ...
+        parseParamsMidget(pBlock, LMRatio, cfCone, coneDelay, eccBin);
 
-    % Plot the temporal RFs
+    % Plot the midget temporal RFs
     figHandle = figure();
     plotRF(rfMidgetLum,figHandle,'-k');
     plotRF(rfMidgetChrom,figHandle,'-r');
@@ -119,42 +128,65 @@ for ee = 1:nEccBands
     semilogx(midgetData.(eccField).chromatic.f,midgetData.(eccField).chromatic.p,'*r');
     semilogx(midgetData.(eccField).luminance.f,midgetData.(eccField).luminance.p,'*k');
 
+
+    % Extract the parasol parameter values for this eccentricity band
+    pBlock = squeeze(p(:,ee,2));
+
+     % Get the parasol temporal RF defined by these parameters
+     [rfParasaolLum, rfLMCone, rfBipolar] = ...
+        parseParamsParasol(pBlock, cfCone, coneDelay);
+
+    % Plot the parasol temporal RF
+    figHandle = figure();
+    plotRF(rfParasaolLum,figHandle,'-b');
+    plotRF(rfLMCone,figHandle,'-g',3);
+    subplot(3,1,1);
+    hold on
+    loglog(parasolData.(eccField).luminance.f,parasolData.(eccField).luminance.g,'*b');
+    title(sprintf('Eccentricity = %2.1f',eccDegs(ee)));
+
 end
 
 % Plot the parameters vs. eccentricity and obtain params x eccentricity
-figure
-pByEccExpParams = nan(nBlockParams,4);
+pByEccExpParams = nan(nBlockParams,2,4);
 optionsFMINCON = optimoptions('fmincon','Display','off');
 
 sigmoidFit = @(x,support) x(1) + x(2) - x(2)*exp( - (support./x(3)).^x(4) );
 
-for ii=1:nBlockParams-1
-    subplot(4,2,ii)
-    y = p(ii,:);
-    plot(eccDegs,y,'ok')
-    hold on
-    x0 = [y(1),range(y),mean(eccDegs),10];
-    myPlotFitObj = @(x) norm(sigmoidFit(x,eccDegs)-y);
-    pByEccExpParams(ii,:)=fmincon(myPlotFitObj,x0,[],[],[],[],[],[],[],optionsFMINCON);
-    eccDegsFit = 1:max(eccDegs)*1.05;
-    plot(eccDegsFit,sigmoidFit(pByEccExpParams(ii,:),eccDegsFit),'-r')
-    title(blockParamNames{ii})
-    xlabel('Eccentricity [deg]'); ylabel('param value')
-    if ii==paramToHold
-        ylim([0 1]);
+for cc=1:2
+    figure
+    for ii=1:nBlockParams-1
+        subplot(4,2,ii)
+        y = squeeze(p(ii,:,cc));
+        plot(eccDegs,y,'ok')
+        hold on
+        x0 = [y(1),range(y),mean(eccDegs),10];
+        myPlotFitObj = @(x) norm(sigmoidFit(x,eccDegs)-y);
+        pByEccExpParams(ii,cc,:)=fmincon(myPlotFitObj,x0,[],[],[],[],[],[],[],optionsFMINCON);
+        eccDegsFit = 1:max(eccDegs)*1.05;
+        plot(eccDegsFit,sigmoidFit(pByEccExpParams(ii,cc,:),eccDegsFit),'-r')
+        title(blockParamNames{ii})
+        xlabel('Eccentricity [deg]'); ylabel('param value')
+        ylim([lbBlock(ii) ubBlock(ii)]);
+    end
+    switch cc
+        case 1
+            sgtitle('Midget parameters')
+        case 2
+            sgtitle('Parasol parameters')
     end
 end
 
-
 %% Save the midgetModel structure
-midgetModel.pByEccExpParams = pByEccExpParams;
-midgetModel.blockParamNames = blockParamNames;
-midgetModel.LMRatio = LMRatio;
-midgetModel.coneDelay = coneDelay;
-midgetModel.cfCone = cfCone;
+temporalModel.pByEccExpParams = pByEccExpParams;
+temporalModel.blockParamNames = blockParamNames;
+temporalModel.LMRatio = LMRatio;
+temporalModel.coneDelay = coneDelay;
+temporalModel.cfCone = cfCone;
+temporalModel.eccDegs = eccDegs;
 
-savePath = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults','midgetModel.mat');
-save(savePath,'midgetModel');
+savePath = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults','temporalModel.mat');
+save(savePath,'temporalModel');
 
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -169,24 +201,28 @@ end
 % Enforce that some parameters, such as delay and filter frequency,
 % increase or decrease in value across eccentricity
 for ii=1:size(p,1)
-    tempP = reshape( squeeze(p(ii,1:nBlockParams*nEccBands)),[nBlockParams,nEccBands]);
-    if ...
-            any(diff(tempP(3,:))<0) || ... % force cfInhibit to increase with eccentricity
-            any(diff(tempP(4,:))<0) || ... % force cf2ndStage to increase with eccentricity
-            any(diff(tempP(5,:))<0) || ... % force 2nd stage Q to increase with eccentricity
-            any(diff(tempP(6,:))<0) || ... % force surroundWeight to increase with eccentricity
-            any(diff(tempP(7,:))<0)        % force surroundDelay to increase with eccentricity
-        c(ii)=1;
-    else
-        c(ii)=0;
+    subP = p(ii,:);
+    subP = reshape(subP(1:nBlockParams*nEccBands*2),[nBlockParams,nEccBands,2]);
+    for cc=1:2
+        tempP=squeeze(subP(:,:,cc));
+        if ...
+                any(diff(tempP(3,:))<0) || ... % force cfInhibit to increase with eccentricity
+                any(diff(tempP(4,:))<0) || ... % force cf2ndStage to increase with eccentricity
+                any(diff(tempP(5,:))<0) || ... % force 2nd stage Q to increase with eccentricity
+                any(diff(tempP(6,:))<0) || ... % force surroundWeight to increase with eccentricity
+                any(diff(tempP(7,:))<0)        % force surroundDelay to increase with eccentricity
+            c(ii,cc)=1;
+        else
+            c(ii,cc)=0;
+        end
     end
 end
-c=c';
+c=any(c')';
 end
 
 
 
-function [rfMidgetChrom, rfMidgetLum, eccDegs, rfLMCone, rfBipolar] = parseParams(pBlock, LMRatio, cfCone, coneDelay, eccBin)
+function [rfMidgetChrom, rfMidgetLum, eccDegs, rfLMCone, rfBipolar] = parseParamsMidget(pBlock, LMRatio, cfCone, coneDelay, eccBin)
 
 g = pBlock(1); k = pBlock(2);
 cfInhibit = pBlock(3); cf2ndStage = pBlock(4); Q = pBlock(5);
@@ -216,13 +252,28 @@ chromaticSurroundWeight = mean(abs(tmpSurroundWeight));
 end
 
 
-function fVal = rgcFitObjective(p,midgetData,shrinkParams,nBlockParams,eccFields,eccBins,phaseErrorScale,shrinkErrorScale,verbose)
+function [rfParasaolLum, rfLMCone, rfBipolar] = parseParamsParasol(pBlock, cfCone, coneDelay)
+
+g = pBlock(1); k = pBlock(2);
+cfInhibit = pBlock(3); cf2ndStage = pBlock(4); Q = pBlock(5);
+surroundWeight = pBlock(6); surroundDelay = pBlock(7);
+
+[rfLMCone, rfBipolar, rfParasaolLum] = assembleParasolRFs(...
+    cfCone, coneDelay, ...
+    g, k, cfInhibit, cf2ndStage, Q, ...
+    surroundWeight, surroundDelay);
+
+end
+
+
+
+function fVal = rgcFitObjective(p,midgetData,parasolData,shrinkParams,nBlockParams,eccFields,eccBins,phaseErrorScale,shrinkErrorScale,verbose)
 
 
 LMRatio = p(end);
 coneDelay = p(end-1);
 cfCone = p(end-2);
-p = reshape(p(1:nBlockParams*3),[nBlockParams,3]);
+p = reshape(p(1:nBlockParams*3*2),[nBlockParams,3,2]);
 
 chromGainError = [];
 lumGainError = [];
@@ -232,43 +283,59 @@ lumPhaseError = [];
 % Loop across eccentricity bands
 parfor ee = 1:length(eccFields)
 
+    %% Midgets
     % Extract the parameter values for this eccentricity band
-    pBlock = p(:,ee);
+    pBlock = squeeze(p(:,ee,1));
     eccBin = eccBins{ee};
     eccField = eccFields{ee};
 
     % Get the temporal RFs defined by these parameters
-    [rfMidgetChrom, rfMidgetLum] = parseParams(pBlock, LMRatio, cfCone, coneDelay, eccBin);
+    [rfMidgetChrom, rfMidgetLum] = parseParamsMidget(pBlock, LMRatio, cfCone, coneDelay, eccBin);
 
     % Derive the complex fourier domain TTF from the symbolic equations
     chromTTF = double(subs(rfMidgetChrom,midgetData.(eccField).chromatic.f));
     lumTTF = double(subs(rfMidgetLum,midgetData.(eccField).luminance.f));
 
     % Error in fitting the gain values
-    chromGainError(ee) = norm(midgetData.(eccField).chromatic.g - abs(chromTTF));
-    lumGainError(ee) = norm(midgetData.(eccField).luminance.g - abs(lumTTF));
+    chromGainErrorMidget(ee) = norm(midgetData.(eccField).chromatic.g - abs(chromTTF));
+    lumGainErrorMidget(ee) = norm(midgetData.(eccField).luminance.g - abs(lumTTF));
 
     % Error in fitting the phase values
-    chromPhaseError(ee) = norm(midgetData.(eccField).chromatic.p - unwrap(angle(chromTTF))*(180/pi));
-    lumPhaseError(ee) = norm(midgetData.(eccField).luminance.p - unwrap(angle(lumTTF))*(180/pi));
+    chromPhaseErrorMidget(ee) = norm(midgetData.(eccField).chromatic.p - unwrap(angle(chromTTF))*(180/pi));
+    lumPhaseErrorMidget(ee) = norm(midgetData.(eccField).luminance.p - unwrap(angle(lumTTF))*(180/pi));
+
+    %% Parasols
+    pBlock = squeeze(p(:,ee,2));
+
+    % Get the temporal RF defined by these parameters
+    rfParasaolLum = parseParamsParasol(pBlock, cfCone, coneDelay);
+
+    % Derive the complex fourier domain TTF from the symbolic equations
+    lumTTF = double(subs(rfParasaolLum,parasolData.(eccField).luminance.f));
+
+    % Error in fitting the gain values    chromGainErrorMidget(ee) = norm(midgetData.(eccField).chromatic.g - abs(chromTTF));
+    lumGainErrorParasol(ee) = norm(parasolData.(eccField).luminance.g - abs(lumTTF));
 
 end
 
 % Take the L2 norm of all of the model fits, scaling the phase values
-fValGain = norm([lumGainError chromGainError]);
-fValPhase = norm([lumPhaseError chromPhaseError])*phaseErrorScale;
+fValGain = norm([lumGainErrorMidget chromGainErrorMidget lumGainErrorParasol]);
+fValPhase = norm([lumPhaseErrorMidget chromPhaseErrorMidget])*phaseErrorScale;
 
 % Calculate a regularization that attempts to match parameter values
-% across eccentricity
-fValShrink = shrinkErrorScale * norm(std(p(shrinkParams,:),[],2)./mean(p(shrinkParams,:),2));
+% across eccentricity. Do this separately for the midget and parasol model
+pSub = squeeze(p(shrinkParams{1},:,1));
+fValShrinkMidget = shrinkErrorScale * norm(std(pSub,[],2)./mean(pSub,2));
+pSub = squeeze(p(shrinkParams{2},:,2));
+fValShrinkParasol = shrinkErrorScale * norm(std(pSub,[],2)./mean(pSub,2));
 
 % Report the values
 if verbose
-    fprintf('fValGain: %2.2f, fValPhase: %2.2f, shrink: %2.2f \n',fValGain,fValPhase,fValShrink);
+    fprintf('fValGain: %2.2f, fValPhase: %2.2f, shrinkMidget: %2.2f, shrinkParasol: %2.2f \n',fValGain,fValPhase,fValShrinkMidget,fValShrinkParasol);
 end
 
 % Combine errors
-fVal = fValGain + fValPhase + fValShrink;
+fVal = fValGain + fValPhase + fValShrinkMidget + fValShrinkParasol;
 
 if isnan(fVal)
     error('Encountered a nan value in the objective function');

@@ -17,8 +17,8 @@ function [midgetData, parasolData] = loadRGCResponseData()
 % value at this frequency suggests that it exists. I assigned a value by
 % extrapolating the fit.
 %
-% Responses are to spatially uniform, wide field modulations at close to
-% 2000 Trolands.
+% Responses were to a spatially uniform, 4.7° diameter modulations at close
+% to 2000 Trolands.
 %
 
 midgetData.e0.luminance.f = [0.609375, 1.2188, 2.4375, 4.8750, 9.7500, 20, 30, 40, 50, 60 78];
@@ -42,39 +42,39 @@ midgetData.e30.chromatic.f = [0.609375, 1.2188, 2.4375, 4.8750, 9.7500, 15, 20, 
 midgetData.e30.chromatic.g = [0.415777936	0.644266457	0.900089539	1.057382233	1.119496026	0.808479799	1.032163881	0.886480472	1.074358692	0.761510012	0.494562596	0.344497299];
 midgetData.e30.chromatic.p = [23.58341247	-0.696422919	8.990186768	-29.34472934	-78.91737892	-105.3181387	-128.4900285	-219.784742	-285.1535296	-426.7173156	-539.8227287	-655.8721114];
 
-%   Smith VC, Pokorny J, Lee BB, Dacey DM. Sequential processing in vision:
-%   The interaction of sensitivity regulation and temporal dynamics. Vision
-%   Research. 2008 Nov 1;48(26):2649-56.
+%   Solomon SG, Martin PR, White AJ, Rüttiger L, Lee BB. Modulation
+%   sensitivity of ganglion cells in peripheral retina of macaque. Vision
+%   Research. 2002 Dec 1;42(27):2893-8..
 %
-% Figures 3B and 4
+% Figures 1A and 1B
 %
 % Mean response of cells from 3-10° eccentricity at 2000 Trolands
 
-midgetData.e3.chromatic.f = [0.609375, 0.8618, 1.2188, 1.625, 2.4375, 3.25, 4.8750, 6.57, 9.7500, 13.28, 20, 26, 39, 53];
-midgetData.e3.chromatic.g = 10.^[-0.94	-0.93	-0.86	-0.89	-0.8	-0.74	-0.66	-0.63	-0.74	-0.52	-0.68	-0.74	-1.24	-1.59];
-midgetData.e3.chromatic.p = rad2deg([0.163729128	0.243970315	0.148886827	0.050092764	0.027365492	-0.070037106	-0.343692022	-0.798701299	-1.572820037	-2.45593692	-3.979128015	-5.684601113	-9.1716141	-11.91280148]);
-midgetData.e3.luminance.f = [0.609375, 1.2188, 2.4375, 4.8750, 9.7500, 20, 39, 53];
-midgetData.e3.luminance.g = 10.^[-1.74	-1.73	-1.55	-1.33	-1	-0.84	-1.02	-1.4];
-midgetData.e3.luminance.p = rad2deg([0.44851577	0.327458256	0.313543599	0.156307978	-1.250463822	-3.586734694	-6.243042672	-8.269944341]);
+parasolData.e0.luminance.f = [0.609375, 1.2188, 2.4375, 4.8750, 9.7500, 20, 30, 40, 50, 60 78];
+parasolData.e0.luminance.g = [0.262436577	0.591149071	1.644125739	3.702102437	5.900662716	7.471381688	4.057508719	2.615399798	1.591726565	0.672262083	0.495504391];
 
-parasolData.e3.luminance.f = [0.609375, 0.8618, 1.2188, 1.625, 2.4375, 3.25, 4.8750, 6.57, 9.7500, 13.28, 20, 26, 39, 53, 78];
-parasolData.e3.luminance.g = 10.^[-1.526304534	-1.393926433	-1.189478186	-1.033219276	-0.781151982	-0.720202452	-0.468135158	-0.430852581	-0.357356715	-0.332121471	-0.198959224	-0.150057029	-0.314442543	-0.527373824	-1.537140006];
-parasolData.e3.luminance.p = rad2deg([1.913043478	1.8	1.782608696	1.7	1.6	1.47826087	0.782608696	0.130434783	-0.47826087	-1.086956522	-2.260869565	-3.434782609	-5.956521739	-8.47826087	-12.73913043]);
+parasolData.e20.luminance.f = [0.609375, 1.2188, 2.4375, 4.8750, 9.7500, 15, 20, 30, 40, 50, 60 78];
+parasolData.e20.luminance.g = [0.229534081	0.744221684	1.775076399	5.228815432	8.177641335	8.049716059	7.052555544	5.956457628	5.022726615	3.495853844	2.340097948	0.898244473];
 
-% figure
-% loglog(midget.e0.chromatic.f,midget.e0.chromatic.g,'-r','LineWidth',4);
-% hold on
-% loglog(midget.e20.chromatic.f,midget.e20.chromatic.g,'-r','LineWidth',2);
-% loglog(midget.e30.chromatic.f,midget.e30.chromatic.g,'-r','LineWidth',1);
-% 
-% loglog(midget.e0.luminance.f,midget.e0.luminance.g,'-k','LineWidth',4);
-% loglog(midget.e20.luminance.f,midget.e20.luminance.g,'-k','LineWidth',2);
-% loglog(midget.e30.luminance.f,midget.e30.luminance.g,'-k','LineWidth',1);
-% 
-% figure
-% loglog(parasol.e3.luminance.f,parasol.e3.luminance.g,'-b','LineWidth',3);
-% hold on
-% loglog(midget.e0.chromatic.f,midget.e0.chromatic.g,'-r','LineWidth',4);
-% loglog(midget.e0.luminance.f,midget.e0.luminance.g,'-k','LineWidth',4);
+parasolData.e30.luminance.f = [0.609375, 1.2188, 2.4375, 4.8750, 9.7500, 15, 20, 30, 40, 50, 60 78];
+parasolData.e30.luminance.g = [0.27808972	0.638310685	2.413000771	5.755355979	8.33404175	7.454962426	7.1900742	7.6431795	9.831543136	9.482210723	8.303539014	3.645080274];
+
+%{
+    figure
+    loglog(midgetData.e0.chromatic.f,midgetData.e0.chromatic.g,'-r','LineWidth',4);
+    hold on
+    loglog(midgetData.e20.chromatic.f,midgetData.e20.chromatic.g,'-r','LineWidth',2);
+    loglog(midgetData.e30.chromatic.f,midgetData.e30.chromatic.g,'-r','LineWidth',1);
+    
+    loglog(midgetData.e0.luminance.f,midgetData.e0.luminance.g,'-k','LineWidth',4);
+    loglog(midgetData.e20.luminance.f,midgetData.e20.luminance.g,'-k','LineWidth',2);
+    loglog(midgetData.e30.luminance.f,midgetData.e30.luminance.g,'-k','LineWidth',1);
+    
+    figure
+    loglog(parasolData.e0.luminance.f,parasolData.e0.luminance.g,'-k','LineWidth',4);
+    hold on
+    loglog(parasolData.e20.luminance.f,parasolData.e20.luminance.g,'-k','LineWidth',2);
+    loglog(parasolData.e30.luminance.f,parasolData.e30.luminance.g,'-k','LineWidth',1);
+%}
 
 end

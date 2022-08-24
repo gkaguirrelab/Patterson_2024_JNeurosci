@@ -2,6 +2,8 @@
 %
 
 rng;
+searchFlag = false;
+
 
 %% Load the flicker response data
 [midgetData, parasolData] = loadRGCResponseData();
@@ -47,9 +49,9 @@ ub = [ubBlock ubBlock ubBlock 25 25 10];
 nBlockParams = length(p0Block);
 nEccBands = length(eccFields);
 
-% Could replace the default p0 here with a seed from a prior search
-% fValGain: 1.65, fValPhase: 0.68, shrink: 0.00 
-p0 = [ 3.4395, 0.5806, 6.8328, 39.7043, 1.1466, 0.8652, 2.1192, 0.8001, 3.8793, 0.6815, 19.2577, 40.6018, 1.2104, 0.8652, 2.1225, 0.0555, 4.0083, 0.7108, 31.2966, 51.9474, 2.5020, 0.8652, 4.3304, 0.4452, 15.1277, 13.6584, 1.0056 ];
+% Here is a seed from a prior search with good performance
+% fValGain: 1.60, fValPhase: 0.67, shrink: 0.00
+p0 = [ 3.4397165179, 0.5859245405, 6.7901217937, 40.0400388241, 1.1437500417, 0.8688447177, 2.0883977413, 0.7998218775, 3.8780929148, 0.6806570783, 19.3246120214, 40.4715168476, 1.2194156796, 0.8688532561, 2.1265215874, 0.0543420553, 4.0079992712, 0.7113094196, 31.2511581182, 51.9151723385, 2.5076012462, 0.8688690066, 4.3271616101, 0.3479259253, 15.1120990515, 13.7365531921, 1.0085806677 ];
 
 
 %% Define the objective and non-linear bound
@@ -60,19 +62,22 @@ myNonbcon = @(p) nonbcon(p,nBlockParams,nEccBands);
 
 %% Options
 % The objective function is deterministic
-options.UncertaintyHandling = 0;
+optionsBADS.UncertaintyHandling = 0;
 
 
 %% Search
-%p = bads(myObj,p0,lb,ub,plb,pub,myNonbcon,options); 
-p=p0;
+if searchFlag
+    p = bads(myObj,p0,lb,ub,plb,pub,myNonbcon,optionsBADS);
+else
+    p = p0;
+end
 
 % Call the objective at the solution to report the fVals
 myFit(p,true);
 
-% Print the parameters in a format to be used as a seed in future searches 
+% Print the parameters in a format to be used as a seed in future searches
 str = 'p0 = [ ';
-for ss=1:length(p); str = [str sprintf('%2.6f, ',p(ss))]; end
+for ss=1:length(p); str = [str sprintf('%2.10f, ',p(ss))]; end
 str = [str(1:end-2) ' ];\n'];
 fprintf(str);
 
@@ -116,25 +121,43 @@ for ee = 1:nEccBands
 
 end
 
-% Plot the parameters vs. eccentricity
+% Plot the parameters vs. eccentricity and obtain params x eccentricity
 figure
-paramsToPlot = [1 2 3 4 5 7];
-options = optimoptions('fmincon','Display','off');
-for ii=1:length(paramsToPlot)
-    subplot(2,3,ii)
-    y = p(paramsToPlot(ii),:);
+pByEccExpParams = nan(nBlockParams,4);
+optionsFMINCON = optimoptions('fmincon','Display','off');
+
+sigmoidFit = @(x,support) x(1) + x(2) - x(2)*exp( - (support./x(3)).^x(4) );
+
+for ii=1:nBlockParams-1
+    subplot(4,2,ii)
+    y = p(ii,:);
     plot(eccDegs,y,'ok')
     hold on
-    myY = @(x,support) (support.*x(1)).^x(2)+x(3);
-    myPlotFitObj = @(x) norm(myY(x,eccDegs)-y);
-    x=fmincon(myPlotFitObj,[1/eccDegs(1) 0.01 y(1)],[],[],[],[],[],[],[],options);
+    x0 = [y(1),range(y),mean(eccDegs),10];
+    myPlotFitObj = @(x) norm(sigmoidFit(x,eccDegs)-y);
+    pByEccExpParams(ii,:)=fmincon(myPlotFitObj,x0,[],[],[],[],[],[],[],optionsFMINCON);
     eccDegsFit = 1:max(eccDegs)*1.05;
-    plot(eccDegsFit,myY(x,eccDegsFit),'-r')
+    plot(eccDegsFit,sigmoidFit(pByEccExpParams(ii,:),eccDegsFit),'-r')
     title(blockParamNames{ii})
+    xlabel('Eccentricity [deg]'); ylabel('param value')
+    if ii==paramToHold
+        ylim([0 1]);
+    end
 end
 
 
+%% Save the midgetModel structure
+midgetModel.pByEccExpParams = pByEccExpParams;
+midgetModel.blockParamNames = blockParamNames;
+midgetModel.LMRatio = LMRatio;
+midgetModel.coneDelay = coneDelay;
+midgetModel.cfCone = cfCone;
 
+savePath = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults','midgetModel.mat');
+save(savePath,'midgetModel');
+
+
+%% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Local functions
 
 function c = nonbcon(p,nBlockParams,nEccBands)

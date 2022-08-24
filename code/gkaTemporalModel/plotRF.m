@@ -1,19 +1,26 @@
-function plotRF(cellEquation,figHandle,lineStyle,whichPanel)
+function plotRF(cellEquation,figHandle,lineStyle,whichPanel,LineWidth)
 
 % Handle arguments
 if nargin == 1
     figHandle = figure();
     lineStyle = '-r';
     whichPanel = [1 2 3];
+    LineWidth = 1;
 end
 if nargin == 2
     figure(figHandle);
     lineStyle = '-r';
     whichPanel = [1 2 3];
+    LineWidth = 1;
 end
 if nargin == 3
     figure(figHandle);
     whichPanel = [1 2 3];
+    LineWidth = 1;
+end
+if nargin == 4
+    figure(figHandle);
+    LineWidth = 1;
 end
 
 % Check if there is anything in the figure yet
@@ -36,7 +43,7 @@ if any(whichPanel==1)
     if ~newFigure
         hold on
     end
-    semilogx(myFreqs,abs(ttfComplex),lineStyle);
+    semilogx(myFreqs,abs(ttfComplex),lineStyle,'LineWidth',LineWidth);
     ylim([1e-2 1e1]);
     xlabel('frequency [Hz]'); ylabel('gain');
 end
@@ -48,7 +55,7 @@ if any(whichPanel==2)
     if ~newFigure
         hold on
     end
-    semilogx(myFreqs,unwrap(angle(ttfComplex))*(180/pi),lineStyle);
+    semilogx(myFreqs,unwrap(angle(ttfComplex))*(180/pi),lineStyle,'LineWidth',LineWidth);
     ylim([-1000 100]);
     xlabel('frequency [Hz]'); ylabel('phase [deg]');
 end
@@ -62,7 +69,7 @@ if any(whichPanel==3)
     if ~newFigure
         hold on
     end
-    plot(myTime*1000,irf,lineStyle);
+    plot(myTime*1000,irf,lineStyle,'LineWidth',LineWidth);
     ylim([-1.1 1.1]);
     xlabel('time [msec]'); ylabel('relative response');
 end

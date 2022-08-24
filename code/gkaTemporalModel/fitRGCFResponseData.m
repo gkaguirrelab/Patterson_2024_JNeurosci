@@ -30,6 +30,7 @@ LMRatio = 1.0; % Ratio of L to M cones
 
 
 %% Define p0 and bounds
+blockParamNames = {'g','k','cfInhibit', 'cf2ndStage', 'Q', 'surroundWeight', 'surroundDelay', 'eccProportion'};
 p0Block = [g, k, cfInhibit, cf2ndStage, Q, surroundWeight, surroundDelay, eccProportion];
 lbBlock =  [0, 0.40, 05, 020, 0.50, 0.0, 01, 0.05];
 plbBlock = [3, 0.50, 10, 050, 0.75, 0.5, 02, 0.10];
@@ -47,8 +48,8 @@ nBlockParams = length(p0Block);
 nEccBands = length(eccFields);
 
 % Could replace the default p0 here with a seed from a prior search
-% fValGain: 1.61, fValPhase: 0.68, shrink: 0.00  
-p0 = [ 3.4416, 0.5812, 6.6298, 40.0833, 1.1608, 0.8618, 2.1016, 0.7928, 3.8775, 0.6818, 19.3453, 41.1886, 1.2086, 0.8618, 2.1189, 0.0500, 4.0063, 0.7101, 31.3832, 52.0082, 2.5065, 0.8619, 4.3378, 0.4555, 15.1184, 13.6459, 1.0022 ];
+% fValGain: 1.65, fValPhase: 0.68, shrink: 0.00 
+p0 = [ 3.4395, 0.5806, 6.8328, 39.7043, 1.1466, 0.8652, 2.1192, 0.8001, 3.8793, 0.6815, 19.2577, 40.6018, 1.2104, 0.8652, 2.1225, 0.0555, 4.0083, 0.7108, 31.2966, 51.9474, 2.5020, 0.8652, 4.3304, 0.4452, 15.1277, 13.6584, 1.0056 ];
 
 
 %% Define the objective and non-linear bound
@@ -63,14 +64,15 @@ options.UncertaintyHandling = 0;
 
 
 %% Search
-p = bads(myObj,p0,lb,ub,plb,pub,myNonbcon,options); 
+%p = bads(myObj,p0,lb,ub,plb,pub,myNonbcon,options); 
+p=p0;
 
 % Call the objective at the solution to report the fVals
 myFit(p,true);
 
 % Print the parameters in a format to be used as a seed in future searches 
 str = 'p0 = [ ';
-for ss=1:length(p); str = [str sprintf('%2.4f, ',p(ss))]; end
+for ss=1:length(p); str = [str sprintf('%2.6f, ',p(ss))]; end
 str = [str(1:end-2) ' ];\n'];
 fprintf(str);
 
@@ -96,7 +98,7 @@ for ee = 1:nEccBands
     eccField = eccFields{ee};
 
     % Get the temporal RFs defined by these parameters
-    [rfMidgetChrom, rfMidgetLum, eccDegs, rfLMCone, rfBipolar] = ...
+    [rfMidgetChrom, rfMidgetLum, eccDegs(ee), rfLMCone, rfBipolar] = ...
         parseParams(pBlock, LMRatio, cfCone, coneDelay, eccBin);
 
     % Plot the temporal RFs
@@ -107,12 +109,30 @@ for ee = 1:nEccBands
     subplot(3,1,1);
     loglog(midgetData.(eccField).chromatic.f,midgetData.(eccField).chromatic.g,'*r');
     loglog(midgetData.(eccField).luminance.f,midgetData.(eccField).luminance.g,'*k');
-    title(sprintf('Eccentricity = %2.1f',eccDegs));
+    title(sprintf('Eccentricity = %2.1f',eccDegs(ee)));
     subplot(3,1,2);
     semilogx(midgetData.(eccField).chromatic.f,midgetData.(eccField).chromatic.p,'*r');
     semilogx(midgetData.(eccField).luminance.f,midgetData.(eccField).luminance.p,'*k');
 
 end
+
+% Plot the parameters vs. eccentricity
+figure
+paramsToPlot = [1 2 3 4 5 7];
+options = optimoptions('fmincon','Display','off');
+for ii=1:length(paramsToPlot)
+    subplot(2,3,ii)
+    y = p(paramsToPlot(ii),:);
+    plot(eccDegs,y,'ok')
+    hold on
+    myY = @(x,support) (support.*x(1)).^x(2)+x(3);
+    myPlotFitObj = @(x) norm(myY(x,eccDegs)-y);
+    x=fmincon(myPlotFitObj,[1/eccDegs(1) 0.01 y(1)],[],[],[],[],[],[],[],options);
+    eccDegsFit = 1:max(eccDegs)*1.05;
+    plot(eccDegsFit,myY(x,eccDegsFit),'-r')
+    title(blockParamNames{ii})
+end
+
 
 
 %% Local functions

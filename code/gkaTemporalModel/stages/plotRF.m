@@ -33,7 +33,7 @@ cellEquationTime = ifourier(subs(cellEquation,w/(2*pi)));
 
 % Define the support for the plots
 myFreqs = logspace(log10(0.5),log10(100),100);
-myTime = 0:0.001:0.2;
+myTime = 0:0.001:0.1;
 
 
 %% Panel 1 -- Gain by frequency

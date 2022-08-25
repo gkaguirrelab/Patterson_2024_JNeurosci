@@ -111,9 +111,14 @@ for ee = 1:nEccBands
     eccBin = eccBins{ee};
     eccField = eccFields{ee};
 
+    % The eccProportion parameter is used to determine the precise eccentricity
+    % location within the range provided by the eccBin
+    eccProportion = pBlock(8);
+    eccDegs(ee) = eccBin(1)+eccProportion*(range(eccBin));
+    
     % Get the midget temporal RFs defined by these parameters
-    [rfMidgetChrom, rfMidgetLum, eccDegs(ee), rfLMCone] = ...
-        parseParamsMidget(pBlock, LMRatio, cfCone, coneDelay, eccBin);
+    [rfMidgetChrom, rfMidgetLum, rfLMCone] = ...
+        parseParamsMidget(pBlock, cfCone, coneDelay, LMRatio, eccDegs(ee));
 
     % Plot the midget temporal RFs
     figHandle = figure();
@@ -133,7 +138,7 @@ for ee = 1:nEccBands
     pBlock = squeeze(p(:,ee,2));
 
      % Get the parasol temporal RF defined by these parameters
-     [rfParasaolLum, rfLMCone, rfBipolar] = ...
+     [rfParasaolLum, rfLMCone] = ...
         parseParamsParasol(pBlock, cfCone, coneDelay);
 
     % Plot the parasol temporal RF
@@ -234,70 +239,6 @@ c=any(c')';
 end
 
 
-%% parseParamsMidget
-function [rfMidgetChrom, rfMidgetLum, eccDegs, rfLMCone, rfBipolar] = parseParamsMidget(pBlock, LMRatio, cfCone, coneDelay, eccBin)
-% Given the parameters for an eccentricity location, as well as the fixed
-% cone-stage parameters and the LM ratio, derive and return the complex
-% Fourier domain symbolic equations the express temporal sensitiviy of the
-% midgets.
-
-% Extract the parameters
-g = pBlock(1); k = pBlock(2);
-cfInhibit = pBlock(3); cf2ndStage = pBlock(4); Q = pBlock(5);
-surroundWeight = pBlock(6); surroundDelay = pBlock(7);
-eccProportion = pBlock(8);
-
-% The eccProportion parameter is used to determine the precise eccentricity
-% location within the range provided by the eccBin
-eccDegs = eccBin(1)+eccProportion*(range(eccBin));
-
-% Simulate 1000 RGCs with random sampling from the cone mosaic at the
-% specified eccentricity and with the specified LMRatio. For each RGC,
-% obtain the chromatic weight on the center and surround. We then take the
-% absolute value of these, as we assume that the behavior of an L-center
-% RGC is the same as the behavior of an M-center RGC.
-tmpCenterWeight = [];
-tmpSurroundWeight = [];
-for cc = 1:1000
-    [tmpC,tmpS] = ...
-        returnChromaticWeights(eccDegs,LMRatio);
-    tmpCenterWeight(cc) = tmpC;
-    tmpSurroundWeight(cc) = tmpS;
-end
-chromaticCenterWeight = mean(abs(tmpCenterWeight));
-chromaticSurroundWeight = mean(abs(tmpSurroundWeight));
-
-% Assemble the temporal receptive fields
-[rfLMCone, rfBipolar, rfMidgetChrom, rfMidgetLum] = assembleMidgetRFs(...
-    cfCone, coneDelay, ...
-    g, k, cfInhibit, cf2ndStage, Q, ...
-    surroundWeight, surroundDelay, ...
-    chromaticCenterWeight, chromaticSurroundWeight);
-
-end
-
-
-%% parseParamsParasol
-function [rfParasaolLum, rfLMCone, rfBipolar] = parseParamsParasol(pBlock, cfCone, coneDelay)
-% Given the parameters for an eccentricity location, as well as the fixed
-% cone-stage parameters, derive and return the complex
-% Fourier domain symbolic equations the express temporal sensitiviy of the
-% midgets.
-
-% Extract the parameters
-g = pBlock(1); k = pBlock(2);
-cfInhibit = pBlock(3); cf2ndStage = pBlock(4); Q = pBlock(5);
-surroundWeight = pBlock(6); surroundDelay = pBlock(7);
-
-% Assemble the temporal receptive fields
-[rfLMCone, rfBipolar, rfParasaolLum] = assembleParasolRFs(...
-    cfCone, coneDelay, ...
-    g, k, cfInhibit, cf2ndStage, Q, ...
-    surroundWeight, surroundDelay);
-
-end
-
-
 %% rgcFitObjective
 function fVal = rgcFitObjective(p,midgetData,parasolData,shrinkParams,nBlockParams,eccFields,eccBins,phaseErrorScale,shrinkErrorScale,verbose)
 % Given the midget and parasol data, as well as the full set of parameters
@@ -322,8 +263,13 @@ parfor ee = 1:length(eccFields)
     eccBin = eccBins{ee};
     eccField = eccFields{ee};
 
+    % The eccProportion parameter is used to determine the precise eccentricity
+    % location within the range provided by the eccBin
+    eccProportion = pBlock(8);
+    eccDeg = eccBin(1)+eccProportion*(range(eccBin));
+
     % Get the temporal RFs defined by these parameters
-    [rfMidgetChrom, rfMidgetLum] = parseParamsMidget(pBlock, LMRatio, cfCone, coneDelay, eccBin);
+    [rfMidgetChrom, rfMidgetLum] = parseParamsMidget(pBlock, cfCone, coneDelay, LMRatio, eccDeg);
 
     % Derive the complex fourier domain TTF from the symbolic equations
     chromTTF = double(subs(rfMidgetChrom,midgetData.(eccField).chromatic.f));

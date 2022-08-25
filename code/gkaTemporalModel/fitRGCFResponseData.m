@@ -1,13 +1,13 @@
-% fitRGCFResponseData
+%% fitRGCFResponseData
 %
 % Loads RGC temporal sensitivity data from Solomon et al (2002, 2005) and
 % then fits these data in the complex fourier domain using a cascading
 % low-pass filter model. 
 %
 
-% Reset the random number generator to provide co
+%% Housekeeping
 rng;
-searchFlag = true;
+searchFlag = false;
 
 
 %% Load the flicker response data
@@ -151,23 +151,35 @@ end
 pByEccExpParams = nan(nBlockParams,2,4);
 optionsFMINCON = optimoptions('fmincon','Display','off');
 
+% A Weibull CDF
 sigmoidFit = @(x,support) x(1) + x(2) - x(2)*exp( - (support./x(3)).^x(4) );
 
+% Loop across cells
 for cc=1:2
     figure
+
+    % Loop across the 7 params that vary with eccentricty
     for ii=1:nBlockParams-1
-        subplot(4,2,ii)
+
+        % The values for this param across eccentricity
         y = squeeze(p(ii,:,cc));
-        plot(eccDegs,y,'ok')
-        hold on
+
+        % Fit the values and store the fit
         x0 = [y(1),range(y),mean(eccDegs),10];
         myPlotFitObj = @(x) norm(sigmoidFit(x,eccDegs)-y);
         pByEccExpParams(ii,cc,:)=fmincon(myPlotFitObj,x0,[],[],[],[],[],[],[],optionsFMINCON);
+        pMean(ii,cc) = mean(y);
+
+        % Plot these values and the fit
+        subplot(4,2,ii)
+        plot(eccDegs,y,'ok')
+        hold on
         eccDegsFit = 1:max(eccDegs)*1.05;
         plot(eccDegsFit,sigmoidFit(pByEccExpParams(ii,cc,:),eccDegsFit),'-r')
         title(blockParamNames{ii})
         xlabel('Eccentricity [deg]'); ylabel('param value')
         ylim([lbBlock(ii) ubBlock(ii)]);
+
     end
     switch cc
         case 1
@@ -177,7 +189,9 @@ for cc=1:2
     end
 end
 
+
 %% Save the midgetModel structure
+temporalModel.pMean = pMean;
 temporalModel.pByEccExpParams = pByEccExpParams;
 temporalModel.blockParamNames = blockParamNames;
 temporalModel.LMRatio = LMRatio;
@@ -189,17 +203,16 @@ savePath = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data
 save(savePath,'temporalModel');
 
 
+
+
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Local functions
 
+
+%% nonbcon
 function c = nonbcon(p,nBlockParams,nEccBands)
-
-if isempty(p)
-    c=1;
-end
-
 % Enforce that some parameters, such as delay and filter frequency,
-% increase or decrease in value across eccentricity
+% increase in value across eccentricity
 for ii=1:size(p,1)
     subP = p(ii,:);
     subP = reshape(subP(1:nBlockParams*nEccBands*2),[nBlockParams,nEccBands,2]);
@@ -221,19 +234,30 @@ c=any(c')';
 end
 
 
-
+%% parseParamsMidget
 function [rfMidgetChrom, rfMidgetLum, eccDegs, rfLMCone, rfBipolar] = parseParamsMidget(pBlock, LMRatio, cfCone, coneDelay, eccBin)
+% Given the parameters for an eccentricity location, as well as the fixed
+% cone-stage parameters and the LM ratio, derive and return the complex
+% Fourier domain symbolic equations the express temporal sensitiviy of the
+% midgets.
 
+% Extract the parameters
 g = pBlock(1); k = pBlock(2);
 cfInhibit = pBlock(3); cf2ndStage = pBlock(4); Q = pBlock(5);
 surroundWeight = pBlock(6); surroundDelay = pBlock(7);
 eccProportion = pBlock(8);
 
+% The eccProportion parameter is used to determine the precise eccentricity
+% location within the range provided by the eccBin
 eccDegs = eccBin(1)+eccProportion*(range(eccBin));
 
+% Simulate 1000 RGCs with random sampling from the cone mosaic at the
+% specified eccentricity and with the specified LMRatio. For each RGC,
+% obtain the chromatic weight on the center and surround. We then take the
+% absolute value of these, as we assume that the behavior of an L-center
+% RGC is the same as the behavior of an M-center RGC.
 tmpCenterWeight = [];
 tmpSurroundWeight = [];
-
 for cc = 1:1000
     [tmpC,tmpS] = ...
         returnChromaticWeights(eccDegs,LMRatio);
@@ -243,6 +267,7 @@ end
 chromaticCenterWeight = mean(abs(tmpCenterWeight));
 chromaticSurroundWeight = mean(abs(tmpSurroundWeight));
 
+% Assemble the temporal receptive fields
 [rfLMCone, rfBipolar, rfMidgetChrom, rfMidgetLum] = assembleMidgetRFs(...
     cfCone, coneDelay, ...
     g, k, cfInhibit, cf2ndStage, Q, ...
@@ -252,12 +277,19 @@ chromaticSurroundWeight = mean(abs(tmpSurroundWeight));
 end
 
 
+%% parseParamsParasol
 function [rfParasaolLum, rfLMCone, rfBipolar] = parseParamsParasol(pBlock, cfCone, coneDelay)
+% Given the parameters for an eccentricity location, as well as the fixed
+% cone-stage parameters, derive and return the complex
+% Fourier domain symbolic equations the express temporal sensitiviy of the
+% midgets.
 
+% Extract the parameters
 g = pBlock(1); k = pBlock(2);
 cfInhibit = pBlock(3); cf2ndStage = pBlock(4); Q = pBlock(5);
 surroundWeight = pBlock(6); surroundDelay = pBlock(7);
 
+% Assemble the temporal receptive fields
 [rfLMCone, rfBipolar, rfParasaolLum] = assembleParasolRFs(...
     cfCone, coneDelay, ...
     g, k, cfInhibit, cf2ndStage, Q, ...
@@ -266,19 +298,20 @@ surroundWeight = pBlock(6); surroundDelay = pBlock(7);
 end
 
 
-
+%% rgcFitObjective
 function fVal = rgcFitObjective(p,midgetData,parasolData,shrinkParams,nBlockParams,eccFields,eccBins,phaseErrorScale,shrinkErrorScale,verbose)
+% Given the midget and parasol data, as well as the full set of parameters
+% across cell classes and eccentricity, derive the model fit error, with
+% separate initial terms for fitting the gain and phase components of the
+% transfer function. Additionally, we implement a "shrink" error that is
+% used to drive certain sets of parameters to be the same across
+% eccentricity locations.
 
-
+% Extract and reshape the parameters
 LMRatio = p(end);
 coneDelay = p(end-1);
 cfCone = p(end-2);
 p = reshape(p(1:nBlockParams*3*2),[nBlockParams,3,2]);
-
-chromGainError = [];
-lumGainError = [];
-chromPhaseError = [];
-lumPhaseError = [];
 
 % Loop across eccentricity bands
 parfor ee = 1:length(eccFields)
@@ -337,6 +370,7 @@ end
 % Combine errors
 fVal = fValGain + fValPhase + fValShrinkMidget + fValShrinkParasol;
 
+% Catch and error out if there is a nan in here
 if isnan(fVal)
     error('Encountered a nan value in the objective function');
 end

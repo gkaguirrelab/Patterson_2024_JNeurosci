@@ -26,24 +26,30 @@ end
 % Check if there is anything in the figure yet
 newFigure = isempty(figHandle.Children);
 
-% Use the inverse fourier transform to obtain the response in time after
-% converting units from frequency to radians/sec (w)
-syms w
-cellEquationTime = ifourier(subs(cellEquation,w/(2*pi)));
-
 % Define the support for the plots
 myFreqs = logspace(log10(0.5),log10(100),100);
 myTime = 0:0.001:0.1;
 
-
 %% Panel 1 -- Gain by frequency
-ttfComplex = eval(subs(cellEquation,myFreqs));
+if iscell(cellEquation)
+    gainVals = zeros(size(myFreqs)); angleVals = zeros(size(myFreqs));
+    for ii=1:length(cellEquation)
+        ttfComplex = eval(subs(cellEquation{ii},myFreqs));
+        gainVals = gainVals + abs(ttfComplex);
+        angleVals = angleVals + angle(ttfComplex);
+    end
+else
+    ttfComplex = eval(subs(cellEquation,myFreqs));
+            gainVals = abs(ttfComplex);
+        angleVals = angle(ttfComplex);
+end
+
 if any(whichPanel==1)
     subplot(3,1,1)
     if ~newFigure
         hold on
     end
-    semilogx(myFreqs,abs(ttfComplex),lineStyle,'LineWidth',LineWidth);
+    semilogx(myFreqs,gainVals,lineStyle,'LineWidth',LineWidth);
     ylim([1e-2 1e1]);
     xlabel('frequency [Hz]'); ylabel('gain');
 end
@@ -55,7 +61,7 @@ if any(whichPanel==2)
     if ~newFigure
         hold on
     end
-    semilogx(myFreqs,unwrap(angle(ttfComplex))*(180/pi),lineStyle,'LineWidth',LineWidth);
+    semilogx(myFreqs,unwrap(angleVals)*(180/pi),lineStyle,'LineWidth',LineWidth);
     ylim([-1000 100]);
     xlabel('frequency [Hz]'); ylabel('phase [deg]');
 end
@@ -64,7 +70,22 @@ end
 %% Panel 3 -- Impulse response function
 if any(whichPanel==3)
     subplot(3,1,3)
-    irf = (eval(subs(cellEquationTime,myTime)));
+
+    % Use the inverse fourier transform to obtain the response in time
+    % after converting units from frequency to radians/sec (w)
+    syms w
+    if iscell(cellEquation)
+        irf = zeros(size(myTime));
+        for ii=1:length(cellEquation)
+            cellEquationTime = ifourier(subs(cellEquation{ii},w/(2*pi)));
+            irf = irf + (eval(subs(cellEquationTime,myTime)));
+        end
+    else
+        cellEquationTime = ifourier(subs(cellEquation,w/(2*pi)));
+        irf = (eval(subs(cellEquationTime,myTime)));
+    end
+
+    % Scal the IRF to unit amplitude
     irf = irf ./ max(irf);
     if ~newFigure
         hold on

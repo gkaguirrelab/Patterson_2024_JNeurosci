@@ -1,29 +1,56 @@
+clear
+
 loadPath = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults','temporalModel.mat');
 load(loadPath,'temporalModel');
 
 % Define a set of eccentricities in degrees, log spaced and centered within
 % each of the bins of the Mt Sinai data
-eD = logspace(log10(1),log10(64),13); % eccentricities in degrees,
+eccDegs = logspace(log10(1),log10(64),13); % eccentricities in degrees,
 
 % A high-rez version of eD for plotting interpolated fits
 eDFit = logspace(log10(1),log10(64),130);
 
-eccDegs = [5 10 20 40];
-LMRatios = 1./[1 2 4 8];
-figHandleChrom = figure;
-%figHandleLum = figure;
+% Drasdo 2007 equation for the midget fraction as a function of
+% eccentricity
+midgetFraction = @(r) 0.8928*(1+r/41.03).^(-1);
 
-lineStyles = {'-','--','-.',':'};
-eccVals = [6.25 12.5 25 50];
-for ee = 1:4
 
-    pBlock = temporalModel.pMean(:,1);
+eccDegs = [20 25 30 35 40];
+
+figHandleMidgetChrom = figure;
+figHandleMidgetLum = figure;
+figHandleParasolLum = figure;
+figHandleMixLum = figure;
+
+lineStyles = {'-','--','-.',':','-'};
+
+for ee = 1:5
+
+    pBlock = [];
+    for ii = 1:7
+        pBlock(ii) = temporalModel.pFitByEccen{ii,1}(eccDegs(ee));
+    end
 
     [rfMidgetChrom, rfMidgetLum] = parseParamsMidget(pBlock, ...
-        temporalModel.cfCone, temporalModel.coneDelay, LMRatios(ee), eccDegs(1));
-        
-    plotRF(rfMidgetChrom,figHandleChrom,[lineStyles{ee} 'r']);
-    %plotRF(rfMidgetLum,figHandleLum,[lineStyles{ee} 'k']);
+        temporalModel.cfCone, temporalModel.coneDelay, temporalModel.LMRatio, eccDegs(ee));
+
+    plotRF(rfMidgetChrom,figHandleMidgetChrom,[lineStyles{ee} 'r']);
+    plotRF(rfMidgetLum,figHandleMidgetLum,[lineStyles{ee} 'k']);
+
+    pBlock = [];
+    for ii = 1:7
+        pBlock(ii) = temporalModel.pFitByEccen{ii,2}(eccDegs(ee));
+    end
+
+    [rfParasolLum] = parseParamsParasol(pBlock, ...
+        temporalModel.cfCone, temporalModel.coneDelay);
+
+    plotRF(rfParasolLum,figHandleParasolLum,[lineStyles{ee} 'b']);
+
+    rfMixLum{1} = midgetFraction(eccDegs(ee)).*rfMidgetLum;
+    rfMixLum{2} = (1-midgetFraction(eccDegs(ee))).*rfParasolLum;
+    plotRF(rfMixLum,figHandleMixLum,[lineStyles{ee} 'm']);
+
 
 end
 

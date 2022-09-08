@@ -104,6 +104,7 @@ fprintf('cfCone: %2.2f, coneDelay: %2.2f, LMRatio: %2.2f \n',cfCone,coneDelay,LM
 p
 
 % Plot each eccentricity band
+eccDegs = [];
 for ee = 1:nEccBands
 
     % Extract the midget parameter values for this eccentricity band
@@ -153,11 +154,10 @@ for ee = 1:nEccBands
 end
 
 % Plot the parameters vs. eccentricity and obtain params x eccentricity
-pByEccExpParams = nan(nBlockParams,2,4);
-optionsFMINCON = optimoptions('fmincon','Display','off');
 
-% A Weibull CDF
-sigmoidFit = @(x,support) x(1) + x(2) - x(2)*exp( - (support./x(3)).^x(4) );
+% A simple linear interpolation and extrapolation, bounded by the plausible
+% values of the search
+myInterpObj = @(v,xq,ii) max([repmat(plbBlock(ii),1,length(xq)); min([repmat(pubBlock(ii),1,length(xq)); interp1(eccDegs,v,xq,'linear','extrap')])]);
 
 % Loop across cells
 for cc=1:2
@@ -166,21 +166,19 @@ for cc=1:2
     % Loop across the 7 params that vary with eccentricty
     for ii=1:nBlockParams-1
 
-        % The values for this param across eccentricity
+        % The values for this param across eccentricity, and the mean
         y = squeeze(p(ii,:,cc));
+        pMean(ii,cc) = mean(y);
 
         % Fit the values and store the fit
-        x0 = [y(1),range(y),mean(eccDegs),10];
-        myPlotFitObj = @(x) norm(sigmoidFit(x,eccDegs)-y);
-        pByEccExpParams(ii,cc,:)=fmincon(myPlotFitObj,x0,[],[],[],[],[],[],[],optionsFMINCON);
-        pMean(ii,cc) = mean(y);
+        pFitByEccen{ii,cc} = @(xq) myInterpObj(y,xq,ii);
 
         % Plot these values and the fit
         subplot(4,2,ii)
         plot(eccDegs,y,'ok')
         hold on
-        eccDegsFit = 1:max(eccDegs)*1.05;
-        plot(eccDegsFit,sigmoidFit(pByEccExpParams(ii,cc,:),eccDegsFit),'-r')
+        eccDegsFit = 0:90;
+        plot(eccDegsFit,pFitByEccen{ii,cc}(eccDegsFit),'-r')
         title(blockParamNames{ii})
         xlabel('Eccentricity [deg]'); ylabel('param value')
         ylim([lbBlock(ii) ubBlock(ii)]);
@@ -197,7 +195,7 @@ end
 
 %% Save the midgetModel structure
 temporalModel.pMean = pMean;
-temporalModel.pByEccExpParams = pByEccExpParams;
+temporalModel.pFitByEccen = pFitByEccen;
 temporalModel.blockParamNames = blockParamNames;
 temporalModel.LMRatio = LMRatio;
 temporalModel.coneDelay = coneDelay;
@@ -216,6 +214,12 @@ save(savePath,'temporalModel');
 
 %% nonbcon
 function c = nonbcon(p,nBlockParams,nEccBands)
+
+% Sometimes BADS sends an empty set of parameters
+if isempty(p)
+    c=1;
+end
+
 % Enforce that some parameters, such as delay and filter frequency,
 % increase in value across eccentricity
 for ii=1:size(p,1)
@@ -225,8 +229,6 @@ for ii=1:size(p,1)
         tempP=squeeze(subP(:,:,cc));
         if ...
                 any(diff(tempP(3,:))<0) || ... % force cfInhibit to increase with eccentricity
-                any(diff(tempP(4,:))<0) || ... % force cf2ndStage to increase with eccentricity
-                any(diff(tempP(5,:))<0) || ... % force 2nd stage Q to increase with eccentricity
                 any(diff(tempP(6,:))<0) || ... % force surroundWeight to increase with eccentricity
                 any(diff(tempP(7,:))<0)        % force surroundDelay to increase with eccentricity
             c(ii,cc)=1;
@@ -237,6 +239,9 @@ for ii=1:size(p,1)
 end
 c=any(c')';
 end
+
+%                 any(diff(tempP(4,:))<0) || ... % force cf2ndStage to increase with eccentricity
+%                 any(diff(tempP(5,:))<0) || ... % force 2nd stage Q to increase with eccentricity
 
 
 %% rgcFitObjective

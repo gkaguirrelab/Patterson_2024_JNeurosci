@@ -5,7 +5,7 @@ load(loadPath,'temporalModel');
 
 % Define a set of eccentricities in degrees, log spaced and centered within
 % each of the bins of the Mt Sinai data
-eccDegs = logspace(log10(1),log10(64),13); % eccentricities in degrees,
+eccDegs = logspace(log10(1),log10(64),6); % eccentricities in degrees,
 
 % A high-rez version of eD for plotting interpolated fits
 eDFit = logspace(log10(1),log10(64),130);
@@ -15,16 +15,14 @@ eDFit = logspace(log10(1),log10(64),130);
 midgetFraction = @(r) 0.8928*(1+r/41.03).^(-1);
 
 
-eccDegs = [20 25 30 35 40];
-
 figHandleMidgetChrom = figure;
 figHandleMidgetLum = figure;
 figHandleParasolLum = figure;
 figHandleMixLum = figure;
 
-lineStyles = {'-','--','-.',':','-'};
+lineStyles = {'-','--','-.',':','.','o'};
 
-for ee = 1:5
+for ee = 1:6
 
     pBlock = [];
     for ii = 1:7

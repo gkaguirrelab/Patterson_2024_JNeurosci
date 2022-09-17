@@ -40,8 +40,8 @@ if iscell(cellEquation)
     end
 else
     ttfComplex = eval(subs(cellEquation,myFreqs));
-            gainVals = abs(ttfComplex);
-        angleVals = angle(ttfComplex);
+    gainVals = abs(ttfComplex);
+    angleVals = angle(ttfComplex);
 end
 
 if any(whichPanel==1)

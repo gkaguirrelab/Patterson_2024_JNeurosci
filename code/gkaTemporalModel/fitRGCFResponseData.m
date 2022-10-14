@@ -134,7 +134,6 @@ for ee = 1:nEccBands
     semilogx(midgetData.(eccField).chromatic.f,midgetData.(eccField).chromatic.p,'*r');
     semilogx(midgetData.(eccField).luminance.f,midgetData.(eccField).luminance.p,'*k');
 
-
     % Extract the parasol parameter values for this eccentricity band
     pBlock = squeeze(p(:,ee,2));
 
@@ -155,9 +154,9 @@ end
 
 % Plot the parameters vs. eccentricity and obtain params x eccentricity
 
-% A simple linear interpolation and extrapolation, bounded by the plausible
-% values of the search
-myInterpObj = @(v,xq,ii) max([repmat(plbBlock(ii),1,length(xq)); min([repmat(pubBlock(ii),1,length(xq)); interp1(eccDegs,v,xq,'linear','extrap')])]);
+% A simple linear interpolation and extrapolation, bounded by maximum
+% returned values from the search
+myInterpObj = @(v,xq,ii) max([repmat(plbBlock(ii),1,length(xq)); min([repmat(max(v),1,length(xq)); interp1(eccDegs,v,xq,'linear','extrap')])]);
 
 % Loop across cells
 for cc=1:2
@@ -259,8 +258,8 @@ coneDelay = p(end-1);
 cfCone = p(end-2);
 p = reshape(p(1:nBlockParams*3*2),[nBlockParams,3,2]);
 
-% Loop across eccentricity bands
-parfor ee = 1:length(eccFields)
+% Loop across eccentricity bands. Can make this parfor for speed
+for ee = 1:length(eccFields)
 
     %% Midgets
     % Extract the parameter values for this eccentricity band

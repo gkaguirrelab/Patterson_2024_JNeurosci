@@ -1,5 +1,5 @@
-%% parseParamsMidget
-function [rfMidgetChrom, rfMidgetLum, rfLMCone, rfBipolar] = parseParamsMidget(pBlock, cfCone, coneDelay, LMRatio, eccDeg)
+function [rfMidgetChrom, rfMidgetLum, rfLMCone, rfBipolar, f] = parseParamsMidget(pBlock, cfCone, coneDelay, LMRatio, eccDeg)
+% parseParamsMidget
 % Given the parameters for an eccentricity location, as well as the fixed
 % cone-stage parameters and the LM ratio, derive and return the complex
 % Fourier domain symbolic equations the express temporal sensitiviy of the
@@ -27,7 +27,7 @@ chromaticCenterWeight = mean(abs(tmpCenterWeight));
 chromaticSurroundWeight = mean(abs(tmpSurroundWeight));
 
 % Assemble the temporal receptive fields
-[rfLMCone, rfBipolar, rfMidgetChrom, rfMidgetLum] = assembleMidgetRFs(...
+[rfLMCone, rfBipolar, rfMidgetChrom, rfMidgetLum, f] = assembleMidgetRFs(...
     cfCone, coneDelay, ...
     g, k, cfInhibit, cf2ndStage, Q, ...
     surroundWeight, surroundDelay, ...

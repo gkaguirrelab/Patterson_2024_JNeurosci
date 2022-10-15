@@ -1,5 +1,7 @@
 % Load the Mt Sinai TTF results
 
+whichSub = 2;
+
 % This should be the V1 and LGN area bold fMRI signal mean, and 95% CI. The
 % matrix is subject (GKA 1, ASB 2) x channel (L-M 1, S 2, LMS 3) x area
 % (LGN 1, V1 2) x flicker freqency x bootstrap (1st value is 2.5%tile, 2nd
@@ -19,7 +21,7 @@ studiedFreqs = [2 4 8 16 32 64];
 
 % Extract the relevant LGN data. Concatenate gka then asb
 lgnFreqX = [studiedFreqs];% studiedFreqs];
-lgnLumY = [squeeze(LGN_V1mri(1,3,1,:,2))'];
+lgnLumY = [squeeze(LGN_V1mri(whichSub,3,1,:,2))'];
 
 % Extract the relevant V1 data across eccentricity
 
@@ -36,18 +38,21 @@ for ee = 1:nEcc
 %     v1ChromY = [v1ChromY squeeze(V1ecc_mri(1,1,ee,:,2))' squeeze(V1ecc_mri(2,1,ee,:,2))'];
     v1Eccentricity = [v1Eccentricity repmat(eccDegVals(ee),1,6)];
     v1FreqX = [v1FreqX studiedFreqs];
-    v1LumY = [v1LumY squeeze(V1ecc_mri(1,3,ee,:,2))'];
-    v1ChromY = [v1ChromY squeeze(V1ecc_mri(1,1,ee,:,2))'];
+    v1LumY = [v1LumY squeeze(V1ecc_mri(whichSub,3,ee,:,2))'];
+    v1ChromY = [v1ChromY squeeze(V1ecc_mri(whichSub,1,ee,:,2))'];
 end
 
 % Define the objective
-myObj = @(p) norm(v1LumY - returnV1EccTTFFit(p,v1FreqX,v1Eccentricity)) + ...
-    norm(lgnLumY - returnlgnLumTTFFit(p,lgnFreqX,v1Eccentricity));
+myObj = @(p) norm(v1LumY - returnV1LumEccTTFFit(p,v1FreqX,v1Eccentricity)) + ...
+             norm(lgnLumY - returnlgnLumTTFFit(p,lgnFreqX,v1Eccentricity));
+
+%myObj = @(p) norm(v1ChromY - returnV1ChromEccTTFFit(p,v1FreqX,v1Eccentricity));
+
 options = optimoptions(@fmincon,'Display','iter');
 
 % p0 and bounds
-p0 = [0.1 09 0.29 10 repmat(0.5,1,nEcc) repmat(0.3,1,nEcc)];
-p0 = [0.05 12.8957    0.2567    9.6977    0.6335    0.6415    0.5943    0.4931    0.2037    0.2098    0.3030    0.3881    0.3553    0.1945    0.3220  3.5170e+12];
+%p0 = [0.1 09 0.29 10 repmat(0.5,1,nEcc) repmat(0.3,1,nEcc)];
+p0 = [0.0462   25.7673    0.1516   10.9039    0.5773    0.5777    0.5304    0.4170    0.0914    0.0019    0.1602    0.2178    0.2807    0.2594    0.1439    0.2107];
 lb = [ 00 05 0.01 05 repmat(0,1,nEcc) zeros(1,nEcc)];
 ub = [inf 30 2.00 20 repmat(1,1,nEcc) inf(1,nEcc)];
 
@@ -56,7 +61,7 @@ p = fmincon(myObj,p0,[],[],[],[],lb,ub,[],options);
 
 % plot
 figure
-v1LumTTFFit = returnV1EccTTFFit(p,v1FreqX,v1Eccentricity);
+v1LumTTFFit = returnV1LumEccTTFFit(p,v1FreqX,v1Eccentricity);
 v1LumTTFFit = reshape(v1LumTTFFit,6,1,nEcc);
 v1LumY = reshape(v1LumY,6,1,nEcc);
 for ee=1:6
@@ -74,7 +79,7 @@ hold on
 semilogx(lgnFreqX,lgnLumTTFFit,'-r');
 
 figure
-v1ChromTTFFit = returnV1EccTTFFit(p,v1FreqX,v1Eccentricity);
+v1ChromTTFFit = returnV1ChromEccTTFFit(p,v1FreqX,v1Eccentricity);
 v1ChromTTFFit = reshape(v1ChromTTFFit,6,1,nEcc);
 v1ChromY = reshape(v1ChromY,6,1,nEcc);
 for ee=1:6
@@ -91,7 +96,7 @@ foo=1;
 
 %% LOCAL FUNCTIONS
 
-function [v1LumAmplitude,v1LumPhase] = returnV1EccTTFFit(p,v1FreqX,v1Eccentricity)
+function [v1LumAmplitude,v1LumPhase] = returnV1LumEccTTFFit(p,v1FreqX,v1Eccentricity)
 
 nEcc = 6;
 nFixed = 4;
@@ -103,7 +108,7 @@ secondOrderQ = p(3);
 surroundDelay = p(4);
 surroundIndex = p(nFixed+1:nFixed+nEcc);
 nSubtractions = 2; % Two delayed surround stages: LGN and then V1
-v1LumGain = p(nFixed+nEcc:end);
+v1LumGain = p(nFixed+nEcc+1:end);
 
 % Loop through eccentricities and obtain modeled responses
 eccDegVals = unique(v1Eccentricity);
@@ -140,7 +145,7 @@ secondOrderQ = p(3);
 surroundDelay = p(4);
 surroundIndex = p(nFixed+1:nFixed+nEcc);
 nSubtractions = 2; % Two delayed surround stages: LGN and then V1
-v1LumGain = p(nFixed+nEcc:end);
+v1LumGain = p(nFixed+nEcc+1:end);
 v1ChromGain = v1LumGain;
 
 % Loop through eccentricities and obtain modeled responses

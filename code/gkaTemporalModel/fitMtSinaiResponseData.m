@@ -1,6 +1,6 @@
 % Load the Mt Sinai TTF results
 
-whichSub = 2;
+whichSub = 1;
 
 % This should be the V1 and LGN area bold fMRI signal mean, and 95% CI. The
 % matrix is subject (GKA 1, ASB 2) x channel (L-M 1, S 2, LMS 3) x area
@@ -50,14 +50,26 @@ myObj = @(p) norm(v1LumY - returnV1LumEccTTFFit(p,v1FreqX,v1Eccentricity)) + ...
 
 options = optimoptions(@fmincon,'Display','iter');
 
-% p0 and bounds
-%p0 = [0.1 09 0.29 10 repmat(0.5,1,nEcc) repmat(0.3,1,nEcc)];
+% p0 options
+%{
+    % Used to initialize the search
+    p0 = [0.1 09 0.29 10 repmat(0.5,1,nEcc) repmat(0.3,1,nEcc)]; 
+    % Found for whichSub = 1 (gka)
+    p0 = [0.0462   25.7673    0.1516   10.9039    0.5773    0.5777    0.5304    0.4170    0.0914    0.0019    0.1602    0.2178    0.2807    0.2594    0.1439    0.2107];
+    % Found for whichSub = 2 (asb)
+    p0 = [0.0468   18.5300    0.1910   14.6890    0.9839    0.7123    0.6003    0.4514    0.2425    0.1574    0.1039    0.2078    0.2927    0.2789    0.2871    0.5766];
+%}
+
+% p0
 p0 = [0.0462   25.7673    0.1516   10.9039    0.5773    0.5777    0.5304    0.4170    0.0914    0.0019    0.1602    0.2178    0.2807    0.2594    0.1439    0.2107];
-lb = [ 00 05 0.01 05 repmat(0,1,nEcc) zeros(1,nEcc)];
-ub = [inf 30 2.00 20 repmat(1,1,nEcc) inf(1,nEcc)];
+
+% bounds
+lb = [ 0  05 0.01 05 zeros(1,nEcc) zeros(1,nEcc)];
+ub = [inf 30 2.00 20 ones(1,nEcc) inf(1,nEcc)];
 
 % search
-p = fmincon(myObj,p0,[],[],[],[],lb,ub,[],options);
+%p = fmincon(myObj,p0,[],[],[],[],lb,ub,[],options);
+p=p0;
 
 % plot
 figure

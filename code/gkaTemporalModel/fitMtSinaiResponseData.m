@@ -1,14 +1,21 @@
 % Fit the Mt Sinai fMRI data with a model that starts with the RGC temporal
 % sensitivity functions
 
-searchFlag = true;
+% Plotting mode. Copy and paste this to the console
+%{
+    searchFlag = false;
+    for whichStim = 1:3; for whichSub = 1:2; fitMtSinaiResponseData; end; end
+%}
 
-% What shall we fit?
-whichStim = 2; % 1 = L-M; 2 = S; 3 = LMS
-whichSub = 1;  % 1 = gka; 2 = asb
+% Search mode. Copy and paste this to the console
+%{
+    searchFlag = true;
+    whichStim = 1; whichSub = 1;
+    fitMtSinaiResponseData
+%}
 
 % The identities of the stims and subjects
-stims = {'L-M','S','LMS'};
+stimuli = {'L-M','S','LMS'};
 subjects = {'gka','asb'};
 
 % The number of parameters in the model that are fixed across eccentricity
@@ -94,9 +101,9 @@ switch whichStim
         pub = [ 0.10 20 1.0 30 repmat(0.8,1,nEcc) ones(1,nEcc)];
         switch whichSub
             case 1
-                p0 = [0.0041   17.2462    0.9075   30.9342    0.7069    0.3565    0.2228    0.1369    0.1368    0.1111    0.0053    0.0110    0.0317    0.0320    0.0383    0.1294];
+                p0 = [0.0030   15.8839    0.3990   28.3153    0.9261    0.4802    0.3507    0.1678    0.1367    0.1222    0.0016    0.0080    0.0323    0.0460    0.0663    0.1226];
             case 2
-                p0 = [0.0120   15.8006    0.5299   26.1496    0.4394    0.3332    0.1586    0.0069    0.0058    0.0043    0.0106    0.0202    0.0572    0.0700    0.1925    0.7719];
+                p0 = [0.0026   12.9277    0.3248   19.9888    0.3326    0.3316    0.2216    0.0000    0.0000    0.0000    0.0028    0.0142    0.0652    0.0896    0.2406    0.8036];
         end
 
     case 3 % LMS luminance
@@ -141,68 +148,85 @@ switch whichStim
         figure
         v1RedGreenY = reshape(v1RedGreenY,6,1,nEcc);
         for ee=1:6
-            subplot(3,2,ee)
-            semilogx(studiedFreqs,squeeze(v1RedGreenY(:,1,ee)),'.k');
+            subplot(2,4,ee+(ee>3))
+            semilogx(studiedFreqs,squeeze(v1RedGreenY(:,1,ee)),'ok');
             hold on
             pBlock = [p(2:4) p(nFixed+ee) p(nFixed+nEcc+ee)];
             yFit = returnV1ChromEccTTFFit(pBlock,freqsForPlotting,eccDegVals(ee));
             semilogx(freqsForPlotting,yFit,'-r');
             refline(0,0);
-            title(num2str(eccDegVals(ee),2));
+            title([stimuli{whichStim} ', ' subjects{whichSub} ', ecc = ' num2str(eccDegVals(ee),2) '°']);
+            ylim([-1 7]);
         end
 
-        figure
+        subplot(2,4,8)
         lgnChromTTFFit = returnlgnChromTTFFit(p,freqsForPlotting,v1Eccentricity);
-        semilogx(lgnFreqX,lgnRedGreenY,'.k');
+        semilogx(lgnFreqX,lgnRedGreenY,'ok');
         hold on
         semilogx(freqsForPlotting,lgnChromTTFFit,'-r');
+        title([stimuli{whichStim} ', ' subjects{whichSub} ', LGN']);
         refline(0,0);
+        ylim([-0.5 4]);
 
     case 2
         figure
         v1BlueYellowY = reshape(v1BlueYellowY,6,1,nEcc);
         for ee=1:6
-            subplot(3,2,ee)
-            semilogx(studiedFreqs,squeeze(v1BlueYellowY(:,1,ee)),'.k');
+            subplot(2,4,ee+(ee>3))
+            semilogx(studiedFreqs,squeeze(v1BlueYellowY(:,1,ee)),'ok');
             hold on
             pBlock = [p(2:4) p(nFixed+ee) p(nFixed+nEcc+ee)];
             yFit = returnV1ChromEccTTFFit(pBlock,freqsForPlotting,eccDegVals(ee));
-            semilogx(freqsForPlotting,yFit,'-r');
+            semilogx(freqsForPlotting,yFit,'-b');
             refline(0,0);
-            title(num2str(eccDegVals(ee),2));
+            ylim([-1 7]);
+            title([stimuli{whichStim} ', ' subjects{whichSub} ', ecc = ' num2str(eccDegVals(ee),2) '°']);
         end
 
-        figure
+        subplot(2,4,8)
         lgnChromTTFFit = returnlgnChromTTFFit(p,freqsForPlotting,v1Eccentricity);
-        semilogx(lgnFreqX,lgnBlueYellowY,'.k');
+        semilogx(lgnFreqX,lgnBlueYellowY,'ok');
         hold on
-        semilogx(freqsForPlotting,lgnChromTTFFit,'-r');
+        semilogx(freqsForPlotting,lgnChromTTFFit,'-b');
         refline(0,0);
+        title([stimuli{whichStim} ', ' subjects{whichSub} ', LGN']);
+        ylim([-0.5 4]);
 
     case 3
         figure
         v1LumY = reshape(v1LumY,6,1,nEcc);
         for ee=1:6
-            subplot(3,2,ee)
-            semilogx(studiedFreqs,squeeze(v1LumY(:,1,ee)),'*k');
+            subplot(2,4,ee+(ee>3))
+            semilogx(studiedFreqs,squeeze(v1LumY(:,1,ee)),'ok');
             hold on
             pBlock = [p(2:4) p(nFixed+ee) p(nFixed+nEcc+ee)];
             yFit = returnV1LumEccTTFFit(pBlock,freqsForPlotting,eccDegVals(ee));
-            semilogx(freqsForPlotting,yFit,'-r');
+            semilogx(freqsForPlotting,yFit,'-k');
             refline(0,0);
-            title(num2str(eccDegVals(ee),2));
+            ylim([-1 7]);
+            title([stimuli{whichStim} ', ' subjects{whichSub} ', ecc = ' num2str(eccDegVals(ee),2) '°']);
         end
 
-        figure
+        subplot(2,4,8)
         lgnLumTTFFit = returnlgnLumTTFFit(p,freqsForPlotting,v1Eccentricity);
-        semilogx(lgnFreqX,lgnLumY,'.k');
+        semilogx(lgnFreqX,lgnLumY,'ok');
         hold on
-        semilogx(freqsForPlotting,lgnLumTTFFit,'-r');
+        semilogx(freqsForPlotting,lgnLumTTFFit,'-k');
         refline(0,0);
+        title([stimuli{whichStim} ', ' subjects{whichSub} ', LGN']);
+        ylim([-0.5 4]);
 
 end
 
+% Plot the surround suppression index vs. eccentricity
+subplot(2,4,4)
+plot(log10(eccDegVals),p(:,nFixed+1:nFixed+nEcc),'*k');
+xlabel('Eccentricity [log deg]');
+ylabel('Suppression index');
+ylim([0 1]);
 
+plotName = [stimuli{whichStim} '_' subjects{whichSub} '_ModelFit.pdf' ];
+saveas(gcf,fullfile('~/Desktop',plotName));
 
 %% LOCAL FUNCTIONS
 

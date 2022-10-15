@@ -1,6 +1,9 @@
 % Load the Mt Sinai TTF results
 
-whichSub = 1;
+searchFlag = true ;
+
+whichStim = 3; % 1 = L-M; 3 = LMS
+whichSub = 2;  % 1 = gka; 2 = asb
 
 % This should be the V1 and LGN area bold fMRI signal mean, and 95% CI. The
 % matrix is subject (GKA 1, ASB 2) x channel (L-M 1, S 2, LMS 3) x area
@@ -20,8 +23,9 @@ load(loadPath,'V1ecc_mri');
 studiedFreqs = [2 4 8 16 32 64];
 
 % Extract the relevant LGN data. Concatenate gka then asb
-lgnFreqX = [studiedFreqs];% studiedFreqs];
-lgnLumY = [squeeze(LGN_V1mri(whichSub,3,1,:,2))'];
+lgnFreqX = studiedFreqs;% studiedFreqs];
+lgnLumY = squeeze(LGN_V1mri(whichSub,3,1,:,2))';
+lgnChromY = squeeze(LGN_V1mri(whichSub,1,1,:,2))';
 
 % Extract the relevant V1 data across eccentricity
 
@@ -32,74 +36,93 @@ eccDegVals = eccDegBinEdges(4:2:14);
 v1Eccentricity = []; v1FreqX = []; v1LumY = []; v1ChromY = [];
 nEcc = 6;
 for ee = 1:nEcc
-%     v1Eccentricity = [v1Eccentricity repmat(eccDegVals(ee),1,6) repmat(eccDegVals(ee),1,6)];
-%     v1FreqX = [v1FreqX studiedFreqs studiedFreqs];
-%     v1LumY = [v1LumY squeeze(V1ecc_mri(1,3,ee,:,2))' squeeze(V1ecc_mri(2,3,ee,:,2))'];
-%     v1ChromY = [v1ChromY squeeze(V1ecc_mri(1,1,ee,:,2))' squeeze(V1ecc_mri(2,1,ee,:,2))'];
     v1Eccentricity = [v1Eccentricity repmat(eccDegVals(ee),1,6)];
     v1FreqX = [v1FreqX studiedFreqs];
     v1LumY = [v1LumY squeeze(V1ecc_mri(whichSub,3,ee,:,2))'];
     v1ChromY = [v1ChromY squeeze(V1ecc_mri(whichSub,1,ee,:,2))'];
 end
 
-% Define the objective
-myObj = @(p) norm(v1LumY - returnV1LumEccTTFFit(p,v1FreqX,v1Eccentricity)) + ...
-             norm(lgnLumY - returnlgnLumTTFFit(p,lgnFreqX,v1Eccentricity));
-
-%myObj = @(p) norm(v1ChromY - returnV1ChromEccTTFFit(p,v1FreqX,v1Eccentricity));
-
-options = optimoptions(@fmincon,'Display','iter');
-
-% p0 options
-%{
-    % Used to initialize the search
-    p0 = [0.1 09 0.29 10 repmat(0.5,1,nEcc) repmat(0.3,1,nEcc)]; 
-    % Found for whichSub = 1 (gka)
-    p0 = [0.0462   25.7673    0.1516   10.9039    0.5773    0.5777    0.5304    0.4170    0.0914    0.0019    0.1602    0.2178    0.2807    0.2594    0.1439    0.2107];
-    % Found for whichSub = 2 (asb)
-    p0 = [0.0468   18.5300    0.1910   14.6890    0.9839    0.7123    0.6003    0.4514    0.2425    0.1574    0.1039    0.2078    0.2927    0.2789    0.2871    0.5766];
-%}
-
-% p0
-p0 = [0.0462   25.7673    0.1516   10.9039    0.5773    0.5777    0.5304    0.4170    0.0914    0.0019    0.1602    0.2178    0.2807    0.2594    0.1439    0.2107];
+% Define the objective and p0, depending upon subject and stimulus
+switch whichStim
+    case 1 % L-M chromatic
+        myObj = @(p) norm(v1ChromY - returnV1ChromEccTTFFit(p,v1FreqX,v1Eccentricity)) + ...
+            norm(lgnChromY - returnlgnChromTTFFit(p,lgnFreqX,v1Eccentricity));
+        switch whichSub
+            case 1
+                p0 = [0.0039   17.7473    0.9175   30.8000    0.6467    0.3519    0.2082    0.1368    0.1270    0.0562    0.0056    0.0110    0.0298    0.0311    0.0358    0.0658];
+            case 2
+                p0 = [0.0109   15.3284    0.5645   26.8723    0.5004    0.3325    0.1850    0.0048    0.0043    0.0000    0.0098    0.0192    0.0577    0.0696    0.1809    0.7404];
+        end
+    case 3 % LMS luminance
+        myObj = @(p) norm(v1LumY - returnV1LumEccTTFFit(p,v1FreqX,v1Eccentricity)) + ...
+            norm(lgnLumY - returnlgnLumTTFFit(p,lgnFreqX,v1Eccentricity));
+        switch whichSub
+            case 1
+                p0 = [0.0462   25.8171    0.1522   10.9342    0.5731    0.5731    0.5309    0.4144    0.0891    0.0000    0.1586    0.2156    0.2784    0.2571    0.1427    0.2091];
+            case 2
+                p0 = [0.0453   18.7557    0.1920   14.6532    1.0000    0.7155    0.6070    0.4503    0.2440    0.1536    0.1010    0.2044    0.2876    0.2751    0.2830    0.5669];
+        end
+end
 
 % bounds
 lb = [ 0  05 0.01 05 zeros(1,nEcc) zeros(1,nEcc)];
-ub = [inf 30 2.00 20 ones(1,nEcc) inf(1,nEcc)];
+ub = [ 1  50 2.00 40 ones(1,nEcc) ones(1,nEcc)];
+
+plb = [ 0.01 10 0.1 10 repmat(0.2,1,nEcc) zeros(1,nEcc)];
+pub = [ 0.10 30 1.5 30 repmat(0.8,1,nEcc) ones(1,nEcc)];
+
+% Non-linear constraint that surround index decrease with eccentricity
+myNonbcon = @(p) nonbcon(p);
+
+% Options - the objective function is deterministic
+optionsBADS.UncertaintyHandling = 0;
 
 % search
-%p = fmincon(myObj,p0,[],[],[],[],lb,ub,[],options);
-p=p0;
+if searchFlag
+    p = bads(myObj,p0,lb,ub,plb,pub,myNonbcon,optionsBADS);
+else
+    p=p0;
+end
 
 % plot
-figure
-v1LumTTFFit = returnV1LumEccTTFFit(p,v1FreqX,v1Eccentricity);
-v1LumTTFFit = reshape(v1LumTTFFit,6,1,nEcc);
-v1LumY = reshape(v1LumY,6,1,nEcc);
-for ee=1:6
-    subplot(3,2,ee)
-    semilogx(studiedFreqs,squeeze(v1LumY(:,1,ee)),'*k');
-    hold on
-    semilogx(studiedFreqs,squeeze(v1LumTTFFit(:,1,ee)),'-r');
-    title(num2str(eccDegVals(ee),2));
-end    
+switch whichStim
+    case 1
+        figure
+        v1ChromTTFFit = returnV1ChromEccTTFFit(p,v1FreqX,v1Eccentricity);
+        v1ChromTTFFit = reshape(v1ChromTTFFit,6,1,nEcc);
+        v1ChromY = reshape(v1ChromY,6,1,nEcc);
+        for ee=1:6
+            subplot(3,2,ee)
+            semilogx(studiedFreqs,squeeze(v1ChromY(:,1,ee)),'.k');
+            hold on
+            semilogx(studiedFreqs,squeeze(v1ChromTTFFit(:,1,ee)),'-r');
+        end
 
-figure
-lgnLumTTFFit = returnlgnLumTTFFit(p,lgnFreqX,v1Eccentricity);
-semilogx(lgnFreqX,lgnLumY,'.k');
-hold on
-semilogx(lgnFreqX,lgnLumTTFFit,'-r');
+        figure
+        lgnChromTTFFit = returnlgnChromTTFFit(p,lgnFreqX,v1Eccentricity);
+        semilogx(lgnFreqX,lgnChromY,'.k');
+        hold on
+        semilogx(lgnFreqX,lgnChromTTFFit,'-r');
 
-figure
-v1ChromTTFFit = returnV1ChromEccTTFFit(p,v1FreqX,v1Eccentricity);
-v1ChromTTFFit = reshape(v1ChromTTFFit,6,1,nEcc);
-v1ChromY = reshape(v1ChromY,6,1,nEcc);
-for ee=1:6
-    subplot(3,2,ee)
-    semilogx(studiedFreqs,squeeze(v1ChromY(:,1,ee)),'.k');
-    hold on
-    semilogx(studiedFreqs,squeeze(v1ChromTTFFit(:,1,ee)),'-r');
-end    
+    case 3
+        figure
+        v1LumTTFFit = returnV1LumEccTTFFit(p,v1FreqX,v1Eccentricity);
+        v1LumTTFFit = reshape(v1LumTTFFit,6,1,nEcc);
+        v1LumY = reshape(v1LumY,6,1,nEcc);
+        for ee=1:6
+            subplot(3,2,ee)
+            semilogx(studiedFreqs,squeeze(v1LumY(:,1,ee)),'*k');
+            hold on
+            semilogx(studiedFreqs,squeeze(v1LumTTFFit(:,1,ee)),'-r');
+            title(num2str(eccDegVals(ee),2));
+        end
+
+        figure
+        lgnLumTTFFit = returnlgnLumTTFFit(p,lgnFreqX,v1Eccentricity);
+        semilogx(lgnFreqX,lgnLumY,'.k');
+        hold on
+        semilogx(lgnFreqX,lgnLumTTFFit,'-r');
+end
 
 
 foo=1;
@@ -107,6 +130,15 @@ foo=1;
 
 
 %% LOCAL FUNCTIONS
+
+%% nonbcon
+
+% Enforce constraint of declining surround index with eccentricity
+function c = nonbcon(p)
+nEcc = 6; nFixed = 4;
+surroundIndex = p(:,nFixed+1:nFixed+nEcc);
+c = sum(diff(surroundIndex,1,2)>0,2);
+end
 
 function [v1LumAmplitude,v1LumPhase] = returnV1LumEccTTFFit(p,v1FreqX,v1Eccentricity)
 
@@ -199,15 +231,8 @@ nSubtractions = 1; % One delayed surround stage at the LGN
 % of RGCs, but each area is treated equivalently.
 eccDegVals = 1:20:61;
 
-% Fit the surround index values with a falling Weibull CDF as a function of
-% log eccentricity.
-weibullFunc = @(x,g,lambda,k) g.*exp(-(x./lambda).^k);
-myObj = @(pWeib) norm(surroundIndex - weibullFunc(log10(unique(v1Eccentricity)),pWeib(1),pWeib(2),pWeib(3)));
-options = optimoptions(@fmincon,'Display','off');
-pWeib = fmincon(myObj,[1 1 1],[],[],[],[],[],[],[],options);
-
-% Get the interpolated v1SurroundIndex values at the eccentricity values
-surroundIndex = weibullFunc(log10(eccDegVals),pWeib(1),pWeib(2),pWeib(3));
+% Interpolate the surround index values for the modeled eccentricities
+surroundIndex = interp1(log10(unique(v1Eccentricity)),surroundIndex,log10(eccDegVals),'linear','extrap');
 
 % Loop through eccentricities and obtain modeled responses
 rfLumLGN = {};
@@ -225,5 +250,47 @@ for ii=1:length(rfLumLGN)
 end
 
 lgnLumAmplitude = lgnLumAmplitude.*lgnGain;
+
+end
+
+
+function [lgnChromAmplitude,lgnChromPhase] = returnlgnChromTTFFit(p,lgnFreqX,v1Eccentricity)
+
+nEcc = 6;
+nFixed = 4;
+
+% Unpack model parameters
+lgnGain = p(1);
+secondOrderFc = p(2);
+secondOrderQ = p(3);
+surroundDelay = p(4);
+surroundIndex = p(nFixed+1:nFixed+nEcc);
+nSubtractions = 1; % One delayed surround stage at the LGN
+
+% Retinal eccentricities to be averaged. Note that these are linearly
+% spaced, as we wish to give equal weight to each annular area of the
+% retina in contributing its population of RGCs to the average response.
+% The effective weight of an annular area may be low due to a small number
+% of RGCs, but each area is treated equivalently.
+eccDegVals = 1:20:61;
+
+% Interpolate the surround index values for the modeled eccentricities
+surroundIndex = interp1(log10(unique(v1Eccentricity)),surroundIndex,log10(eccDegVals),'linear','extrap');
+
+% Loop through eccentricities and obtain modeled responses
+rfChromLGN = {};
+parfor ee=1:length(eccDegVals)
+    [rfChromLGN{ee}] = returnPostRetinalResponses(eccDegVals(ee),secondOrderFc,secondOrderQ,surroundIndex(ee),surroundDelay,nSubtractions);
+end
+
+% Obtain the average chromatic TTF across these eccentricities
+lgnChromAmplitude = zeros(size(lgnFreqX)); lgnChromPhase = zeros(size(lgnFreqX));
+for ii=1:length(rfChromLGN)
+    ttfComplex = double(subs(rfChromLGN{ii},lgnFreqX));
+    lgnChromAmplitude = lgnChromAmplitude + abs(ttfComplex).*(1/length(rfChromLGN));
+    lgnChromPhase = lgnChromPhase + unwrap(angle(ttfComplex)).*(1/length(rfChromLGN));
+end
+
+lgnChromAmplitude = lgnChromAmplitude.*lgnGain;
 
 end

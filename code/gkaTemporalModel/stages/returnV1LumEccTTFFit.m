@@ -1,35 +1,22 @@
-function [v1LumAmplitude,v1LumPhase] = returnV1LumEccTTFFit(p,v1FreqX,v1Eccentricity)
-
-nEcc = 6;
-nFixed = 4;
+function [v1LumAmplitude,v1LumPhase] = returnV1LumEccTTFFit(p,freqs,eccDeg)
 
 % Unpack model parameters
-lgnGain = p(1);
-secondOrderFc = p(2);
-secondOrderQ = p(3);
-surroundDelay = p(4);
-surroundIndex = p(nFixed+1:nFixed+nEcc);
+secondOrderFc = p(1);
+secondOrderQ = p(2);
+surroundDelay = p(3);
+surroundIndex = p(4);
+gain = p(5);
 nSubtractions = 2; % Two delayed surround stages: LGN and then V1
-v1LumGain = p(nFixed+nEcc+1:end);
 
-% Loop through eccentricities and obtain modeled responses
-eccDegVals = unique(v1Eccentricity);
-studiedFreqs = unique(v1FreqX);
-v1LumAmplitude=[];v1LumPhase=[];
+v1LumAmplitude=zeros(size(freqs)); v1LumPhase=zeros(size(freqs));
 
-parfor ee=1:length(eccDegVals)
-    [~,rfLumV1Ecc] = returnPostRetinalResponses(eccDegVals(ee),secondOrderFc,secondOrderQ,surroundIndex(ee),surroundDelay,nSubtractions);
-    gainVals = zeros(size(studiedFreqs)); angleVals = zeros(size(studiedFreqs));
-    for ii=1:length(rfLumV1Ecc)
-        ttfComplex = double(subs(rfLumV1Ecc{ii},studiedFreqs));
-        gainVals = gainVals + abs(ttfComplex).*(1/length(rfLumV1Ecc));
-        angleVals = angleVals + unwrap(angle(ttfComplex)).*(1/length(rfLumV1Ecc));
-    end
-    v1LumAmplitude(ee,:) = v1LumGain(ee).*gainVals;
-    v1LumPhase(ee,:) = angleVals;
+[~,rfLumV1Ecc] = returnPostRetinalResponses(eccDeg,secondOrderFc,secondOrderQ,surroundIndex,surroundDelay,nSubtractions);
+for ii=1:length(rfLumV1Ecc)
+    ttfComplex = double(subs(rfLumV1Ecc{ii},freqs));
+    v1LumAmplitude = v1LumAmplitude + abs(ttfComplex).*(1/length(rfLumV1Ecc));
+    v1LumPhase = v1LumPhase + unwrap(angle(ttfComplex)).*(1/length(rfLumV1Ecc));
 end
 
-v1LumAmplitude = reshape(v1LumAmplitude',1,nEcc*length(studiedFreqs));
-v1LumPhase = reshape(v1LumPhase',1,nEcc*length(studiedFreqs));
+v1LumAmplitude = gain.*v1LumAmplitude;
 
 end

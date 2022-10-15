@@ -1,7 +1,7 @@
 function [rfMidgetChrom,rfLum] = returnPostRetinalResponses(eccDeg,secondOrderFc,secondOrderQ,surroundIndex,surroundDelay,nSubtractions)
 
 % Load the RGC model parameters
-loadPath = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults','temporalModel.mat');
+loadPath = fullfile(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath'))))),'data','temporalModelResults','temporalModel.mat');
 load(loadPath,'temporalModel');
 
 % Drasdo 2007 equation for the midget fraction as a function of

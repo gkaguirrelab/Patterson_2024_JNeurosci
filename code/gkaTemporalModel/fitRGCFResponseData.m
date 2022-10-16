@@ -2,7 +2,11 @@
 %
 % Loads RGC temporal sensitivity data from Solomon et al (2002, 2005) and
 % then fits these data in the complex fourier domain using a cascading
-% low-pass filter model. 
+% low-pass filter model.
+%
+% The fitting is conducted simultaneously for parasol and midget responses
+% at three eccentricities, and for the gain and phase components of the
+% filter response.
 %
 
 %% Housekeeping
@@ -16,12 +20,24 @@ searchFlag = false;
 
 %% Set model constants
 eccFields = {'e0','e20','e30'};
+% We assume that the RGC data were sampled from somewhere within these
+% eccentricity ranges
 eccBins = {[0 10],[20 30],[30 47]};
+% The objective function attempts to fit both the gain and phase of the
+% filter. The unwrapped phase units are large, so this is how they are
+% scaled to be placed on a more equal footing with the gain.
 phaseErrorScale = 1/400;
+% The search includes a regularization that attempts to shrink the
+% difference in some parameter values across eccentricity. This is the
+% factor by which these differences are scaled in the objective function.
 shrinkErrorScale = 20;
 
 
 %% Set the p0 values
+% There are 8 "block" parameters, and these 8 parameters are allowed to
+% vary for each RGC class (midget and parasol) and each of the three
+% eccentricities, leading to 6 blocks in total. The same p0 values are used
+% to initialize all blocks
 g = 4; % Overall gain
 k = 0.67; % relative strength of the "lead compensators" (feedback stages)
 cfInhibit = 20; % Corner frequency of the inhibitory stage
@@ -31,29 +47,40 @@ surroundWeight = 0.8667; % Weight of the surround relative to center
 surroundDelay = 3; % Delay (in msecs) of the surround relative to center
 eccProportion = 0.25; % Position within the eccentricity bin to calculate LM ratios
 
+% There are 3 "common" parameters that define the temporal properties of
+% the L and M cones, and the LM cone ratio.
 cfCone = 15; % Corner frequency of the "cone" low-pass stage
-coneDelay = 14; % Delay (in msecs) impposed by the "cone" stage
+coneDelay = 14; % Delay (in msecs) imposed at the "cone" stage
 LMRatio = 1.0; % Ratio of L to M cones
 
 
-%% Define p0 and bounds
+%% Assemble the p0 and bounds
+% We define here bounds on the block parameters
 blockParamNames = {'g','k','cfInhibit', 'cf2ndStage', 'Q', 'surroundWeight', 'surroundDelay', 'eccProportion'};
 p0Block = [g, k, cfInhibit, cf2ndStage, Q, surroundWeight, surroundDelay, eccProportion];
 lbBlock =  [2, 0.01, 01, 20, 0.25, 0.7, 01, 0.05];
 plbBlock = [3, 0.40, 02, 30, 0.50, 0.8, 02, 0.10];
 pubBlock = [5, 0.80, 40, 60, 2.50, 1.0, 05, 0.90];
 ubBlock =  [6, 0.90, 60, 90, 3.00, 1.1, 10, 0.95];
+
+% This vector controls for each of the block parameters if the shrink
+% regularization is applied to match values across ecccentricity. A
+% different set of choices are used for the midget and parasol models, as I
+% find that the midget data can only be fit properly if greater flexibility
+% across eccentricity is allowed.
 shrinkParams = {...
     [false false false false false true false false], ... % midget shrink
     [true true true false false true true true] ...       % parasol shrink
     };
 
+% Assemble the p0 and bounds out of the block and common parameters
 p0 = [p0Block p0Block p0Block p0Block p0Block p0Block cfCone coneDelay LMRatio];
 lb = [lbBlock lbBlock lbBlock lbBlock lbBlock lbBlock 10 10 0.50];
 plb = [plbBlock plbBlock plbBlock plbBlock plbBlock plbBlock 12 12 0.90];
 pub = [pubBlock pubBlock pubBlock pubBlock pubBlock pubBlock 18 15 1.10];
 ub = [ubBlock ubBlock ubBlock ubBlock ubBlock ubBlock 20 18 2.00];
 
+% Derive and set some values we will need later
 nBlockParams = length(p0Block);
 nEccBands = length(eccFields);
 nCellClasses = 2;
@@ -64,7 +91,9 @@ p0 = [ 3.2832766771, 0.5869017720, 5.6224342804, 38.6179661751, 1.2765139937, 0.
 
 
 %% Define the objective and non-linear bound
-myFit = @(p,verbose) rgcFitObjective(p,midgetData,parasolData,shrinkParams,nBlockParams,eccFields,eccBins,phaseErrorScale,shrinkErrorScale,verbose);
+myFit = @(p,verbose) rgcFitObjective(p,midgetData,parasolData,...
+    shrinkParams,nBlockParams,eccFields,eccBins,...
+    phaseErrorScale,shrinkErrorScale,verbose);
 myObj = @(p) myFit(p,false);
 myNonbcon = @(p) nonbcon(p,nBlockParams,nEccBands);
 

@@ -76,7 +76,6 @@ for ee = 1:nEccBands
 end
 
 % Plot the parameters vs. eccentricity and obtain params x eccentricity
-
 % Loop across cells
 for cc=1:2
     figure
@@ -106,4 +105,5 @@ for cc=1:2
     end
 end
 
+% Figure of successive stages of the IRF
 

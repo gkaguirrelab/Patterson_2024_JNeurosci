@@ -1,4 +1,4 @@
-function [rfMidgetChrom,rfLum] = returnPostRetinalResponses(eccDeg,secondOrderFc,secondOrderQ,surroundIndex,surroundDelay,nSubtractions)
+function [rfMidgetChrom,rfLum,rfMidgetBipolar,rfParasolBipolar,rfLMCone] = returnPostRetinalResponses(eccDeg,secondOrderFc,secondOrderQ,surroundIndex,surroundDelay,nSubtractions)
 
 % Load the RGC model parameters
 loadPath = fullfile(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath'))))),'data','temporalModelResults','temporalModel.mat');
@@ -19,7 +19,8 @@ end
 totalRGCfDensityAtEcc = @(eccDeg) mean(cellfun(@(x) x(eccDeg),totalRGCfDensity));
 
 % Get the rfs for midget and parasol luminance at this eccentricity
-[rfMidgetChrom,rfMidgetLum, rfParasolLum] = returnCellModel(temporalModel,...
+[rfMidgetChrom,rfMidgetLum,rfParasolLum,rfMidgetBipolar,rfParasolBipolar,rfLMCone] = ...
+    returnCellModel(temporalModel,...
     eccDeg,secondOrderFc,secondOrderQ,...
     surroundIndex,surroundDelay,nSubtractions);
 
@@ -46,7 +47,7 @@ end
 
 
 %% LOCAL FUNCTIONS
-function [rfMidgetChrom,rfMidgetLum,rfParasolLum] = returnCellModel(temporalModel,eccDeg,secondOrderFc,secondOrderQ,surroundIndex,surroundDelay,nSubtractions)
+function [rfMidgetChrom,rfMidgetLum,rfParasolLum,rfMidgetBipolar,rfParasolBipolar,rfLMCone] = returnCellModel(temporalModel,eccDeg,secondOrderFc,secondOrderQ,surroundIndex,surroundDelay,nSubtractions)
 
 syms f
 
@@ -59,10 +60,10 @@ for ii = 1:7
 end
 
 % Derive the RGC models
-[rfMidgetChrom, rfMidgetLum] = parseParamsMidget(pBlockMidget, ...
+[rfMidgetChrom, rfMidgetLum, rfLMCone, rfMidgetBipolar] = parseParamsMidget(pBlockMidget, ...
     temporalModel.cfCone, temporalModel.coneDelay, temporalModel.LMRatio, eccDeg);
 
-[rfParasolLum] = parseParamsParasol(pBlockParasol, ...
+[rfParasolLum, rfLMCone, rfParasolBipolar] = parseParamsParasol(pBlockParasol, ...
     temporalModel.cfCone, temporalModel.coneDelay);
 
 % Apply iterative, delayed surround subtraction. The expectation is one

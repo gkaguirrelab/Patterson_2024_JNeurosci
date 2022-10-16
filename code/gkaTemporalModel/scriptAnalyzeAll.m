@@ -1,4 +1,12 @@
 
+%% Housekeeping
+clear
+close all
+
+%% Create the RGC temporal sensitivity model
+fitRGCFResponseData
+
+
 %% Load the Mt. Sinai data
 % This should be the V1 and LGN area bold fMRI signal mean, and 95% CI. The
 % matrix is subject (GKA 1, ASB 2) x channel (L-M 1, S 2, LMS 3) x area
@@ -16,7 +24,7 @@ loadPath = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data
 load(loadPath,'V1ecc_mri');
 
 % Do we want to conduct a search, or just use the p0 values and make plots?
-searchFlag = false;
+searchFlag = true;
 
 % Do we wish to use the monotonic constraint upon surround index in the
 % search?

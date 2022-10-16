@@ -1,59 +1,74 @@
-function p = fitMRIResponseData(p0, v1FreqX, v1Eccentricity, v1Y, v1W, lgnFreqX, lgnY, lgnW, whichModel, useMonotonicConstraint  )
+function p = fitMRIResponseData(p0, v1FreqX, v1Eccentricity, v1Y, v1W, lgnFreqX, lgnY, lgnW, whichModel, useMonotonicConstraint)
 % Fit the RGC-referred temporal model to combined V1 and LGN data
 %
 % Syntax:
 %   output = myFunc(input)
 %
 % Description:
-%   Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean euismod
-%   nulla a tempor scelerisque. Maecenas et lobortis est. Donec et turpis
-%   sem. Sed fringilla in metus ut malesuada. Pellentesque nec eros
-%   efficitur, pellentesque nisl vel, dapibus felis. Morbi eu gravida enim.
-%   Sed sodales ipsum eget finibus dapibus. Fusce sagittis felis id orci
-%   egestas, non convallis neque porttitor. Proin ut mi augue. Cras posuere
-%   diam at purus dignissim, vel vestibulum tellus ultrices
+%   Model that simultaneously fits TTF responses from the LGN, and from V1
+%   across eccentricity for a particular post-receptoral direction. The
+%   model starts with Fourier-domain models of the chromatic and achromatic
+%   temporal sensitivity functions of the RGCs as a function of
+%   eccentricity. Responses at the LGN are modeled as the RGC responses,
+%   subject to a delayed surround inhibition. Responses at V1 are the
+%   responses from the LGN, subject to another iteration of delayed
+%   surround inhibition, and also subject to a second-order, low-pass
+%   temporal filter. 
+%
+%   The effect of eccentricity is present in the model in
+%   both a fixed and parameterized form. There is a fixed effect of
+%   eccentricity at the retina, which is derived from the change in the
+%   center and surround cone inputs to the midget RGCs, and by changes in
+%   the parameters of the temporal model used to fit the empirical RGC
+%   data. The effect of eccentricity in the post-retinal model is found in
+%   the varying of the index of surround inhibition.
+%
+%   The parameters of the model are:
+%       lgnGain       - Multiplicative gain for fitting the LGN amplitudes
+%       secondOrderFc - Corner frequency of 2nd order filter at V1 stage
+%       secondOrderQ  - "Quality" parameter of 2nd order filter at V1
+%       surroundDelay - The delay (in msecs) between the center and
+%                       surround, used at both the LGN and V1 stages
+%       surroundIndex - The index (range 0 - 1) of the surround inhibition
+%                       at the LGN and V1 stages. One value for each of the
+%                       k eccentricity measurements from V1
+%       v1gain        - Multiplicative gain for fitting the V1 amplitudes
+%                       at each eccentricity band.
 %
 % Inputs:
-%   none
-%   foo                   - Scalar. Foo foo foo foo foo foo foo foo foo foo
-%                           foo foo foo foo foo foo foo foo foo foo foo foo
-%                           foo foo foo
-%
-% Optional key/value pairs:
-%   none
-%  'bar'                  - Scalar. Bar bar bar bar bar bar bar bar bar bar
-%                           bar bar bar bar bar bar bar bar bar bar bar bar
-%                           bar bar bar bar bar bar
+%   p0                    - 1x[4+k*2] vector of parameters for the model fit.
+%   v1FreqX               - 1xn vector of frequency values (in Hz) the
+%                           correspond to the cortical amplitude values in
+%                           v1Y. The length is equal to j * k, where j is
+%                           the number of frequencies and k is the number
+%                           of eccentricities.
+%   v1Eccentricity        - 1xn vector of eccentricity locations (in
+%                           degrees) from which the v1Y measurements were
+%                           made.
+%   v1Y                   - 1xn vector of BOLD amplitudes at each of many
+%                           eccentricities and stimulus frequencies. The
+%                           order of these is:
+%                             [ [e1f1 e1f2 ... e1fj] [e2f1 e2f2 ... e2fj]
+%   v1W                   - 1xn vector of weights for each of the
+%                           measurements in v1Y. One choice is the inverse
+%                           of the 95% CI of the measurement.
+%   lgnFreqX              - 1xj vector of frequencies for which the LGN
+%                           measurements were made.
+%   lgnY                  - 1xj vector of BOLD amplitudes measured from the
+%                           LGN.
+%   lgnW                  - 1xj vector of weights for the measurements in
+%                           lgnY.
+%   whichModel            - String or char vec from the set:
+%                               {'chromatic','luminance'}
+%   useMonotonicConstraint - Logical. Controls if the model includes a
+%                           non-linear constraint that requires the
+%                           surround index decrease in value across
+%                           eccentricity positions.
 %
 % Outputs:
-%   none
-%   baz                   - Cell. Baz baz baz baz baz baz baz baz baz baz
-%                           baz baz baz baz baz baz baz baz baz baz baz baz
-%                           baz baz baz
-%
-% Examples:
-%{
-	foo = 1;
-    bar = myFunc(foo);
-	fprintf('Bar = %d \n',bar);   
-%}
+%   p                     - 1x16 vector of model fit parameters
 
-% Fit the Mt Sinai fMRI data with a model that starts with the RGC temporal
-% sensitivity functions
-
-% Plotting mode. Copy and paste this to the console
-%{
-    searchFlag = true;
-    for whichStim = 1:3; for whichSub = 1:2; fitMtSinaiResponseData; end; end
-%}
-
-% Search mode. Copy and paste this to the console
-%{
-    searchFlag = true;
-    whichStim = 1; whichSub = 1;
-    fitMtSinaiResponseData
-%}
-
+% Extract this value for later
 nEcc = length(unique(v1Eccentricity));
 
 % Define the objective, plausible bound, and p0, depending upon subject and
@@ -90,7 +105,7 @@ myObj = @(p) norm(v1W.*(v1Y - myV1TTF(p))) + ...
 lb = [ 0  10 0.01 05 zeros(1,nEcc) zeros(1,nEcc)];
 ub = [ 1  50 2.00 40 ones(1,nEcc) ones(1,nEcc)];
 
-% Non-linear constraint that surround index decrease with eccentricity
+% Non-linear constraint that surround index decreases with eccentricity
 if useMonotonicConstraint
     myNonbcon = @(p) nonbcon(p);
 else

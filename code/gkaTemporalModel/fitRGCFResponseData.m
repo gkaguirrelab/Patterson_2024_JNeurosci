@@ -158,20 +158,20 @@ end
 
 
 %% Save the temporalModel
-temporalModel.p = p;
-temporalModel.LMRatio = LMRatio;
-temporalModel.coneDelay = coneDelay;
-temporalModel.cfCone = cfCone;
-temporalModel.pMean = pMean;
-temporalModel.pFitByEccen = pFitByEccen;
-temporalModel.meta.blockParamNames = blockParamNames;
-temporalModel.meta.eccFields = eccFields;
-temporalModel.meta.eccBins = eccBins;
-temporalModel.meta.lbBlock = lbBlock;
-temporalModel.meta.ubBlock = ubBlock;
+rgcTemporalModel.p = p;
+rgcTemporalModel.LMRatio = LMRatio;
+rgcTemporalModel.coneDelay = coneDelay;
+rgcTemporalModel.cfCone = cfCone;
+rgcTemporalModel.pMean = pMean;
+rgcTemporalModel.pFitByEccen = pFitByEccen;
+rgcTemporalModel.meta.blockParamNames = blockParamNames;
+rgcTemporalModel.meta.eccFields = eccFields;
+rgcTemporalModel.meta.eccBins = eccBins;
+rgcTemporalModel.meta.lbBlock = lbBlock;
+rgcTemporalModel.meta.ubBlock = ubBlock;
 
-savePath = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults','temporalModel.mat');
-save(savePath,'temporalModel');
+savePath = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults','rgcTemporalModel.mat');
+save(savePath,'rgcTemporalModel');
 
 
 

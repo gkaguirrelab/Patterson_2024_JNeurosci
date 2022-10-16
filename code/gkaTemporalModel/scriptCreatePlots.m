@@ -8,20 +8,20 @@ close all
 [midgetData, parasolData] = loadRGCResponseData();
 
 % Load the RGC model parameters
-loadPath = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults','temporalModel.mat');
-load(loadPath,'temporalModel');
+loadPath = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults','rgcTemporalModel.mat');
+load(loadPath,'rgcTemporalModel');
 
 % Extract some info from the stored model structure
-p = temporalModel.p;
-cfCone = temporalModel.cfCone;
-coneDelay = temporalModel.coneDelay;
-LMRatio = temporalModel.LMRatio;
-pFitByEccen = temporalModel.pFitByEccen;
-blockParamNames = temporalModel.meta.blockParamNames;
-eccFields = temporalModel.meta.eccFields;
-eccBins = temporalModel.meta.eccBins;
-lbBlock = temporalModel.meta.lbBlock;
-ubBlock = temporalModel.meta.ubBlock;
+p = rgcTemporalModel.p;
+cfCone = rgcTemporalModel.cfCone;
+coneDelay = rgcTemporalModel.coneDelay;
+LMRatio = rgcTemporalModel.LMRatio;
+pFitByEccen = rgcTemporalModel.pFitByEccen;
+blockParamNames = rgcTemporalModel.meta.blockParamNames;
+eccFields = rgcTemporalModel.meta.eccFields;
+eccBins = rgcTemporalModel.meta.eccBins;
+lbBlock = rgcTemporalModel.meta.lbBlock;
+ubBlock = rgcTemporalModel.meta.ubBlock;
 
 nEccBands = length(eccFields);
 nBlockParams = size(p,1);

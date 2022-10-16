@@ -1,4 +1,4 @@
-% scriptCreatePlots
+% plotRGCModel
 
 % Housekeeping
 clear
@@ -116,69 +116,61 @@ end
 %% plot the model fits to the MRI data
 
 % Extract some meta info from the mriTemporalModel
-studiedFreqs = mriTemporalModel.meta.studiedFreqs;
-eccDegVals = mriTemporalModel.meta.eccDegVals;
-subjects = mriTemporalModel.meta.subjects;
-stimuli = mriTemporalModel.meta.stimuli;
-plotColor = mriTemporalModel.meta.plotColor;
-nFixed = mriTemporalModel.meta.nFixed;
-nEcc = length(eccDegVals);
+subjects = mriTemporalModel.subjects;
+stimuli = mriTemporalModel.stimuli;
+plotColors = mriTemporalModel.plotColors;
+nFixed = mriTemporalModel.nFixed;
+
 freqsForPlotting = logspace(0,2,50);
 
 for whichStim = 1:length(stimuli)
     for whichSub = 1:length(subjects)
 
         figure
-        pMRI = mriTemporalModel.(stimuli{whichStim}).(subjects{whichSub}).p;
-        v1Y = mriTemporalModel.(stimuli{whichStim}).(subjects{whichSub}).data.v1Y;
-        v1Y = reshape(v1Y,length(studiedFreqs),1,nEcc);
-        v1Eccentricity = mriTemporalModel.(stimuli{whichStim}).(subjects{whichSub}).data.v1Eccentricity;
-        lgnFreqX = mriTemporalModel.(stimuli{whichStim}).(subjects{whichSub}).data.lgnFreqX;
-        lgnY = mriTemporalModel.(stimuli{whichStim}).(subjects{whichSub}).data.lgnY;
+        v1Y = mriTemporalModel.(stimuli{whichStim}).(subjects{whichSub}).v1Y;
+        v1Y = reshape(v1Y,6,1,nEcc);
         modelType = mriTemporalModel.(stimuli{whichStim}).(subjects{whichSub}).modelType;
 
-        % Loop over eccentricities
-        for ee=1:nEcc
-            subplot(2,4,ee+(ee>3))
-            semilogx(studiedFreqs,squeeze(v1Y(:,1,ee)),['o' plotColor{whichStim}]);
-            hold on
-            pBlock = [pMRI(2:4) pMRI(nFixed+ee) pMRI(nFixed+nEcc+ee)];
-            switch modelType
-                case 'chromatic'
-                    yFit = returnV1ChromEccTTFFit(pBlock,freqsForPlotting,eccDegVals(ee));
-                case 'luminance'
-                    yFit = returnV1LumEccTTFFit(pBlock,freqsForPlotting,eccDegVals(ee));
-            end
-            semilogx(freqsForPlotting,yFit,['-' plotColor{whichStim}]);
-            refline(0,0);
-            title([stimuli{whichStim} ', ' subjects{whichSub} ', ecc = ' num2str(eccDegVals(ee),2) '°']);
-            ylim([-1 7]);
-        end
-
-        % Add the LGN response
-        switch modelType
-            case 'chromatic'
-                lgnTTFFit = returnlgnLumTTFFit(pMRI,freqsForPlotting,v1Eccentricity);
-            case 'luminance'
-                lgnTTFFit = returnlgnLumTTFFit(pMRI,freqsForPlotting,v1Eccentricity);
-        end
-        subplot(2,4,8)
-        semilogx(lgnFreqX,lgnY,['o' plotColor{whichStim}]);
-        hold on
-        semilogx(freqsForPlotting,lgnTTFFit,['-' plotColor{whichStim}]);
-        refline(0,0);
-        title([stimuli{whichStim} ', ' subjects{whichSub} ', LGN']);
-        ylim([-0.5 4]);
-
-        % Plot the surround suppression index vs. eccentricity
-        subplot(2,4,4)
-        plot(log10(eccDegVals),pMRI(:,nFixed+1:nFixed+nEcc),['*' plotColor{whichStim}]);
-        xlabel('Eccentricity [log deg]');
-        ylabel('Suppression index');
-        ylim([0 1]);
-
-        % Save the plot
-        plotName = [stimuli{whichStim} '_' subjects{whichSub} '_ModelFit.pdf' ];
-        saveas(gcf,fullfile('~/Desktop',plotName));
+% Loop over eccentricities
+for ee=1:nEcc
+    subplot(2,4,ee+(ee>3))
+    semilogx(studiedFreqs,squeeze(v1Y(:,1,ee)),['o' plotColor{whichStim}]);
+    hold on
+    pBlock = [pMRI(2:4) pRGC(nFixed+ee) pMRI(nFixed+nEcc+ee)];
+    switch modelType{whichStim}
+        case 'chromatic'
+            yFit = returnV1ChromEccTTFFit(pBlock,freqsForPlotting,eccDegVals(ee));
+        case 'luminance'
+            yFit = returnV1LumEccTTFFit(pBlock,freqsForPlotting,eccDegVals(ee));
     end
+    semilogx(freqsForPlotting,yFit,['-' plotColor{whichStim}]);
+    refline(0,0);
+    title([stimuli{whichStim} ', ' subjects{whichSub} ', ecc = ' num2str(eccDegVals(ee),2) '°']);
+    ylim([-1 7]);
 end
+
+% Add the LGN response
+switch modelType{whichStim}
+    case 'chromatic'
+        lgnTTFFit = returnlgnLumTTFFit(pRGC,freqsForPlotting,v1Eccentricity);
+    case 'luminance'
+        lgnTTFFit = returnlgnLumTTFFit(pRGC,freqsForPlotting,v1Eccentricity);
+end
+subplot(2,4,8)
+semilogx(lgnFreqX,lgnY,['o' plotColor{whichStim}]);
+hold on
+semilogx(freqsForPlotting,lgnTTFFit,['-' plotColor{whichStim}]);
+refline(0,0);
+title([stimuli{whichStim} ', ' subjects{whichSub} ', LGN']);
+ylim([-0.5 4]);
+
+% Plot the surround suppression index vs. eccentricity
+subplot(2,4,4)
+plot(log10(eccDegVals),pRGC(:,nFixed+1:nFixed+nEcc),['*' plotColor{whichStim}]);
+xlabel('Eccentricity [log deg]');
+ylabel('Suppression index');
+ylim([0 1]);
+
+% Save the plot
+plotName = [stimuli{whichStim} '_' subjects{whichSub} '_ModelFit.pdf' ];
+saveas(gcf,fullfile('~/Desktop',plotName));

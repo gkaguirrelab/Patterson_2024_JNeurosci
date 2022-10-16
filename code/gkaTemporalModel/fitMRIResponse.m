@@ -1,4 +1,4 @@
-function p = fitMRIResponseData(p0, v1FreqX, v1Eccentricity, v1Y, v1W, lgnFreqX, lgnY, lgnW, whichModel, useMonotonicConstraint)
+function [p,fVal] = fitMRIResponseData(p0, v1FreqX, v1Eccentricity, v1Y, v1W, lgnFreqX, lgnY, lgnW, whichModel, useMonotonicConstraint)
 % Fit the RGC-referred temporal model to combined V1 and LGN data
 %
 % Syntax:
@@ -117,7 +117,7 @@ optionsBADS.UncertaintyHandling = 0;
 optionsBADS.Display = 'iter';
 
 % search
-p = bads(myObj,p0,lb,ub,plb,pub,myNonbcon,optionsBADS);
+[p,fVal] = bads(myObj,p0,lb,ub,plb,pub,myNonbcon,optionsBADS);
 
 end % main function
 

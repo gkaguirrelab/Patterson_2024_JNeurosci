@@ -5,13 +5,13 @@ close all
 
 
 %% Create the RGC temporal sensitivity model
-fitRGCFResponseData
+fitRGCFResponse
 
 
 %% Are we searching or not?
 % Do we want to conduct a search for the fMRI data, or just use the p0
 % values and make plots?
-searchFlag = true;
+searchFlag = false;
 
 % Do we wish to use the monotonic constraint upon surround index in the
 % search?
@@ -42,7 +42,7 @@ eccDegVals = eccDegBinEdges(4:2:14);
 
 % The identities of the stims and subjects
 subjects = {'gka','asb'};
-stimuli = {'L-M','S','LMS'};
+stimuli = {'LminusM','S','LMS'};
 plotColor = {'r','b','k'};
 modelType = {'chromatic','chromatic','luminance'};
 
@@ -101,63 +101,37 @@ for whichStim = 1:3
 
         % Perform the search
         if searchFlag
-            p = fitMRIResponseData(p0,v1FreqX, v1Eccentricity, v1Y, v1W, ...
+            [p,fVal] = fitMRIResponseData(p0,v1FreqX, v1Eccentricity, v1Y, v1W, ...
                 lgnFreqX, lgnY, lgnW, ...
                 modelType{whichStim}, useMonotonicConstraint  );
         else
             p = p0;
+            fVal = nan;
         end
 
-        % plot
-        figure
-
-        freqsForPlotting = logspace(0,2,50);
-        v1Y = reshape(v1Y,6,1,nEcc);
-
-        % Loop over eccentricities
-        for ee=1:nEcc
-            subplot(2,4,ee+(ee>3))
-            semilogx(studiedFreqs,squeeze(v1Y(:,1,ee)),['o' plotColor{whichStim}]);
-            hold on
-            pBlock = [p(2:4) p(nFixed+ee) p(nFixed+nEcc+ee)];
-            switch modelType{whichStim}
-                case 'chromatic'
-                    yFit = returnV1ChromEccTTFFit(pBlock,freqsForPlotting,eccDegVals(ee));
-                case 'luminance'
-                    yFit = returnV1LumEccTTFFit(pBlock,freqsForPlotting,eccDegVals(ee));
-            end
-            semilogx(freqsForPlotting,yFit,['-' plotColor{whichStim}]);
-            refline(0,0);
-            title([stimuli{whichStim} ', ' subjects{whichSub} ', ecc = ' num2str(eccDegVals(ee),2) '°']);
-            ylim([-1 7]);
-        end
-
-        % Add the LGN response
-        switch modelType{whichStim}
-            case 'chromatic'
-                lgnTTFFit = returnlgnLumTTFFit(p,freqsForPlotting,v1Eccentricity);
-            case 'luminance'
-                lgnTTFFit = returnlgnLumTTFFit(p,freqsForPlotting,v1Eccentricity);
-        end
-        subplot(2,4,8)
-        semilogx(lgnFreqX,lgnY,['o' plotColor{whichStim}]);
-        hold on
-        semilogx(freqsForPlotting,lgnTTFFit,['-' plotColor{whichStim}]);
-        refline(0,0);
-        title([stimuli{whichStim} ', ' subjects{whichSub} ', LGN']);
-        ylim([-0.5 4]);
-
-        % Plot the surround suppression index vs. eccentricity
-        subplot(2,4,4)
-        plot(log10(eccDegVals),p(:,nFixed+1:nFixed+nEcc),['*' plotColor{whichStim}]);
-        xlabel('Eccentricity [log deg]');
-        ylabel('Suppression index');
-        ylim([0 1]);
-
-        % Save the plot
-        plotName = [stimuli{whichStim} '_' subjects{whichSub} '_ModelFit.pdf' ];
-        saveas(gcf,fullfile('~/Desktop',plotName));
+        % Save the model parameters and data
+        mriTemporalModel.(stimuli{whichStim}).(subjects{whichSub}).p = p;
+        mriTemporalModel.(stimuli{whichStim}).(subjects{whichSub}).fVal = p;
+        mriTemporalModel.(stimuli{whichStim}).(subjects{whichSub}).data.v1FreqX = v1FreqX;
+        mriTemporalModel.(stimuli{whichStim}).(subjects{whichSub}).data.v1Eccentricity = v1Eccentricity;
+        mriTemporalModel.(stimuli{whichStim}).(subjects{whichSub}).data.v1Y = v1Y;
+        mriTemporalModel.(stimuli{whichStim}).(subjects{whichSub}).data.v1W = v1W;
+        mriTemporalModel.(stimuli{whichStim}).(subjects{whichSub}).data.lgnFreqX = lgnFreqX;
+        mriTemporalModel.(stimuli{whichStim}).(subjects{whichSub}).data.lgnY = lgnY;
+        mriTemporalModel.(stimuli{whichStim}).(subjects{whichSub}).data.lgnW = lgnW;
+        mriTemporalModel.(stimuli{whichStim}).(subjects{whichSub}).modelType = modelType{whichStim};
 
     end
 
 end
+
+%% Save the temporalModel
+mriTemporalModel.meta.studiedFreqs = studiedFreqs;
+mriTemporalModel.meta.eccDegVals = eccDegVals;
+mriTemporalModel.meta.subjects = subjects;
+mriTemporalModel.meta.stimuli = stimuli;
+mriTemporalModel.meta.plotColor = plotColor;
+mriTemporalModel.meta.nFixed = nFixed;
+
+savePath = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults','mriTemporalModel.mat');
+save(savePath,'mriTemporalModel');

@@ -1,8 +1,8 @@
-function [p,fVal] = fitMRIResponseData(p0, v1FreqX, v1Eccentricity, v1Y, v1W, lgnFreqX, lgnY, lgnW, whichModel, useMonotonicConstraint)
+function [p,fVal] = fitMRIResponse(p0, v1FreqX, v1Eccentricity, v1Y, v1W, lgnFreqX, lgnY, lgnW, whichModel, useMonotonicConstraint)
 % Fit the RGC-referred temporal model to combined V1 and LGN data
 %
 % Syntax:
-%   output = myFunc(input)
+%  [p,fVal] = fitMRIResponseData(p0, v1FreqX, v1Eccentricity, v1Y, v1W, lgnFreqX, lgnY, lgnW, whichModel, useMonotonicConstraint)
 %
 % Description:
 %   Model that simultaneously fits TTF responses from the LGN, and from V1

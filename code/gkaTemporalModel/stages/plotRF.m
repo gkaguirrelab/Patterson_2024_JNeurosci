@@ -34,12 +34,12 @@ myTime = 0:0.001:0.1;
 if iscell(cellEquation)
     gainVals = zeros(size(myFreqs)); angleVals = zeros(size(myFreqs));
     for ii=1:length(cellEquation)
-        ttfComplex = eval(subs(cellEquation{ii},myFreqs));
+        ttfComplex = double(subs(cellEquation{ii},myFreqs));
         gainVals = gainVals + abs(ttfComplex).*(1/length(cellEquation));
         angleVals = angleVals + unwrap(angle(ttfComplex)).*(1/length(cellEquation));
     end
 else
-    ttfComplex = eval(subs(cellEquation,myFreqs));
+    ttfComplex = double(subs(cellEquation,myFreqs));
     gainVals = abs(ttfComplex);
     angleVals = angle(ttfComplex);
 end
@@ -78,11 +78,11 @@ if any(whichPanel==3) && ~any(isnan(ttfComplex))
         irf = zeros(size(myTime));
         for ii=1:length(cellEquation)
             cellEquationTime = ifourier(subs(cellEquation{ii},f,w/(2*pi)));
-            irf = irf + (eval(subs(cellEquationTime,myTime)));
+            irf = irf + (double(subs(cellEquationTime,myTime)));
         end
     else
         cellEquationTime = ifourier(subs(cellEquation,f,w/(2*pi)),w,x);
-        irf = eval(subs(cellEquationTime,x,myTime));
+        irf = double(subs(cellEquationTime,x,myTime));
     end
 
     % Scale the IRF to unit amplitude

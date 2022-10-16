@@ -16,7 +16,7 @@ loadPath = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data
 load(loadPath,'V1ecc_mri');
 
 % Do we want to conduct a search, or just use the p0 values and make plots?
-searchFlag = true;
+searchFlag = false;
 
 % Do we wish to use the monotonic constraint upon surround index in the
 % search?

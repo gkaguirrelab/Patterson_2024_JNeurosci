@@ -110,6 +110,8 @@ else
     p = p0;
 end
 
+
+%% Report results
 % Call the objective at the solution to report the fVals
 myFit(p,true);
 
@@ -119,8 +121,7 @@ for ss=1:length(p); str = [str sprintf('%2.10f, ',p(ss))]; end
 str = [str(1:end-2) ' ];\n'];
 fprintf(str);
 
-
-%% Report the results
+% Reshape and store the parameters
 LMRatio = p(end);
 coneDelay = p(end-1);
 cfCone = p(end-2);
@@ -129,59 +130,15 @@ p = reshape(p(1:nBlockParams*nEccBands*nCellClasses),[nBlockParams,nEccBands,nCe
 % Report the common params
 fprintf('cfCone: %2.2f, coneDelay: %2.2f, LMRatio: %2.2f \n',cfCone,coneDelay,LMRatio)
 
-% Dump out the reshaped p values
-p
 
-% Plot each eccentricity band
-eccDegs = [];
+%% Interpolate params across eccentricity
+
+% This is the position within each RGC recording bin that the model has
+% identified as the correct location
+eccDegs = zeros(1,nEccBands);
 for ee = 1:nEccBands
-
-    % Extract the midget parameter values for this eccentricity band
-    pBlock = squeeze(p(:,ee,1));
-    eccBin = eccBins{ee};
-    eccField = eccFields{ee};
-
-    % The eccProportion parameter is used to determine the precise eccentricity
-    % location within the range provided by the eccBin
-    eccProportion = pBlock(8);
-    eccDegs(ee) = eccBin(1)+eccProportion*(range(eccBin));
-    
-    % Get the midget temporal RFs defined by these parameters
-    [rfMidgetChrom, rfMidgetLum, rfLMCone] = ...
-        parseParamsMidget(pBlock, cfCone, coneDelay, LMRatio, eccDegs(ee));
-
-    % Plot the midget temporal RFs
-    figHandle = figure();
-    plotRF(rfMidgetLum,figHandle,'-k');
-    plotRF(rfMidgetChrom,figHandle,'-r');
-    plotRF(rfLMCone,figHandle,'-g',3);
-    subplot(3,1,1);
-    loglog(midgetData.(eccField).chromatic.f,midgetData.(eccField).chromatic.g,'*r');
-    loglog(midgetData.(eccField).luminance.f,midgetData.(eccField).luminance.g,'*k');
-    title(sprintf('Eccentricity = %2.1f',eccDegs(ee)));
-    subplot(3,1,2);
-    semilogx(midgetData.(eccField).chromatic.f,midgetData.(eccField).chromatic.p,'*r');
-    semilogx(midgetData.(eccField).luminance.f,midgetData.(eccField).luminance.p,'*k');
-
-    % Extract the parasol parameter values for this eccentricity band
-    pBlock = squeeze(p(:,ee,2));
-
-     % Get the parasol temporal RF defined by these parameters
-     [rfParasaolLum, rfLMCone] = ...
-        parseParamsParasol(pBlock, cfCone, coneDelay);
-
-    % Plot the parasol temporal RF
-    figHandle = figure();
-    plotRF(rfParasaolLum,figHandle,'-b');
-    plotRF(rfLMCone,figHandle,'-g',3);
-    subplot(3,1,1);
-    hold on
-    loglog(parasolData.(eccField).luminance.f,parasolData.(eccField).luminance.g,'*b');
-    title(sprintf('Eccentricity = %2.1f',eccDegs(ee)));
-
+    eccDegs(ee) = eccBins{ee}(1)+squeeze(p(8,ee,1)*range(eccBins{ee}));
 end
-
-% Plot the parameters vs. eccentricity and obtain params x eccentricity
 
 % A simple linear interpolation and extrapolation, bounded by maximum
 % returned values from the search
@@ -189,46 +146,29 @@ myInterpObj = @(v,xq,ii) max([repmat(plbBlock(ii),1,length(xq)); min([repmat(max
 
 % Loop across cells
 for cc=1:2
-    figure
-
     % Loop across the 7 params that vary with eccentricty
     for ii=1:nBlockParams-1
-
         % The values for this param across eccentricity, and the mean
         y = squeeze(p(ii,:,cc));
         pMean(ii,cc) = mean(y);
-
         % Fit the values and store the fit
         pFitByEccen{ii,cc} = @(xq) myInterpObj(y,xq,ii);
-
-        % Plot these values and the fit
-        subplot(4,2,ii)
-        plot(eccDegs,y,'ok')
-        hold on
-        eccDegsFit = 0:90;
-        plot(eccDegsFit,pFitByEccen{ii,cc}(eccDegsFit),'-r')
-        title(blockParamNames{ii})
-        xlabel('Eccentricity [deg]'); ylabel('param value')
-        ylim([lbBlock(ii) ubBlock(ii)]);
-
-    end
-    switch cc
-        case 1
-            sgtitle('Midget parameters')
-        case 2
-            sgtitle('Parasol parameters')
     end
 end
 
 
-%% Save the midgetModel structure
-temporalModel.pMean = pMean;
-temporalModel.pFitByEccen = pFitByEccen;
-temporalModel.blockParamNames = blockParamNames;
+%% Save the temporalModel
+temporalModel.p = p;
 temporalModel.LMRatio = LMRatio;
 temporalModel.coneDelay = coneDelay;
 temporalModel.cfCone = cfCone;
-temporalModel.eccDegs = eccDegs;
+temporalModel.pMean = pMean;
+temporalModel.pFitByEccen = pFitByEccen;
+temporalModel.meta.blockParamNames = blockParamNames;
+temporalModel.meta.eccFields = eccFields;
+temporalModel.meta.eccBins = eccBins;
+temporalModel.meta.lbBlock = lbBlock;
+temporalModel.meta.ubBlock = ubBlock;
 
 savePath = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults','temporalModel.mat');
 save(savePath,'temporalModel');

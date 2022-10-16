@@ -3,8 +3,19 @@
 clear
 close all
 
+
 %% Create the RGC temporal sensitivity model
 fitRGCFResponseData
+
+
+%% Are we searching or not?
+% Do we want to conduct a search for the fMRI data, or just use the p0
+% values and make plots?
+searchFlag = true;
+
+% Do we wish to use the monotonic constraint upon surround index in the
+% search?
+useMonotonicConstraint = false;
 
 
 %% Load the Mt. Sinai data
@@ -22,13 +33,6 @@ load(loadPath,'LGN_V1mri');
 % value is 50%tile, 3rd value is 97.5%tile)
 loadPath = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','amplitudeResults','gka_asb_V1_ecc_BOLD.mat');
 load(loadPath,'V1ecc_mri');
-
-% Do we want to conduct a search, or just use the p0 values and make plots?
-searchFlag = true;
-
-% Do we wish to use the monotonic constraint upon surround index in the
-% search?
-useMonotonicConstraint = false;
 
 % Define the eccentricity locations of the data. We use the log-mid point
 % within each of the bins for the cortical

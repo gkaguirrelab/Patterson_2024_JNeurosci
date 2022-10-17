@@ -11,11 +11,11 @@ fitRGCFResponse
 %% Are we searching or not?
 % Do we want to conduct a search for the fMRI data, or just use the p0
 % values and make plots?
-searchFlag = false;
+searchFlag = true;
 
 % Do we wish to use the monotonic constraint upon surround index in the
 % search?
-useMonotonicConstraint = false;
+useMonotonicConstraint = true;
 
 
 %% Load the Mt. Sinai data
@@ -101,9 +101,18 @@ for whichStim = 1:3
 
         % Perform the search
         if searchFlag
+
+            % BADS it
             [p,fVal] = fitMRIResponse(p0,v1FreqX, v1Eccentricity, v1Y, v1W, ...
                 lgnFreqX, lgnY, lgnW, ...
                 modelType{whichStim}, useMonotonicConstraint  );
+
+            % Print the parameters in a format to be used as a seed in future searches
+            str = 'p0 = [ ';
+            for ss=1:length(p); str = [str sprintf('%2.10f, ',p(ss))]; end
+            str = [str(1:end-2) ' ];\n'];
+            fprintf(str);
+
         else
             p = p0;
             fVal = nan;

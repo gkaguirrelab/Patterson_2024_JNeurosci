@@ -41,38 +41,59 @@ for ee = 1:length(myEccs)
         parseParamsMidget(pBlockMidget, cfCone, coneDelay, LMRatio, eccDeg);
 
     % Construct the response grid
-    rfLMConeGrid(ee,:) = abs(double(subs(rfLMCone,myFreqs)));
-    rfParasolBipolarGrid(ee,:) = abs(double(subs(rfParasolBipolar,myFreqs)));
-    rfMidgetBipolarGrid(ee,:) = abs(double(subs(rfMidgetBipolar,myFreqs)));
-    rfRGCParasolLumGrid(ee,:) = abs(double(subs(rfRGCParasolLum,myFreqs)));
-    rfRGCMidgetLumGrid(ee,:) = abs(double(subs(rfRGCMidgetLum,myFreqs)));
-    rfRGCMidgetChromGrid(ee,:) = abs(double(subs(rfRGCMidgetChrom,myFreqs)));
+    plotData.rfLMConeGrid(ee,:) = abs(double(subs(rfLMCone,myFreqs)));
+    plotData.rfParasolBipolarGrid(ee,:) = abs(double(subs(rfParasolBipolar,myFreqs)));
+    plotData.rfMidgetBipolarGrid(ee,:) = abs(double(subs(rfMidgetBipolar,myFreqs)));
+    plotData.rfRGCParasolLumGrid(ee,:) = abs(double(subs(rfRGCParasolLum,myFreqs)));
+    plotData.rfRGCMidgetLumGrid(ee,:) = abs(double(subs(rfRGCMidgetLum,myFreqs)));
+    plotData.rfRGCMidgetChromGrid(ee,:) = abs(double(subs(rfRGCMidgetChrom,myFreqs)));
 
 end
 
-rfLMConeGrid = (rfLMConeGrid./max(rfLMConeGrid,[],2)).*(max(rfLMConeGrid(:)));
-figure
-map = [ linspace(0,1,255);[linspace(0,0.5,127) linspace(0.5,0,128)];[linspace(0,0.5,127) linspace(0.5,0,128)]]';
-colormap(map)
+plotItems = {'rfLMConeGrid','rfParasolBipolarGrid','rfMidgetBipolarGrid',...
+    'rfRGCParasolLumGrid','rfRGCMidgetLumGrid','rfRGCMidgetChromGrid'};
 [X,Y] = meshgrid(log10(myFreqs),myEccs);
-subplot(2,3,1);
-s = mesh(X,Y,rfLMConeGrid);
-s.FaceColor = 'interp';
-s.FaceAlpha = 0.5;
-subplot(2,3,2);
-s = mesh(X,Y,rfParasolBipolarGrid);
-s.FaceColor = 'interp';
-s.FaceAlpha = 0.5;
+zLimMax = [60,40,40,10,10,10];
+map = [ linspace(0,1,255);[linspace(0,0.5,127) linspace(0.5,0,128)];[linspace(0,0.5,127) linspace(0.5,0,128)]]';
 
-subplot(2,3,3);
-mesh(X,Y,rfMidgetBipolarGrid)
-subplot(2,3,4);
-mesh(X,Y,rfRGCParasolLumGrid)
-subplot(2,3,5);
-mesh(X,Y,rfRGCMidgetLumGrid)
-subplot(2,3,6);
-mesh(X,Y,rfRGCMidgetChromGrid)
+f = figure('Renderer','painters');
+colormap(map)
+for ii=1:length(plotItems)
+    subplot(2,3,ii);
+    plot3([log10(myFreqs(1)) log10(myFreqs(1))],[0 90],[0 0],'-b')
+    hold on
+    plot3([log10(myFreqs(1)) log10(myFreqs(1))],[0 90],[zLimMax(ii) zLimMax(ii)],'-b')
+    plot3([log10(myFreqs(end)) log10(myFreqs(end))],[0 90],[zLimMax(ii) zLimMax(ii)],'-b')
+    plot3([log10(myFreqs(1)) log10(myFreqs(1))],[0 0],[0 zLimMax(ii)],'-b')
+    plot3([log10(myFreqs(1)) log10(myFreqs(1))],[90 90],[0 zLimMax(ii)],'-b')
+    plot3([log10(myFreqs(1)) log10(myFreqs(end))],[0 0],[0 0],'-b')
+    plot3([log10(myFreqs(1)) log10(myFreqs(end))],[0 0],[zLimMax(ii) zLimMax(ii)],'-b')
+    plot3([log10(myFreqs(1)) log10(myFreqs(end))],[90 90],[zLimMax(ii) zLimMax(ii)],'-b')
+    s = mesh(X,Y,plotData.(plotItems{ii}));
+    plot3([log10(myFreqs(end)) log10(myFreqs(end))],[90 90],[0 zLimMax(ii)],'-b')
+    s.FaceColor = 'interp';
+    s.FaceAlpha = 0.5;
+    s.EdgeAlpha = 0.75;
+    view([145 20]);
+    ylim([0 90]);
+    zlim([0 zLimMax(ii)]);
+    a = gca;
+    a.Color = 'none';
+    a.XTickLabel={'1','10','100'};
+    a.YTick=[0 30 60 90];
+    a.YTickLabelRotation = 0;
+    axis square
+    grid off
+    box off
+    title({plotItems{ii}})
+end
+
+saveas(f,'~/Desktop/untitled.pdf');
 
 figure
 colormap(map)
-contourf(X,Y,rfRGCMidgetChromGrid,15,'LineWidth',2)
+for ii=1:length(plotItems)
+    subplot(2,3,ii);
+contourf(X,Y,plotData.(plotItems{ii}),15,'LineWidth',0.5)
+    axis square
+end

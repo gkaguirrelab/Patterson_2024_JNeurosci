@@ -1,13 +1,14 @@
 function [lgnChromAmplitude,lgnChromPhase] = returnlgnChromTTFFit(p,lgnFreqX,v1Eccentricity)
 
+nFixed = 5;
 nEcc = 6;
-nFixed = 4;
 
 % Unpack model parameters
-lgnGain = p(1);
-secondOrderFc = p(2);
-secondOrderQ = p(3);
-surroundDelay = p(4);
+LMConeRatio = p(1);
+lgnGain = p(2);
+secondOrderFc = p(3);
+secondOrderQ = p(4);
+surroundDelay = p(5);
 surroundIndex = p(nFixed+1:nFixed+nEcc);
 nSubtractions = 1; % One delayed surround stage at the LGN
 
@@ -24,7 +25,7 @@ surroundIndex = interp1(log10(unique(v1Eccentricity)),surroundIndex,log10(eccDeg
 % Loop through eccentricities and obtain modeled responses
 rfChromLGN = {};
 parfor ee=1:length(eccDegVals)
-    [rfChromLGN{ee}] = returnPostRetinalResponses(eccDegVals(ee),secondOrderFc,secondOrderQ,surroundIndex(ee),surroundDelay,nSubtractions);
+    [rfChromLGN{ee}] = returnPostRetinalResponses(eccDegVals(ee),LMConeRatio,secondOrderFc,secondOrderQ,surroundIndex(ee),surroundDelay,nSubtractions);
 end
 
 % Obtain the average chromatic TTF across these eccentricities

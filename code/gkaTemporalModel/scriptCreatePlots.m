@@ -61,6 +61,10 @@ for ee = 1:nEccBands
     semilogx(midgetData.(eccField).chromatic.f,midgetData.(eccField).chromatic.p,'*r');
     semilogx(midgetData.(eccField).luminance.f,midgetData.(eccField).luminance.p,'*k');
 
+    % Save the plot
+    plotName = ['midgetTemporalRF_' num2str(eccDegs(ee),2) '_ModelFit.pdf' ];
+    saveas(gcf,fullfile('~/Desktop',plotName));
+
     % Extract the parasol parameter values for this eccentricity band
     pBlock = squeeze(pRGC(:,ee,2));
 
@@ -76,6 +80,9 @@ for ee = 1:nEccBands
     hold on
     loglog(parasolData.(eccField).luminance.f,parasolData.(eccField).luminance.g,'*b');
     title(sprintf('Eccentricity = %2.1f',eccDegs(ee)));
+
+    plotName = ['parasolTemporalRF_' num2str(eccDegs(ee),2) '_ModelFit.pdf' ];
+    saveas(gcf,fullfile('~/Desktop',plotName));
 
 end
 
@@ -142,7 +149,7 @@ for whichStim = 1:length(stimuli)
             subplot(2,4,ee+(ee>3))
             semilogx(studiedFreqs,squeeze(v1Y(:,1,ee)),['o' plotColor{whichStim}]);
             hold on
-            pBlock = [pMRI(2:4) pMRI(nFixed+ee) pMRI(nFixed+nEcc+ee)];
+            pBlock = [pMRI(1) pMRI(3:5) pMRI(nFixed+ee) pMRI(nFixed+nEcc+ee)];
             switch modelType
                 case 'chromatic'
                     yFit = returnV1ChromEccTTFFit(pBlock,freqsForPlotting,eccDegVals(ee));

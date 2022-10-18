@@ -2,11 +2,14 @@ function [rfPostRetinalMidgetChrom,rfPostRetinalLum,...
     rfPostRetinalMidgetLum,rfPostRetinalParasolLum,...
     rfRGCMidgetChrom,rfRGCMidgetLum,rfRGCParasolLum,...
     rfMidgetBipolar,rfParasolBipolar,rfLMCone] = ...
-        returnPostRetinalResponses(eccDeg,secondOrderFc,secondOrderQ,surroundIndex,surroundDelay,nSubtractions)
+        returnPostRetinalResponses(eccDeg,LMConeRatio,secondOrderFc,secondOrderQ,surroundIndex,surroundDelay,nSubtractions)
 
 % Load the RGC model parameters
 loadPath = fullfile(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath'))))),'data','temporalModelResults','rgcTemporalModel.mat');
 load(loadPath,'rgcTemporalModel');
+
+% Substitute the passed LMConeRatio for the value used to fit the RGC data
+rgcTemporalModel.LMRatio = LMConeRatio;
 
 % Drasdo 2007 equation for the midget fraction as a function of
 % eccentricity
@@ -88,7 +91,7 @@ for ii = 1:nSubtractions
 end
 
 % Apply a post-lgn, second order low pass filter
-if nSubtractions == 2
+if nSubtractions > 1
     rfPostRetinalMidgetChrom = rfPostRetinalMidgetChrom.*stageSecondOrderLP(f,secondOrderFc,secondOrderQ);
     rfPostRetinalMidgetLum = rfPostRetinalMidgetLum.*stageSecondOrderLP(f,secondOrderFc,secondOrderQ);
     rfPostRetinalParasolLum = rfPostRetinalParasolLum.*stageSecondOrderLP(f,secondOrderFc,secondOrderQ);

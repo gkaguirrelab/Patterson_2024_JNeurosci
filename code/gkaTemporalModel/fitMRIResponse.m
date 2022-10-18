@@ -24,6 +24,7 @@ function [p,fVal] = fitMRIResponse(p0, v1FreqX, v1Eccentricity, v1Y, v1W, lgnFre
 %   the varying of the index of surround inhibition.
 %
 %   The parameters of the model are:
+%       LMConeRatio   - Ratio of L-to-M cones in the modeled retina
 %       lgnGain       - Multiplicative gain for fitting the LGN amplitudes
 %       secondOrderFc - Corner frequency of 2nd order filter at V1 stage
 %       secondOrderQ  - "Quality" parameter of 2nd order filter at V1
@@ -82,8 +83,8 @@ switch whichModel
         myLGNTTF = @(p) returnlgnChromTTFFit(p,lgnFreqX,v1Eccentricity);
 
         % Plausible bounds for the search
-        plb = [ 0.01 10 0.5 20 repmat(0.2,1,nEcc) zeros(1,nEcc)];
-        pub = [ 0.10 20 1.0 30 repmat(0.8,1,nEcc) ones(1,nEcc)];
+        plb = [ 0.5 0.01 10 0.5 20 repmat(0.2,1,nEcc) zeros(1,nEcc)];
+        pub = [ 2.0 0.10 20 1.0 30 repmat(0.8,1,nEcc) ones(1,nEcc)];
 
     case 'luminance'
 
@@ -92,8 +93,8 @@ switch whichModel
         myLGNTTF = @(p) returnlgnLumTTFFit(p,lgnFreqX,v1Eccentricity);
 
         % Plausible bounds for the search
-        plb = [ 0.01 20 0.1 10 repmat(0.2,1,nEcc) zeros(1,nEcc)];
-        pub = [ 0.10 30 0.3 20 repmat(0.8,1,nEcc) ones(1,nEcc)];
+        plb = [ 0.5 0.01 20 0.1 10 repmat(0.2,1,nEcc) zeros(1,nEcc)];
+        pub = [ 2.0 0.10 30 0.3 20 repmat(0.8,1,nEcc) ones(1,nEcc)];
 
 end
 
@@ -102,8 +103,8 @@ myObj = @(p) norm(v1W.*(v1Y - myV1TTF(p))) + ...
     norm(lgnW.*(lgnY - myLGNTTF(p)));
 
 % hard bounds
-lb = [ 0  10 0.01 05 zeros(1,nEcc) zeros(1,nEcc)];
-ub = [ 1  50 2.00 40 ones(1,nEcc) ones(1,nEcc)];
+lb = [ 0.3 0 10 0.01 05 zeros(1,nEcc) zeros(1,nEcc)];
+ub = [ 3.0 1 50 2.00 40 ones(1,nEcc) ones(1,nEcc)];
 
 % Non-linear constraint that surround index decreases with eccentricity
 if useMonotonicConstraint
@@ -129,7 +130,7 @@ end % main function
 
 % Enforce constraint of declining surround index with eccentricity
 function c = nonbcon(p)
-nEcc = 6; nFixed = 4;
+nEcc = 6; nFixed = 5;
 surroundIndex = p(:,nFixed+1:nFixed+nEcc);
 c = sum(diff(surroundIndex,1,2)>0,2);
 end
@@ -139,12 +140,12 @@ function response = assembleV1ChromResponseAcrossEcc(p,v1FreqX,v1Eccentricity)
 eccDegVals = unique(v1Eccentricity);
 studiedFreqs = unique(v1FreqX);
 % Info needed to unpack the param vector
-nFixed = 4;
+nFixed = 5;
 nEcc = length(eccDegVals);
 % Build the response vector
 response = [];
 parfor ee=1:length(eccDegVals)
-    pBlock = [p(2:4) p(nFixed+ee) p(nFixed+nEcc+ee)];
+    pBlock = [p(1) p(3:5) p(nFixed+ee) p(nFixed+nEcc+ee)];
     response(ee,:) = returnV1ChromEccTTFFit(pBlock,studiedFreqs,eccDegVals(ee));
 end
 response = reshape(response',1,length(v1FreqX));
@@ -156,12 +157,12 @@ function response = assembleV1LumResponseAcrossEcc(p,v1FreqX,v1Eccentricity)
 eccDegVals = unique(v1Eccentricity);
 studiedFreqs = unique(v1FreqX);
 % Info needed to unpack the param vector
-nFixed = 4;
+nFixed = 5;
 nEcc = length(eccDegVals);
 % Build the response vector
 response = [];
 parfor ee=1:length(eccDegVals)
-    pBlock = [p(2:4) p(nFixed+ee) p(nFixed+nEcc+ee)];
+    pBlock = [p(1) p(3:5) p(nFixed+ee) p(nFixed+nEcc+ee)];
     response(ee,:) = returnV1LumEccTTFFit(pBlock,studiedFreqs,eccDegVals(ee));
 end
 response = reshape(response',1,length(v1FreqX));

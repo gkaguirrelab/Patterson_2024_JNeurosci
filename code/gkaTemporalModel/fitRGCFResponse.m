@@ -11,11 +11,11 @@
 
 %% Housekeeping
 rng;
-searchFlag = false;
+searchFlag = true;
 
 
 %% Load the flicker response data
-[midgetData, parasolData] = loadRGCResponseData();
+rgcData = loadRGCResponseData();
 
 
 %% Set model constants
@@ -71,14 +71,16 @@ ubBlock =  [2.00, 0.90, 60, 90, 3.00, 1.1, 10, 0.95];
 shrinkParams = {...
     [false false false false false true false false], ... % midget shrink
     [true true true false false true true true] ...       % parasol shrink
+    [true true true true true true true true] ...         % bistratified shrink
     };
 
 % Assemble the p0 and bounds out of the block and common parameters
-p0 = [p0Block p0Block p0Block p0Block p0Block p0Block cfCone coneDelay LMRatio];
-lb = [lbBlock lbBlock lbBlock lbBlock lbBlock lbBlock 10 10 0.50];
-plb = [plbBlock plbBlock plbBlock plbBlock plbBlock plbBlock 12 12 0.90];
-pub = [pubBlock pubBlock pubBlock pubBlock pubBlock pubBlock 18 15 1.10];
-ub = [ubBlock ubBlock ubBlock ubBlock ubBlock ubBlock 20 18 2.00];
+nBlocks = 6;
+p0 = [repmat(p0Block,1,nBlocks) cfCone coneDelay LMRatio];
+lb = [repmat(lbBlock,1,nBlocks) 10 10 0.50];
+plb = [repmat(plbBlock,1,nBlocks) 12 12 0.90];
+pub = [repmat(pubBlock,1,nBlocks) 18 15 1.10];
+ub = [repmat(ubBlock,1,nBlocks) 20 18 2.00];
 
 % Derive and set some values we will need later
 nBlockParams = length(p0Block);
@@ -86,12 +88,18 @@ nEccBands = length(eccFields);
 nCellClasses = 2;
 
 % Here is a seed from a prior search with good performance
-% fValGain: 4.55, fValPhase: 0.65, shrinkMidget: 0.00, shrinkParasol: 0.05 
-p0 = [ 0.1983280182, 0.5919000626, 5.0092568539, 39.6864366531, 1.6134586334, 0.8973509789, 2.4038162231, 0.7417186737, 0.5842558384, 0.6490404129, 16.3420312164, 42.6737880707, 1.3564567566, 0.8973524094, 2.4410309792, 0.1727054596, 1.1209675074, 0.7185020447, 32.3906304156, 51.2771272659, 2.5115203857, 0.8973725319, 3.8472123146, 0.7044895172, 1.0625937462, 0.4812376022, 4.4304386253, 34.3931293488, 0.6049289703, 0.9352448463, 3.7098846436, 0.5005989075, 1.0664087057, 0.4809083939, 4.4306791254, 57.7725505829, 0.7000017166, 0.9352942467, 3.7210555077, 0.5003509521, 1.0644318581, 0.4811956406, 4.4307297587, 59.0841722488, 2.4875526428, 0.9353614807, 3.7221984863, 0.5005889893, 14.1451263428, 13.6162118912, 0.9941482544 ];
-
+% fValGain: 4.55, fValPhase: 0.66, shrinkMidget: 0.00, shrinkParasol: 0.03 
+p0 = [ ...
+    0.1972097355, 0.5846308186, 5.0149334709, 39.8756076121, 1.5605660335, 0.8973745150, 2.4044085092, 0.7469553411, ...
+    0.5832596217, 0.6475761358, 16.3549848095, 42.5415901253, 1.3650369485, 0.8973755821, 2.4506626798, 0.0500003678, ...
+    1.1184292023, 0.7163389747, 32.4052113911, 51.3445703584, 2.5330080011, 0.8974094916, 3.8386941140, 0.7034826188, ...
+    1.0643874637, 0.4814463600, 4.4342387618, 34.3600976944, 0.6029321683, 0.9352258071, 3.7132009941, 0.5003314620, ...
+    1.0654956466, 0.4808840309, 4.4345761549, 58.0414818227, 0.7000975664, 0.9353066738, 3.7183583268, 0.5005013968, ...
+    1.0647037918, 0.4813159307, 4.4349439070, 59.1540781916, 2.4885065617, 0.9353385903, 3.7192254514, 0.5011164645, ...
+    14.1423620647, 13.6251217899, 0.9929001757 ];
 
 %% Define the objective and non-linear bound
-myFit = @(p,verbose) rgcFitObjective(p,midgetData,parasolData,...
+myFit = @(p,verbose) rgcFitObjective(p,rgcData,...
     shrinkParams,nBlockParams,eccFields,eccBins,...
     phaseErrorScale,shrinkErrorScale,verbose);
 myObj = @(p) myFit(p,false);
@@ -117,7 +125,12 @@ myFit(p,true);
 
 % Print the parameters in a format to be used as a seed in future searches
 str = 'p0 = [ ';
-for ss=1:length(p); str = [str sprintf('%2.10f, ',p(ss))]; end
+for ss=1:length(p)
+    str = [str sprintf('%2.10f, ',p(ss))];
+    if mod(ss,nBlockParams)==0
+        str = [str '...\n'];
+    end
+end
 str = [str(1:end-2) ' ];\n'];
 fprintf(str);
 
@@ -213,7 +226,7 @@ end
 
 
 %% rgcFitObjective
-function fVal = rgcFitObjective(p,midgetData,parasolData,shrinkParams,nBlockParams,eccFields,eccBins,phaseErrorScale,shrinkErrorScale,verbose)
+function fVal = rgcFitObjective(p,rgcData,shrinkParams,nBlockParams,eccFields,eccBins,phaseErrorScale,shrinkErrorScale,verbose)
 % Given the midget and parasol data, as well as the full set of parameters
 % across cell classes and eccentricity, derive the model fit error, with
 % separate initial terms for fitting the gain and phase components of the
@@ -221,23 +234,30 @@ function fVal = rgcFitObjective(p,midgetData,parasolData,shrinkParams,nBlockPara
 % used to drive certain sets of parameters to be the same across
 % eccentricity locations.
 
+nEccBins = length(eccFields);
+nCellClasses = 2;
+
 % Extract and reshape the parameters
 LMRatio = p(end);
 coneDelay = p(end-1);
 cfCone = p(end-2);
-p = reshape(p(1:nBlockParams*3*2),[nBlockParams,3,2]);
+p = reshape(p(1:nBlockParams*3*2),[nBlockParams,nEccBins,nCellClasses]);
 
 % Loop across eccentricity bands. Can make this parfor for speed
 for ee = 1:length(eccFields)
 
-    %% Midgets
-    % Extract the parameter values for this eccentricity band
-    pBlock = squeeze(p(:,ee,1));
+    % The eccentricity domain
     eccBin = eccBins{ee};
     eccField = eccFields{ee};
 
-    % The eccProportion parameter is used to determine the precise eccentricity
-    % location within the range provided by the eccBin
+    %% Midget
+    % Extract the parameter values for this eccentricity band
+    pBlock = squeeze(p(:,ee,1));
+
+    % The eccProportion parameter is used to determine the precise
+    % eccentricity location within the range provided by the eccBin. This
+    % is needed for the midget calculation (as it is sensitivity to the
+    % random cone wiring at this position) but not the other RGC classe.
     eccProportion = pBlock(8);
     eccDeg = eccBin(1)+eccProportion*(range(eccBin));
 
@@ -245,28 +265,33 @@ for ee = 1:length(eccFields)
     [rfMidgetChrom, rfMidgetLum] = parseParamsMidget(pBlock, cfCone, coneDelay, LMRatio, eccDeg);
 
     % Derive the complex fourier domain TTF from the symbolic equations
-    chromTTF = double(subs(rfMidgetChrom,midgetData.(eccField).chromatic.f));
-    lumTTF = double(subs(rfMidgetLum,midgetData.(eccField).luminance.f));
+    chromTTF = double(subs(rfMidgetChrom,rgcData.midget.(eccField).chromatic.f));
+    lumTTF = double(subs(rfMidgetLum,rgcData.midget.(eccField).luminance.f));
 
     % Error in fitting the gain values
-    chromGainErrorMidget(ee) = norm(midgetData.(eccField).chromatic.g - abs(chromTTF));
-    lumGainErrorMidget(ee) = norm(midgetData.(eccField).luminance.g - abs(lumTTF));
+    chromGainErrorMidget(ee) = norm(rgcData.midget.(eccField).chromatic.g - abs(chromTTF));
+    lumGainErrorMidget(ee) = norm(rgcData.midget.(eccField).luminance.g - abs(lumTTF));
 
     % Error in fitting the phase values
-    chromPhaseErrorMidget(ee) = norm(midgetData.(eccField).chromatic.p - unwrap(angle(chromTTF))*(180/pi));
-    lumPhaseErrorMidget(ee) = norm(midgetData.(eccField).luminance.p - unwrap(angle(lumTTF))*(180/pi));
+    chromPhaseErrorMidget(ee) = norm(rgcData.midget.(eccField).chromatic.p - unwrap(angle(chromTTF))*(180/pi));
+    lumPhaseErrorMidget(ee) = norm(rgcData.midget.(eccField).luminance.p - unwrap(angle(lumTTF))*(180/pi));
 
-    %% Parasols
+    %% Parasol
+    % Extract the parameter values for this eccentricity band
     pBlock = squeeze(p(:,ee,2));
 
     % Get the temporal RF defined by these parameters
     rfParasaolLum = parseParamsParasol(pBlock, cfCone, coneDelay);
 
     % Derive the complex fourier domain TTF from the symbolic equations
-    lumTTF = double(subs(rfParasaolLum,parasolData.(eccField).luminance.f));
+    lumTTF = double(subs(rfParasaolLum,rgcData.parasol.(eccField).luminance.f));
 
-    % Error in fitting the gain values    chromGainErrorMidget(ee) = norm(midgetData.(eccField).chromatic.g - abs(chromTTF));
-    lumGainErrorParasol(ee) = norm(parasolData.(eccField).luminance.g - abs(lumTTF));
+    % Error in fitting the gain values    chromGainErrorMidget(ee) = norm(rgcData.midget.(eccField).chromatic.g - abs(chromTTF));
+    lumGainErrorParasol(ee) = norm(rgcData.parasol.(eccField).luminance.g - abs(lumTTF));
+
+    %% Bistratified
+    % Extract the parameter values for this eccentricity band
+    
 
 end
 

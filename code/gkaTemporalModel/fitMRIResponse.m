@@ -1,4 +1,4 @@
-function [pMRI,fVal] = fitMRIResponse(p0, v1FreqX, v1Eccentricity, v1Y, v1W, lgnFreqX, lgnY, lgnW, whichModel, useMonotonicConstraint)
+function [pMRI,fVal] = fitMRIResponse(p0,stimulusDirections,studiedEccentricites,studiedFreqs,v1Y,v1W,lgnY,lgnW,useMonotonicConstraint)
 % Fit the RGC-referred temporal model to combined V1 and LGN data
 %
 % Syntax:
@@ -13,7 +13,7 @@ function [pMRI,fVal] = fitMRIResponse(p0, v1FreqX, v1Eccentricity, v1Y, v1W, lgn
 %   subject to a delayed surround inhibition. Responses at V1 are the
 %   responses from the LGN, subject to another iteration of delayed
 %   surround inhibition, and also subject to a second-order, low-pass
-%   temporal filter. 
+%   temporal filter.
 %
 %   The effect of eccentricity is present in the model in
 %   both a fixed and parameterized form. There is a fixed effect of
@@ -37,80 +37,86 @@ function [pMRI,fVal] = fitMRIResponse(p0, v1FreqX, v1Eccentricity, v1Y, v1W, lgn
 %                       at each eccentricity band.
 %
 % Inputs:
-%   p0                    - 1x[4+k*2] vector of parameters for the model fit.
-%   v1FreqX               - 1xn vector of frequency values (in Hz) the
+%   p0                    - 1x[c*(4+k*2)] vector of parameters for the
+%                           model fit, where c is the number of cell
+%                           classes (midget, parasol, bistratified)
+%   v1FreqX               - 1x(s*n) vector of frequency values (in Hz) the
 %                           correspond to the cortical amplitude values in
-%                           v1Y. The length is equal to j * k, where j is
-%                           the number of frequencies and k is the number
-%                           of eccentricities.
-%   v1Eccentricity        - 1xn vector of eccentricity locations (in
+%                           v1Y. The length is equal to s*j*k, where s is
+%                           the number of stimulusDirections
+%                           ('LminusM','S','LMS'), j is the number of
+%                           frequencies and k is the number of
+%                           eccentricities.
+%   v1Eccentricity        - 1x(s*n) vector of eccentricity locations (in
 %                           degrees) from which the v1Y measurements were
 %                           made.
-%   v1Y                   - 1xn vector of BOLD amplitudes at each of many
-%                           eccentricities and stimulus frequencies. The
-%                           order of these is:
-%                             [ [e1f1 e1f2 ... e1fj] [e2f1 e2f2 ... e2fj]
-%   v1W                   - 1xn vector of weights for each of the
+%   v1Y                   - 1x(s*n) vector of BOLD amplitudes at each of
+%                           many eccentricities and stimulus frequencies.
+%                           The order of these is:
+%                             [ [s1e1f1 s1e1f2 ... s1e1fj] [s1e2f1 s1e2f2 ... s1e2fj]
+%   v1W                   - 1x(s*n) vector of weights for each of the
 %                           measurements in v1Y. One choice is the inverse
 %                           of the 95% CI of the measurement.
-%   lgnFreqX              - 1xj vector of frequencies for which the LGN
+%   lgnFreqX              - 1x(s*j) vector of frequencies for which the LGN
 %                           measurements were made.
-%   lgnY                  - 1xj vector of BOLD amplitudes measured from the
-%                           LGN.
-%   lgnW                  - 1xj vector of weights for the measurements in
-%                           lgnY.
-%   whichModel            - String or char vec from the set:
-%                               {'chromatic','luminance'}
+%   lgnY                  - 1x(s*j) vector of BOLD amplitudes measured from
+%                           the LGN.
+%   lgnW                  - 1x(s*j) vector of weights for the measurements
+%                           in lgnY.
+%   stimulusDirections    - Cell array naming the stimulus directions, such
+%                           as {'LminusM','S','LMS'}
 %   useMonotonicConstraint - Logical. Controls if the model includes a
 %                           non-linear constraint that requires the
-%                           surround index decrease in value across
-%                           eccentricity positions.
+%                           surround index to decrease in value across
+%                           eccentricity positions for a given cell class.
 %
 % Outputs:
-%   p                     - 1x16 vector of model fit parameters
+%   p                     - 1x[c*(4+k*2)] vector of model fit parameters
 
 % Load the RGC model parameters
 loadPath = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults','rgcTemporalModel.mat');
 load(loadPath,'rgcTemporalModel');
 
 % Extract this value for later
-nEcc = length(unique(v1Eccentricity));
+nEcc = length(studiedEccentricites);
+nUniqueParams = 1;
+nFixedParams = 4;
 
-% Define the objective, plausible bound, and p0, depending upon subject and
-% stimulus
-switch whichModel
+% The number of params that are fixed across eccentricity within each
+% stimulus block
 
-    case 'LminusM'
 
-        % Plausible bounds for the search
-        plb = [ 0.5 0.01 10 0.5 20 repmat(0.2,1,nEcc) zeros(1,nEcc)];
-        pub = [ 2.0 0.10 20 1.0 30 repmat(0.8,1,nEcc) ones(1,nEcc)];
+% The model includes parameters for each of the cell classes
+cellClassOrder = {'midget','parasol','bistratified'};
 
-    case 'S'
-
-        % Plausible bounds for the search
-        plb = [ 0.5 0.01 20 0.1 10 repmat(0.2,1,nEcc) zeros(1,nEcc)];
-        pub = [ 2.0 0.10 30 0.3 20 repmat(0.8,1,nEcc) ones(1,nEcc)];
-
-    case 'LMS'
-
-        % Plausible bounds for the search
-        plb = [ 0.5 0.01 20 0.1 10 repmat(0.2,1,nEcc) zeros(1,nEcc)];
-        pub = [ 2.0 0.10 30 0.3 20 repmat(0.8,1,nEcc) ones(1,nEcc)];
-
+% Set up the bounds. Initialize these vectors with the unique parameter
+% LMRatio, that is commmon to all cell classes and eccentricities
+lb = [0.33]; ub = [3]; plb = [0.5]; pub = [2];
+for cc = 1:length(cellClassOrder)
+    % hard bounds
+    lb = [lb [ 0 10 0.01 05 zeros(1,nEcc) zeros(1,nEcc)]];
+    ub = [ub [ 1 50 2.00 40 ones(1,nEcc) ones(1,nEcc)]];
+    % Plausible bounds vary by stimulus direction
+    switch cellClassOrder{cc}
+        case 'midget'
+            plb = [plb [ 0.01 10 0.5 20 repmat(0.2,1,nEcc) zeros(1,nEcc)]];
+            pub = [pub [ 0.10 20 1.0 30 repmat(0.8,1,nEcc) ones(1,nEcc)]];
+        case 'bistratified'
+            plb = [plb [ 0.01 20 0.1 10 repmat(0.2,1,nEcc) zeros(1,nEcc)]];
+            pub = [pub [ 0.10 30 0.3 20 repmat(0.8,1,nEcc) ones(1,nEcc)]];
+        case 'parasol'
+            plb = [plb [ 0.01 20 0.1 10 repmat(0.2,1,nEcc) zeros(1,nEcc)]];
+            pub = [pub [ 0.10 30 0.3 20 repmat(0.8,1,nEcc) ones(1,nEcc)]];
+    end
 end
 
 % Returns the TTF, and handles reshaping into a linear vector
-myV1TTF = @(pMRI) assembleV1ResponseAcrossEcc(whichModel,rgcTemporalModel,v1Eccentricity,pMRI,v1FreqX);
-myLGNTTF = @(pMRI) returnlgnTTF(whichModel,rgcTemporalModel,pMRI,lgnFreqX,v1Eccentricity);
+myV1TTF = @(pMRI) assembleV1ResponseAcrossStimsAndEcc(pMRI,stimulusDirections,studiedEccentricites,studiedFreqs,cellClassOrder,rgcTemporalModel,nUniqueParams,nFixedParams);
+myLGNTTF = @(pMRI) assembleLGNResponseAcrossStims(pMRI,stimulusDirections,studiedEccentricites,studiedFreqs,cellClassOrder,rgcTemporalModel,nUniqueParams,nFixedParams);
 
 % The weighted objective
 myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI))) + ...
     norm(lgnW.*(lgnY - myLGNTTF(pMRI)));
-
-% hard bounds
-lb = [ 0.3 0 10 0.01 05 zeros(1,nEcc) zeros(1,nEcc)];
-ub = [ 3.0 1 50 2.00 40 ones(1,nEcc) ones(1,nEcc)];
 
 % Non-linear constraint that surround index decreases with eccentricity
 if useMonotonicConstraint
@@ -140,21 +146,3 @@ nEcc = 6; nFixed = 5;
 surroundIndex = p(:,nFixed+1:nFixed+nEcc);
 c = sum(diff(surroundIndex,1,2)>0,2);
 end
-
-function response = assembleV1ResponseAcrossEcc(stimulusDirection,rgcTemporalModel,v1Eccentricity,pMRI,v1FreqX)
-% Loop through eccentricities and obtain modeled responses
-eccDegVals = unique(v1Eccentricity);
-studiedFreqs = unique(v1FreqX);
-% Info needed to unpack the param vector
-nFixed = 5;
-nEcc = length(eccDegVals);
-% Build the response vector
-response = [];
-parfor ee=1:length(eccDegVals)
-    pMRIBlock = [pMRI(1:5) pMRI(nFixed+ee) pMRI(nFixed+nEcc+ee)];
-    response(ee,:) = returnV1TTFForEcc(stimulusDirection,rgcTemporalModel,eccDegVals(ee),pMRIBlock,studiedFreqs)
-end
-response = reshape(response',1,length(v1FreqX));
-end
-
-

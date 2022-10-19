@@ -11,83 +11,82 @@ rcgData = loadRGCResponseData();
 loadPath = fullfile(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath'))))),'data','temporalModelResults','rgcTemporalModel.mat');
 load(loadPath,'rgcTemporalModel');
 
-% Extract some info from the stored model structure
-pRGC = rgcTemporalModel.p;
-cfCone = rgcTemporalModel.cfCone;
-coneDelay = rgcTemporalModel.coneDelay;
-LMRatio = rgcTemporalModel.LMRatio;
-pFitByEccen = rgcTemporalModel.pFitByEccen;
-blockParamNames = rgcTemporalModel.meta.blockParamNames;
-eccFields = rgcTemporalModel.meta.eccFields;
-eccBins = rgcTemporalModel.meta.eccBins;
-lbBlock = rgcTemporalModel.meta.lbBlock;
-ubBlock = rgcTemporalModel.meta.ubBlock;
-eccDegs = rgcTemporalModel.meta.eccDegs;
-
-nEccBands = length(eccFields);
-nBlockParams = size(pRGC,1);
-
-
-
-%% plot the model fits to the MRI data
-
 % Load the MRI temporal model
 loadPath = fullfile(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath'))))),'data','temporalModelResults','mriTemporalModel.mat');
 load(loadPath,'mriTemporalModel');
 
+
+
 % Extract some meta info from the mriTemporalModel
 studiedFreqs = mriTemporalModel.meta.studiedFreqs;
-eccDegVals = mriTemporalModel.meta.eccDegVals;
+studiedEccentricites = mriTemporalModel.meta.studiedEccentricites;
 subjects = mriTemporalModel.meta.subjects;
-stimulusDirection = mriTemporalModel.meta.stimulusDirection;
+stimulusDirections = mriTemporalModel.meta.stimulusDirections;
 plotColor = mriTemporalModel.meta.plotColor;
-nFixed = mriTemporalModel.meta.nFixed;
-nEcc = length(eccDegVals);
+nFixedParams = 4; %mriTemporalModel.meta.nFixedParams;
+nFloatByEccParams = 2;
+nUniqueParams = 1;
+nEccs = length(studiedEccentricites);
+nFreqs = length(studiedFreqs);
 freqsForPlotting = logspace(0,2,50);
+nFreqsForPlotting = length(freqsForPlotting);
+cellClassOrder = {'midget','parasol','bistratified'};
 
-for whichStim = 1:length(stimulusDirection)
-    for whichSub = 1:length(subjects)
+for whichSub = 1:length(subjects)
 
+    pMRI = mriTemporalModel.(subjects{whichSub}).p;
+    v1Y = mriTemporalModel.(subjects{whichSub}).data.v1Y;
+    lgnY = mriTemporalModel.(subjects{whichSub}).data.lgnY;
+
+    v1YFit = assembleV1ResponseAcrossStimsAndEcc(pMRI,stimulusDirections,studiedEccentricites,freqsForPlotting,cellClassOrder,rgcTemporalModel,nUniqueParams,nFixedParams);
+    lgnYFit = assembleLGNResponseAcrossStims(pMRI,stimulusDirections,studiedEccentricites,freqsForPlotting,cellClassOrder,rgcTemporalModel,nUniqueParams,nFixedParams);
+
+
+    for whichStim = 1:length(stimulusDirections)
         figure
-        pMRI = mriTemporalModel.(stimulusDirection{whichStim}).(subjects{whichSub}).p;
-        v1Y = mriTemporalModel.(stimulusDirection{whichStim}).(subjects{whichSub}).data.v1Y;
-        v1Y = reshape(v1Y,length(studiedFreqs),1,nEcc);
-        v1Eccentricity = mriTemporalModel.(stimulusDirection{whichStim}).(subjects{whichSub}).data.v1Eccentricity;
-        lgnFreqX = mriTemporalModel.(stimulusDirection{whichStim}).(subjects{whichSub}).data.lgnFreqX;
-        lgnY = mriTemporalModel.(stimulusDirection{whichStim}).(subjects{whichSub}).data.lgnY;
 
         % Loop over eccentricities
-        for ee=1:nEcc
+        for ee=1:nEccs
+
+            v1DataIndices = 1+(whichStim-1)*(nEccs*nFreqs)+(ee-1)*(nFreqs): ...
+                (whichStim-1)*(nEccs*nFreqs)+(ee-1)*(nEccs)+nFreqs;
+            v1FitIndices = 1+(whichStim-1)*(nEccs*nFreqsForPlotting)+(ee-1)*(nFreqsForPlotting): ...
+                (whichStim-1)*(nEccs*nFreqsForPlotting)+(ee-1)*(nFreqsForPlotting)+nFreqsForPlotting;
+
             subplot(2,4,ee+(ee>3))
-            semilogx(studiedFreqs,squeeze(v1Y(:,1,ee)),['o' plotColor{whichStim}]);
+            semilogx(studiedFreqs,v1Y(v1DataIndices),['o' plotColor{whichStim}]);
             hold on
-            pMRIBlock = [pMRI(1:5) pMRI(nFixed+ee) pMRI(nFixed+nEcc+ee)];
-            yFit = returnV1TTFForEcc(stimulusDirection{whichStim},rgcTemporalModel,eccDegVals(ee),pMRIBlock,freqsForPlotting);
-            semilogx(freqsForPlotting,yFit,['-' plotColor{whichStim}]);
+            semilogx(freqsForPlotting,v1YFit(v1FitIndices),['-' plotColor{whichStim}]);
             refline(0,0);
-            title([stimulusDirection{whichStim} ', ' subjects{whichSub} ', ecc = ' num2str(eccDegVals(ee),2) '°']);
+            title([stimulusDirections{whichStim} ', ' subjects{whichSub} ', ecc = ' num2str(studiedEccentricites(ee),2) '°']);
             ylim([-1 7]);
         end
 
         % Add the LGN response
-        lgnTTFFit = returnlgnTTF(stimulusDirection{whichStim},rgcTemporalModel,pMRI,freqsForPlotting,v1Eccentricity);
+        lgnDataIndices = 1+(whichStim-1)*(nFreqs): ...
+            (whichStim-1)*(nFreqs)+nFreqs;
+        lgnFitIndices = 1+(whichStim-1)*(nFreqsForPlotting): ...
+            (whichStim-1)*(nFreqsForPlotting)+nFreqsForPlotting;
+
         subplot(2,4,8)
-        semilogx(lgnFreqX,lgnY,['o' plotColor{whichStim}]);
+        semilogx(studiedFreqs,lgnY(lgnDataIndices),['o' plotColor{whichStim}]);
         hold on
-        semilogx(freqsForPlotting,lgnTTFFit,['-' plotColor{whichStim}]);
+        semilogx(freqsForPlotting,lgnYFit(lgnFitIndices),['-' plotColor{whichStim}]);
         refline(0,0);
-        title([stimulusDirection{whichStim} ', ' subjects{whichSub} ', LGN']);
+        title([stimulusDirections{whichStim} ', ' subjects{whichSub} ', LGN']);
         ylim([-0.5 4]);
 
         % Plot the surround suppression index vs. eccentricity
         subplot(2,4,4)
-        plot(log10(eccDegVals),pMRI(:,nFixed+1:nFixed+nEcc),['*' plotColor{whichStim}]);
+        paramIndices = 1+nUniqueParams+(whichStim-1)*(nFixedParams+nEccs*2): ...
+            nUniqueParams+(whichStim-1)*(nFixedParams+nEccs*2)+nEccs;
+        plot(log10(studiedEccentricites),pMRI(paramIndices),['*' plotColor{whichStim}]);
         xlabel('Eccentricity [log deg]');
         ylabel('Suppression index');
         ylim([0 1]);
 
         % Save the plot
-        plotName = [stimulusDirection{whichStim} '_' subjects{whichSub} '_ModelFit.pdf' ];
+        plotName = [stimulusDirections{whichStim} '_' subjects{whichSub} '_ModelFit.pdf' ];
         saveas(gcf,fullfile('~/Desktop',plotName));
     end
 end

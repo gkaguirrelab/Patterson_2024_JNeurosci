@@ -1,19 +1,14 @@
-function [rfPostRetinal, rfRGC, rfBipolar, rfCone] = returnPostRetinalRF(cellClass,stimulusDirection,rgcTemporalModel,eccDeg,pMRI,nSubtractions)
+function [rfPostRetinal, rfRGC, rfBipolar, rfCone] = returnPostRetinalRF(cellClass,stimulusDirection,rgcTemporalModel,eccDeg,pMRI,LMRatio,nSubtractions)
 
 % Unpack the MRI search parameters
-LMConeRatio = pMRI(1);
-% lgnGain = pMRI(2); unused
-secondOrderFc = pMRI(3);
-secondOrderQ = pMRI(4);
-surroundDelay = pMRI(5);
-surroundIndex = pMRI(6);
-% v1Gain = pMRI(7); used by the calling function
+secondOrderFc = pMRI(2);
+secondOrderQ = pMRI(3);
+surroundDelay = pMRI(4);
+surroundIndex = pMRI(5);
 
-% Obtain the chromatic weights. Note that the LMConeRatio that is passed
-% by the pMRI model parameters overrides the LMConeRatio that was used to
-% define the pRGC model.
+% Obtain the chromatic weights
 [chromaticCenterWeight,chromaticSurroundWeight] = ...
-    returnRGCChromaticWeights(cellClass,stimulusDirection,eccDeg,LMConeRatio);
+    returnRGCChromaticWeights(cellClass,stimulusDirection,eccDeg,LMRatio);
 
 % Obtain the pRGC model params for this cell class and eccentricity
 cellIndex = strcmp(cellClass,{'midget','parasol','bistratified'});

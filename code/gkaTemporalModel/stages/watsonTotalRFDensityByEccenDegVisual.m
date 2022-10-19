@@ -59,14 +59,12 @@ end
 % RGC fields (per deg visual ^2) at the foveal peak, same for every meridian
 dgfZero = 33163.2;
 
-
 % Note, the 2 * dcZero value is an expression for the number of midget
 % retinal ganglion cells at the fovea, which is assumed to be 2 * dcZero.
 % That is, it is assumed that the number of midget RGCs at the fovea is
 % exactly equal to twice the number of cones.
-
 watsonFunc = @(posDeg) dgfZero .* ...
-    ( (a.*((1+posDeg./r2)).^-2) + (1-a).*exp(-1.*posDeg./re) );                                                    % The midget fraction at each eccentricity
+    ( (a.*((1+posDeg./r2)).^-2) + (1-a).*exp(-1.*posDeg./re) ); 
 
 % We do not zero out the optic disc points, as we will be integrating over
 % the entire retina, for which the optic disc is just a tiny piece

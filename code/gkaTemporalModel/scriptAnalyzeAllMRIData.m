@@ -11,7 +11,7 @@ fitRGCFResponse
 %% Are we searching or not?
 % Do we want to conduct a search for the fMRI data, or just use the p0
 % values and make plots?
-searchFlag = false;
+searchFlag = true;
 
 % Do we wish to use the monotonic constraint upon surround index in the
 % search?
@@ -42,9 +42,8 @@ eccDegVals = eccDegBinEdges(4:2:14);
 
 % The identities of the stims and subjects
 subjects = {'gka','asb'};
-stimuli = {'LminusM','S','LMS'};
+stimulusDirection = {'LminusM','S','LMS'};
 plotColor = {'r','b','k'};
-modelType = {'chromatic','chromatic','luminance'};
 
 % The number of parameters in the model that are fixed across eccentricity.
 % We need this information later when we make a plot of the surround index
@@ -76,27 +75,28 @@ for whichStim = 1:3
         switch whichStim
             case 1 % L-M chromatic
                 switch whichSub
-                    case 1 % fVal = 2.969
-                        p0 = [ 1.0089677959, 0.0051972309, 17.3851397584, 0.7622797110, 30.9843077824, 0.7730219744, 0.5649684331, 0.3045017661, 0.2167170675, 0.1390385038, 0.0899452484, 0.0070561856, 0.0133253718, 0.0278128534, 0.0308904811, 0.0392816115, 0.1052877128 ];
-                    case 2 % fVal = 2.738
-                        p0 = [ 0.9914443493, 0.0134409952, 15.7920980453, 0.4662187099, 25.6041669846, 0.4843533516, 0.4111606598, 0.2233021736, 0.0211288452, 0.0175668716, 0.0157412529, 0.0150189400, 0.0287246704, 0.0578832626, 0.0699152946, 0.1890430450, 0.8185415268 ];
+                    case 1 % fVal = 3.05672
+                        p0 = [ 1.0365915596, 0.0026905593, 17.3618295789, 0.7657664865, 29.6612483263, 0.7719629049, 0.5324484706, 0.2823590875, 0.1830462933, 0.1764508307, 0.1291090548, 0.0107749701, 0.0119211376, 0.0266638994, 0.0316739678, 0.0390020609, 0.1110406220 ];
+                    case 2 % fVal = 2.82654
+                        p0 = [ 0.9620939866, 0.0068856616, 15.5466822535, 0.4683602266, 22.9088720679, 0.4899014831, 0.4327882633, 0.2212427914, 0.0365395889, 0.0186453119, 0.0138830900, 0.0220885724, 0.0262116492, 0.0551872253, 0.0694075748, 0.2092486992, 0.9071476012 ];
+
 
                 end
 
             case 2 % S chromatic
                 switch whichSub
-                    case 1 % fVal = 1.972
-                        p0 = [ 1.0002533518, 0.0034581543, 15.8262230880, 0.4096923549, 28.6208783539, 0.9539320752, 0.5253737290, 0.3478449759, 0.1708656253, 0.0693765355, 0.0690653905, 0.0017579700, 0.0097139167, 0.0285618296, 0.0421547971, 0.0534671235, 0.1456647850 ];
-                    case 2 % fVal = 2.184
-                        p0 = [ 0.9998304266, 0.0029785313, 12.6641071355, 0.3240441408, 20.5018852511, 0.3427464756, 0.3426924917, 0.2213753842, 0.0103705501, 0.0094405520, 0.0089717728, 0.0044831517, 0.0174973165, 0.0572883245, 0.0824097819, 0.2266700785, 0.8227456771 ];
+                    case 1 % fVal = 1.75303
+                        p0 = [ 1.7418847380, 0.0060342470, 13.1310718500, 0.4334087523, 28.8873984445, 0.9517605482, 0.3264243647, 0.2851549809, 0.1859624245, 0.0000000411, 0.0000000000, 0.0173579260, 0.1125805771, 0.2120167996, 0.2163356691, 0.1274167379, 0.1476888563 ];
+                    case 2 % fVal = 1.93398
+                        p0 = [ 0.5885573703, 0.0058107024, 10.7616140716, 0.3563334082, 9.4470165891, 0.2629912164, 0.2629888290, 0.2629875506, 0.0263283828, 0.0000445717, 0.0000000000, 0.0645086176, 0.2573866223, 0.5534312684, 0.4439267575, 0.5387061765, 0.7720702997 ];
                 end
 
             case 3 % LMS luminance
                 switch whichSub
-                    case 1 % fVal = 3.151
-                        p0 = [ 0.9827876066, 0.0452700749, 27.1020242213, 0.1470951200, 11.7800635150, 0.5624464617, 0.5624463381, 0.5077721188, 0.3753404966, 0.0897572991, 0.0000000000, 0.1512488763, 0.2119570867, 0.2405013722, 0.2269220409, 0.1418322324, 0.1951357739 ];
-                    case 2 % fVal = 1.813
-                        p0 = [ 1.3325173640, 0.0444406984, 16.2963053747, 0.1550703974, 15.2305855792, 0.9999999053, 0.7767361900, 0.6187224112, 0.4671422073, 0.3040515537, 0.2052299644, 0.1424478589, 0.2918556743, 0.3687851181, 0.3536844623, 0.3878452496, 0.7192984705 ];
+                    case 1 % fVal = 3.06177
+                        p0 = [ 1.5767331655, 0.0163077946, 28.7629187983, 0.1913331321, 11.4262334691, 0.5691350720, 0.5691349682, 0.4543243383, 0.3279572777, 0.0583557407, 0.0000003352, 0.2815376798, 0.2615394731, 0.2530629654, 0.2151177143, 0.1233465001, 0.1715851089 ];
+                    case 2 % fVal = 2.12163
+                        p0 = [ 0.3000000000, 0.0164496758, 17.4715094288, 0.1415145190, 15.4795711217, 1.0000000000, 0.7920254851, 0.6172449107, 0.4706962189, 0.3365233145, 0.2496413411, 0.3531578105, 0.4506660876, 0.5133960296, 0.4464027402, 0.4570651637, 0.8371949125 ];
                 end
         end
 
@@ -106,7 +106,7 @@ for whichStim = 1:3
             % BADS it
             [p,fVal] = fitMRIResponse(p0,v1FreqX,v1Eccentricity,v1Y,v1W, ...
                 lgnFreqX,lgnY,lgnW, ...
-                modelType{whichStim}, useMonotonicConstraint  );
+                stimulusDirection{whichStim}, useMonotonicConstraint  );
 
             % Print the parameters in a format to be used as a seed in future searches
             str = 'p0 = [ ';
@@ -120,16 +120,15 @@ for whichStim = 1:3
         end
 
         % Save the model parameters and data
-        mriTemporalModel.(stimuli{whichStim}).(subjects{whichSub}).p = p;
-        mriTemporalModel.(stimuli{whichStim}).(subjects{whichSub}).fVal = p;
-        mriTemporalModel.(stimuli{whichStim}).(subjects{whichSub}).data.v1FreqX = v1FreqX;
-        mriTemporalModel.(stimuli{whichStim}).(subjects{whichSub}).data.v1Eccentricity = v1Eccentricity;
-        mriTemporalModel.(stimuli{whichStim}).(subjects{whichSub}).data.v1Y = v1Y;
-        mriTemporalModel.(stimuli{whichStim}).(subjects{whichSub}).data.v1W = v1W;
-        mriTemporalModel.(stimuli{whichStim}).(subjects{whichSub}).data.lgnFreqX = lgnFreqX;
-        mriTemporalModel.(stimuli{whichStim}).(subjects{whichSub}).data.lgnY = lgnY;
-        mriTemporalModel.(stimuli{whichStim}).(subjects{whichSub}).data.lgnW = lgnW;
-        mriTemporalModel.(stimuli{whichStim}).(subjects{whichSub}).modelType = modelType{whichStim};
+        mriTemporalModel.(stimulusDirection{whichStim}).(subjects{whichSub}).p = p;
+        mriTemporalModel.(stimulusDirection{whichStim}).(subjects{whichSub}).fVal = p;
+        mriTemporalModel.(stimulusDirection{whichStim}).(subjects{whichSub}).data.v1FreqX = v1FreqX;
+        mriTemporalModel.(stimulusDirection{whichStim}).(subjects{whichSub}).data.v1Eccentricity = v1Eccentricity;
+        mriTemporalModel.(stimulusDirection{whichStim}).(subjects{whichSub}).data.v1Y = v1Y;
+        mriTemporalModel.(stimulusDirection{whichStim}).(subjects{whichSub}).data.v1W = v1W;
+        mriTemporalModel.(stimulusDirection{whichStim}).(subjects{whichSub}).data.lgnFreqX = lgnFreqX;
+        mriTemporalModel.(stimulusDirection{whichStim}).(subjects{whichSub}).data.lgnY = lgnY;
+        mriTemporalModel.(stimulusDirection{whichStim}).(subjects{whichSub}).data.lgnW = lgnW;
 
     end
 
@@ -139,7 +138,7 @@ end
 mriTemporalModel.meta.studiedFreqs = studiedFreqs;
 mriTemporalModel.meta.eccDegVals = eccDegVals;
 mriTemporalModel.meta.subjects = subjects;
-mriTemporalModel.meta.stimuli = stimuli;
+mriTemporalModel.meta.stimulusDirection = stimulusDirection;
 mriTemporalModel.meta.plotColor = plotColor;
 mriTemporalModel.meta.nFixed = nFixed;
 

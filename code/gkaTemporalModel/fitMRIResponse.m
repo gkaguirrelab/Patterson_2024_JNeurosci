@@ -1,4 +1,4 @@
-function [p,fVal] = fitMRIResponse(p0, v1FreqX, v1Eccentricity, v1Y, v1W, lgnFreqX, lgnY, lgnW, whichModel, useMonotonicConstraint)
+function [pMRI,fVal] = fitMRIResponse(p0, v1FreqX, v1Eccentricity, v1Y, v1W, lgnFreqX, lgnY, lgnW, whichModel, useMonotonicConstraint)
 % Fit the RGC-referred temporal model to combined V1 and LGN data
 %
 % Syntax:
@@ -69,6 +69,10 @@ function [p,fVal] = fitMRIResponse(p0, v1FreqX, v1Eccentricity, v1Y, v1W, lgnFre
 % Outputs:
 %   p                     - 1x16 vector of model fit parameters
 
+% Load the RGC model parameters
+loadPath = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults','rgcTemporalModel.mat');
+load(loadPath,'rgcTemporalModel');
+
 % Extract this value for later
 nEcc = length(unique(v1Eccentricity));
 
@@ -76,21 +80,19 @@ nEcc = length(unique(v1Eccentricity));
 % stimulus
 switch whichModel
 
-    case 'chromatic'
-
-        % Returns the TTF, and handles reshaping into a linear vector
-        myV1TTF = @(p) assembleV1ChromResponseAcrossEcc(p,v1FreqX,v1Eccentricity);
-        myLGNTTF = @(p) returnlgnChromTTFFit(p,lgnFreqX,v1Eccentricity);
+    case 'LminusM'
 
         % Plausible bounds for the search
         plb = [ 0.5 0.01 10 0.5 20 repmat(0.2,1,nEcc) zeros(1,nEcc)];
         pub = [ 2.0 0.10 20 1.0 30 repmat(0.8,1,nEcc) ones(1,nEcc)];
 
-    case 'luminance'
+    case 'S'
 
-        % Returns the TTF, and handles reshaping into a linear vector
-        myV1TTF = @(p) assembleV1LumResponseAcrossEcc(p,v1FreqX,v1Eccentricity);
-        myLGNTTF = @(p) returnlgnLumTTFFit(p,lgnFreqX,v1Eccentricity);
+        % Plausible bounds for the search
+        plb = [ 0.5 0.01 20 0.1 10 repmat(0.2,1,nEcc) zeros(1,nEcc)];
+        pub = [ 2.0 0.10 30 0.3 20 repmat(0.8,1,nEcc) ones(1,nEcc)];
+
+    case 'LMS'
 
         % Plausible bounds for the search
         plb = [ 0.5 0.01 20 0.1 10 repmat(0.2,1,nEcc) zeros(1,nEcc)];
@@ -98,9 +100,13 @@ switch whichModel
 
 end
 
+% Returns the TTF, and handles reshaping into a linear vector
+myV1TTF = @(pMRI) assembleV1ResponseAcrossEcc(whichModel,rgcTemporalModel,v1Eccentricity,pMRI,v1FreqX);
+myLGNTTF = @(pMRI) returnlgnTTF(whichModel,rgcTemporalModel,pMRI,lgnFreqX,v1Eccentricity);
+
 % The weighted objective
-myObj = @(p) norm(v1W.*(v1Y - myV1TTF(p))) + ...
-    norm(lgnW.*(lgnY - myLGNTTF(p)));
+myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI))) + ...
+    norm(lgnW.*(lgnY - myLGNTTF(pMRI)));
 
 % hard bounds
 lb = [ 0.3 0 10 0.01 05 zeros(1,nEcc) zeros(1,nEcc)];
@@ -108,7 +114,7 @@ ub = [ 3.0 1 50 2.00 40 ones(1,nEcc) ones(1,nEcc)];
 
 % Non-linear constraint that surround index decreases with eccentricity
 if useMonotonicConstraint
-    myNonbcon = @(p) nonbcon(p);
+    myNonbcon = @(pMRI) nonbcon(pMRI);
 else
     myNonbcon = [];
 end
@@ -118,7 +124,7 @@ optionsBADS.UncertaintyHandling = 0;
 optionsBADS.Display = 'iter';
 
 % search
-[p,fVal] = bads(myObj,p0,lb,ub,plb,pub,myNonbcon,optionsBADS);
+[pMRI,fVal] = bads(myObj,p0,lb,ub,plb,pub,myNonbcon,optionsBADS);
 
 end % main function
 
@@ -135,7 +141,7 @@ surroundIndex = p(:,nFixed+1:nFixed+nEcc);
 c = sum(diff(surroundIndex,1,2)>0,2);
 end
 
-function response = assembleV1ChromResponseAcrossEcc(p,v1FreqX,v1Eccentricity)
+function response = assembleV1ResponseAcrossEcc(stimulusDirection,rgcTemporalModel,v1Eccentricity,pMRI,v1FreqX)
 % Loop through eccentricities and obtain modeled responses
 eccDegVals = unique(v1Eccentricity);
 studiedFreqs = unique(v1FreqX);
@@ -145,25 +151,10 @@ nEcc = length(eccDegVals);
 % Build the response vector
 response = [];
 parfor ee=1:length(eccDegVals)
-    pBlock = [p(1) p(3:5) p(nFixed+ee) p(nFixed+nEcc+ee)];
-    response(ee,:) = returnV1ChromEccTTFFit(pBlock,studiedFreqs,eccDegVals(ee));
+    pMRIBlock = [pMRI(1:5) pMRI(nFixed+ee) pMRI(nFixed+nEcc+ee)];
+    response(ee,:) = returnV1TTFForEcc(stimulusDirection,rgcTemporalModel,eccDegVals(ee),pMRIBlock,studiedFreqs)
 end
 response = reshape(response',1,length(v1FreqX));
 end
 
 
-function response = assembleV1LumResponseAcrossEcc(p,v1FreqX,v1Eccentricity)
-% Loop through eccentricities and obtain modeled responses
-eccDegVals = unique(v1Eccentricity);
-studiedFreqs = unique(v1FreqX);
-% Info needed to unpack the param vector
-nFixed = 5;
-nEcc = length(eccDegVals);
-% Build the response vector
-response = [];
-parfor ee=1:length(eccDegVals)
-    pBlock = [p(1) p(3:5) p(nFixed+ee) p(nFixed+nEcc+ee)];
-    response(ee,:) = returnV1LumEccTTFFit(pBlock,studiedFreqs,eccDegVals(ee));
-end
-response = reshape(response',1,length(v1FreqX));
-end

@@ -12,36 +12,8 @@ surroundIndex = pMRI(6);
 % Obtain the chromatic weights. Note that the LMConeRatio that is passed
 % by the pMRI model parameters overrides the LMConeRatio that was used to
 % define the pRGC model.
-switch cellClass
-    case 'midget'
-        switch stimulusDirection
-            case 'LminusM'
-                [chromaticCenterWeight,chromaticSurroundWeight] = ...
-                    returnMidgetChromaticWeights(eccDeg,LMConeRatio);
-            case 'LMS'
-                chromaticCenterWeight = 1; chromaticSurroundWeight = 1;
-            case 'S'
-                chromaticCenterWeight = 0; chromaticSurroundWeight = 0;
-        end
-    case 'parasol'
-        switch stimulusDirection
-            case 'LminusM'
-                chromaticCenterWeight = 0; chromaticSurroundWeight = 0;
-            case 'LMS'
-                chromaticCenterWeight = 1; chromaticSurroundWeight = 1;
-            case 'S'
-                chromaticCenterWeight = 0; chromaticSurroundWeight = 0;
-        end
-    case 'bistratified'
-        switch stimulusDirection
-            case 'LminusM'
-                chromaticCenterWeight = 0; chromaticSurroundWeight = 0;
-            case 'LMS'
-                chromaticCenterWeight = 0; chromaticSurroundWeight = 0;
-            case 'S'
-                chromaticCenterWeight = 1; chromaticSurroundWeight = 1;
-        end
-end
+[chromaticCenterWeight,chromaticSurroundWeight] = ...
+    returnRGCChromaticWeights(cellClass,stimulusDirection,eccDeg,LMConeRatio);
 
 % Obtain the pRGC model params for this cell class and eccentricity
 cellIndex = strcmp(cellClass,{'midget','parasol','bistratified'});

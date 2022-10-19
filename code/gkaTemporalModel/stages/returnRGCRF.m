@@ -1,13 +1,13 @@
-function [rfRGC, rfBipolar, rfCone] = returnRGCRF(pBlock,cfCone,coneDelay,chromaticCenterWeight,chromaticSurroundWeight)
+function [rfRGC, rfBipolar, rfCone] = returnRGCRF(pRGCBlock,cfCone,coneDelay,chromaticCenterWeight,chromaticSurroundWeight)
 % returnRGCRF
 %
 % Derive and return the complex Fourier domain symbolic equations that
 % express temporal sensitiviy for a retinal ganglion cell
 
 % Extract the parameters
-g = pBlock(1); k = pBlock(2);
-cfInhibit = pBlock(3); cf2ndStage = pBlock(4); Q = pBlock(5);
-surroundWeight = pBlock(6); surroundDelay = pBlock(7);
+g = pRGCBlock(1); k = pRGCBlock(2);
+cfInhibit = pRGCBlock(3); cf2ndStage = pRGCBlock(4); Q = pRGCBlock(5);
+surroundWeight = pRGCBlock(6); surroundDelay = pRGCBlock(7);
 
 % Assemble the Fourier domain representation
 syms f

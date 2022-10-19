@@ -186,9 +186,11 @@ rgcTemporalModel.coneDelay = coneDelay;
 rgcTemporalModel.cfCone = cfCone;
 rgcTemporalModel.pMean = pMean;
 rgcTemporalModel.pFitByEccen = pFitByEccen;
-rgcTemporalModel.meta.blockParamNames = blockParamNames;
+rgcTemporalModel.meta.ubBlock = ubBlock;
+rgcTemporalModel.meta.cellClassIndices = cellClassIndices;
 rgcTemporalModel.meta.eccFields = eccFields;
 rgcTemporalModel.meta.eccBins = eccBins;
+rgcTemporalModel.meta.eccDegs = eccDegs;
 rgcTemporalModel.meta.lbBlock = lbBlock;
 rgcTemporalModel.meta.ubBlock = ubBlock;
 
@@ -313,24 +315,23 @@ for ee = 1:length(eccFields)
     eccProportion = pRGCBlock(8);
     eccDeg = eccBin(1)+eccProportion*(range(eccBin));
 
+
     % Obtain the chromatic weights and set the stimulus directions.
     stimulusDirections = {};
-    chromaticCenterWeight = []; chromaticSurroundWeight = [];
     switch cellClass
         case 'midget'
             stimulusDirections = {'LminusM','LMS'};
-            [chromaticCenterWeight(1),chromaticSurroundWeight(1)] = ...
-                returnMidgetChromaticWeights(eccDeg,LMRatio);
-            chromaticCenterWeight(2) = 1;
-            chromaticSurroundWeight(2) = 1;
         case 'parasol'
             stimulusDirections = {'LMS'};
-            chromaticCenterWeight = 1;
-            chromaticSurroundWeight = 1;
         case 'bistratified'
             stimulusDirections = {'S'};
-            chromaticCenterWeight = 1;
-            chromaticSurroundWeight = 1;
+    end
+
+    % Obtain the chromatic weights
+    chromaticCenterWeight = []; chromaticSurroundWeight = [];
+    for ii=1:length(stimulusDirections)
+        [chromaticCenterWeight(ii),chromaticSurroundWeight(ii)] = ...
+            returnRGCChromaticWeights(cellClass,stimulusDirections{ii},eccDeg,LMRatio);
     end
 
     % Loop through the stimulus directions

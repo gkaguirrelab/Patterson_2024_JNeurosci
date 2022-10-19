@@ -1,16 +1,45 @@
-function [chromaticCenterWeight,chromaticSurroundWeight] = returnMidgetChromaticWeights(eccentricityDeg,LMratio)
+function [chromaticCenterWeight,chromaticSurroundWeight] = returnRGCChromaticWeights(cellClass,stimulusDirection,eccDeg,LMRatio)
 
-%{
-    LogLMDistribution=makedist('Normal','mu',0.47,'sigma',0.74); %Mu and sigma computed from a fit of Dacey et al. (2000) JOSA 17:589-596, Fig 5A
-    LMratio=exp(random(LogLMDistribution));
-    figure
-    plot(0,0,'.')
-    hold on
-    for ii=0.1:3:51.1; for xx=1:5000; [chromaticCenterWeight(xx),chromaticSurroundWeight(xx)] = returnChromaticWeights(ii,LMratio); end; plot(ii,mean(abs(chromaticCenterWeight)),'xk'); plot(ii,mean(abs(chromaticSurroundWeight)),'or'); end; title(num2str(LMratio));
-%}
+% Obtain the chromatic weights.
+switch cellClass
+    case 'midget'
+        switch stimulusDirection
+            case 'LminusM'
+                [chromaticCenterWeight,chromaticSurroundWeight] = ...
+                    woolLMWeightModel(eccDeg,LMRatio);
+            case 'LMS'
+                chromaticCenterWeight = 1; chromaticSurroundWeight = 1;
+            case 'S'
+                chromaticCenterWeight = 0; chromaticSurroundWeight = 0;
+        end
+    case 'parasol'
+        switch stimulusDirection
+            case 'LminusM'
+                chromaticCenterWeight = 0; chromaticSurroundWeight = 0;
+            case 'LMS'
+                chromaticCenterWeight = 1; chromaticSurroundWeight = 1;
+            case 'S'
+                chromaticCenterWeight = 0; chromaticSurroundWeight = 0;
+        end
+    case 'bistratified'
+        switch stimulusDirection
+            case 'LminusM'
+                chromaticCenterWeight = 0; chromaticSurroundWeight = 0;
+            case 'LMS'
+                chromaticCenterWeight = 0; chromaticSurroundWeight = 0;
+            case 'S'
+                chromaticCenterWeight = 1; chromaticSurroundWeight = 1;
+        end
+end
 
+
+end
+
+%% Local function
+
+function [chromaticCenterWeight,chromaticSurroundWeight] = woolLMWeightModel(eccDeg,LMRatio)
 % Convert from degrees of visual angle to mm in the macaque retina
-Em = (eccentricityDeg.*223)./1000;
+Em = (eccDeg.*223)./1000;
 
 %Determine some parameters for centers and surrounds
 CSRadRatio=6; %Let's say that a surround radius is ~6x greater than a center radius (Croner & Kaplan, Vis. Res. 1995)
@@ -45,7 +74,7 @@ for cc = 1:nSims
 
     % Assign a retinal L:M:S ratio from which any one cell comes
     % (L:M:S ratios vary across retinas, lognormally)
-    pL=LMratio/(LMratio+1); %Likelihood of L
+    pL=LMRatio/(LMRatio+1); %Likelihood of L
     pM=1-pL; %Likelihood of M
 
     %Assign the patch (a vector of length ConesPerMM) to L, M, and S
@@ -120,6 +149,5 @@ end
 
 chromaticCenterWeight = mean(abs(chromaticCenterWeight));
 chromaticSurroundWeight = mean(abs(chromaticSurroundWeight));
-
 
 end

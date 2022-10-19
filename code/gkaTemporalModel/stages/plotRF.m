@@ -4,18 +4,18 @@ function plotRF(cellEquation,figHandle,lineStyle,whichPanel,LineWidth)
 if nargin == 1
     figHandle = figure();
     lineStyle = '-r';
-    whichPanel = [1 2];
+    whichPanel = [1 2 3];
     LineWidth = 1;
 end
 if nargin == 2
     figure(figHandle);
     lineStyle = '-r';
-    whichPanel = [1 2];
+    whichPanel = [1 2 3];
     LineWidth = 1;
 end
 if nargin == 3
     figure(figHandle);
-    whichPanel = [1 2];
+    whichPanel = [1 2 3];
     LineWidth = 1;
 end
 if nargin == 4

@@ -23,13 +23,21 @@ function [pMRI,fVal] = fitMRIResponse(p0,stimulusDirections,studiedEccentricites
 %   data. The effect of eccentricity in the post-retinal model is found in
 %   the varying of the index of surround inhibition.
 %
-%   The parameters of the model are:
+%   There is one unique parameter of the model, shared across all cell
+%   types and eccentricites:
 %       LMConeRatio   - Ratio of L-to-M cones in the modeled retina
+%
+%   There are four parameters that are "fixed" for each cell type across
+%   eccentricities:
+%
 %       lgnGain       - Multiplicative gain for fitting the LGN amplitudes
 %       secondOrderFc - Corner frequency of 2nd order filter at V1 stage
 %       secondOrderQ  - "Quality" parameter of 2nd order filter at V1
 %       surroundDelay - The delay (in msecs) between the center and
 %                       surround, used at both the LGN and V1 stages
+%
+%   and, there are two parameters that "float" across both cell type and
+%   eccentricity:
 %       surroundIndex - The index (range 0 - 1) of the surround inhibition
 %                       at the LGN and V1 stages. One value for each of the
 %                       k eccentricity measurements from V1
@@ -82,10 +90,6 @@ nEcc = length(studiedEccentricites);
 nUniqueParams = 1;
 nFixedParams = 4;
 
-% The number of params that are fixed across eccentricity within each
-% stimulus block
-
-
 % The model includes parameters for each of the cell classes
 cellClassOrder = {'midget','parasol','bistratified'};
 
@@ -94,19 +98,19 @@ cellClassOrder = {'midget','parasol','bistratified'};
 lb = [0.33]; ub = [3]; plb = [0.5]; pub = [2];
 for cc = 1:length(cellClassOrder)
     % hard bounds
-    lb = [lb [ 0 10 0.01 05 zeros(1,nEcc) zeros(1,nEcc)]];
-    ub = [ub [ 1 50 2.00 40 ones(1,nEcc) ones(1,nEcc)]];
-    % Plausible bounds vary by stimulus direction
+    lb = [lb [ 0 10 0.1 05 zeros(1,nEcc) zeros(1,nEcc)]];
+    ub = [ub [ 1 25 1.0 40 ones(1,nEcc) ones(1,nEcc)]];
+    % Plausible bounds vary by cell class
     switch cellClassOrder{cc}
         case 'midget'
-            plb = [plb [ 0.01 10 0.5 20 repmat(0.2,1,nEcc) zeros(1,nEcc)]];
-            pub = [pub [ 0.10 20 1.0 30 repmat(0.8,1,nEcc) ones(1,nEcc)]];
-        case 'bistratified'
-            plb = [plb [ 0.01 20 0.1 10 repmat(0.2,1,nEcc) zeros(1,nEcc)]];
-            pub = [pub [ 0.10 30 0.3 20 repmat(0.8,1,nEcc) ones(1,nEcc)]];
+            plb = [plb [ 0.01 20 0.2 15 repmat(0.2,1,nEcc) zeros(1,nEcc)]];
+            pub = [pub [ 0.10 25 0.5 25 repmat(0.8,1,nEcc) ones(1,nEcc)]];
         case 'parasol'
-            plb = [plb [ 0.01 20 0.1 10 repmat(0.2,1,nEcc) zeros(1,nEcc)]];
-            pub = [pub [ 0.10 30 0.3 20 repmat(0.8,1,nEcc) ones(1,nEcc)]];
+            plb = [plb [ 0.01 20 0.2 10 repmat(0.2,1,nEcc) zeros(1,nEcc)]];
+            pub = [pub [ 0.10 25 0.5 20 repmat(0.8,1,nEcc) ones(1,nEcc)]];
+        case 'bistratified'
+            plb = [plb [ 0.01 20 0.2 15 repmat(0.2,1,nEcc) zeros(1,nEcc)]];
+            pub = [pub [ 0.10 25 0.5 25 repmat(0.8,1,nEcc) ones(1,nEcc)]];
     end
 end
 

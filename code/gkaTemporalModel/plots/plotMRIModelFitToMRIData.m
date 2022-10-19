@@ -23,9 +23,9 @@ studiedEccentricites = mriTemporalModel.meta.studiedEccentricites;
 subjects = mriTemporalModel.meta.subjects;
 stimulusDirections = mriTemporalModel.meta.stimulusDirections;
 plotColor = mriTemporalModel.meta.plotColor;
-nFixedParams = 4; %mriTemporalModel.meta.nFixedParams;
-nFloatByEccParams = 2;
-nUniqueParams = 1;
+nFixedParams = mriTemporalModel.meta.nFixedParams;
+nFloatByEccParams = mriTemporalModel.meta.nFloatByEccParams;
+nUniqueParams = mriTemporalModel.meta.nUniqueParams;
 nEccs = length(studiedEccentricites);
 nFreqs = length(studiedFreqs);
 freqsForPlotting = logspace(0,2,50);
@@ -34,13 +34,12 @@ cellClassOrder = {'midget','parasol','bistratified'};
 
 for whichSub = 1:length(subjects)
 
-    pMRI = mriTemporalModel.(subjects{whichSub}).p;
+    pMRI = mriTemporalModel.(subjects{whichSub}).pMRI;
     v1Y = mriTemporalModel.(subjects{whichSub}).data.v1Y;
     lgnY = mriTemporalModel.(subjects{whichSub}).data.lgnY;
 
     v1YFit = assembleV1ResponseAcrossStimsAndEcc(pMRI,stimulusDirections,studiedEccentricites,freqsForPlotting,cellClassOrder,rgcTemporalModel,nUniqueParams,nFixedParams);
     lgnYFit = assembleLGNResponseAcrossStims(pMRI,stimulusDirections,studiedEccentricites,freqsForPlotting,cellClassOrder,rgcTemporalModel,nUniqueParams,nFixedParams);
-
 
     for whichStim = 1:length(stimulusDirections)
         figure
@@ -75,18 +74,29 @@ for whichSub = 1:length(subjects)
         refline(0,0);
         title([stimulusDirections{whichStim} ', ' subjects{whichSub} ', LGN']);
         ylim([-0.5 4]);
+    end
 
+    % Save the plot
+    plotName = [stimulusDirections{whichStim} '_' subjects{whichSub} '_ModelFit.pdf' ];
+    saveas(gcf,fullfile('~/Desktop',plotName));
+
+    figure
+    for whichCell = 1:length(cellClassOrder)
         % Plot the surround suppression index vs. eccentricity
-        subplot(2,4,4)
-        paramIndices = 1+nUniqueParams+(whichStim-1)*(nFixedParams+nEccs*2): ...
-            nUniqueParams+(whichStim-1)*(nFixedParams+nEccs*2)+nEccs;
-        plot(log10(studiedEccentricites),pMRI(paramIndices),['*' plotColor{whichStim}]);
+        subplot(1,2,1)
+        paramIndices = 1+nUniqueParams+(whichCell-1)*(nFixedParams+nEccs*2)+nFixedParams: ...
+            nUniqueParams+(whichCell-1)*(nFixedParams+nEccs*2)+nFixedParams+nEccs;
+        plot(log10(studiedEccentricites),pMRI(paramIndices),['*' plotColor{whichCell}]);
+        hold on
         xlabel('Eccentricity [log deg]');
         ylabel('Suppression index');
         ylim([0 1]);
 
-        % Save the plot
-        plotName = [stimulusDirections{whichStim} '_' subjects{whichSub} '_ModelFit.pdf' ];
-        saveas(gcf,fullfile('~/Desktop',plotName));
+        subplot(1,2,2)
+        semilogy(log10(studiedEccentricites),pMRI(paramIndices+1),['*' plotColor{whichCell}]);
+        hold on
+        xlabel('Eccentricity [log deg]');
+        ylabel('Gain parameter');
+
     end
 end

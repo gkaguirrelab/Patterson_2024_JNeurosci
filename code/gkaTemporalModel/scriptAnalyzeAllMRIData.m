@@ -45,11 +45,6 @@ subjects = {'gka','asb'};
 stimulusDirections = {'LminusM','S','LMS'};
 plotColor = {'r','b','k'};
 
-% The number of parameters in the model that are fixed across eccentricity.
-% We need this information later when we make a plot of the surround index
-% values across ecccentricity.
-nFixedParams = 4;
-
 % The frequencies studied
 studiedFreqs = [2 4 8 16 32 64];
 
@@ -78,7 +73,7 @@ for whichSub = 1:2
             pMRI0 = [ 0.8863671795, ...
                 0.0134860409, 18.1483947486, 0.5000765584, 21.2016258389, 0.7580165491, 0.5383087665, 0.3365183949, 0.2541487083, 0.0933484405, 0.0053778589, 0.0212477073, 0.0211576670, 0.0423804373, 0.0422141328, 0.0490258262, 0.0937200040, ...
                 0.0857685912, 22.1618765593, 0.4247020379, 10.4420156777, 0.9734663874, 0.4701987937, 0.4378517017, 0.3489384219, 0.0927484572, 0.0070574537, 0.2510217130, 0.3128278330, 0.2691659108, 0.2009188607, 0.0960811749, 0.1269634813, ...
-                0.0642368834, 38.5026419163, 0.2075465798, 5.0266880542, 0.5982929200, 0.5187450737, 0.3820989922, 0.4244025961, 0.1496773288, 0.2841300383, 0.1093606800, 0.3502666131, 0.4347161576, 0.5029014573, 0.1471649706, 0.2088705599 ];
+                0.0642368834, 24.5026419163, 0.2075465798, 5.0266880542, 0.5982929200, 0.5187450737, 0.3820989922, 0.4244025961, 0.1496773288, 0.2841300383, 0.1093606800, 0.3502666131, 0.4347161576, 0.5029014573, 0.1471649706, 0.2088705599 ];
         case 2
             pMRI0 = [ 1.0046916008, ...
                 0.0287112510, 12.4640452862, 0.4762243032, 20.5744516850, 0.6210548878, 0.5393566608, 0.2984446526, 0.1115529060, 0.0505505323, 0.1056245804, 0.0295580626, 0.0334004164, 0.0670379400, 0.0802596807, 0.2271013260, 0.9598188400, ...
@@ -95,16 +90,21 @@ for whichSub = 1:2
             v1Y,v1W,lgnY,lgnW,...
             useMonotonicConstraint);
 
-        % Print the parameters in a format to be used as a seed in future searches
-        str = 'pMRI0 = [ ';
-        for ss=1:length(pMRI); str = [str sprintf('%2.10f, ',pMRI(ss))]; end
-        str = [str(1:end-2) ' ];\n'];
-        fprintf(str);
-
     else
         pMRI = pMRI0;
         fVal = nan;
     end
+
+    % Print the parameters in a format to be used as a seed in future searches
+    str = ['pMRI0 = [ ' sprintf('%2.10f, ...\n',pMRI(1))];
+    for ss=2:length(pMRI)
+        str = [str sprintf('%2.10f, ',pMRI(ss))];
+        if mod(ss-1,16)==0 && ss~=length(pMRI)
+            str = [str '...\n'];
+        end
+    end
+    str = [str(1:end-2) ' ];\n'];
+    fprintf(str);
 
     % Save the model parameters and data
     mriTemporalModel.(subjects{whichSub}).pMRI = pMRI;
@@ -123,7 +123,9 @@ mriTemporalModel.meta.studiedEccentricites = studiedEccentricites;
 mriTemporalModel.meta.subjects = subjects;
 mriTemporalModel.meta.stimulusDirections = stimulusDirections;
 mriTemporalModel.meta.plotColor = plotColor;
-mriTemporalModel.meta.nFixedParams = nFixedParams;
+mriTemporalModel.meta.nFixedParams = 4;
+mriTemporalModel.meta.nFloatByEccParams = 2;
+mriTemporalModel.meta.nUniqueParams = 1;
 
 savePath = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults','mriTemporalModel.mat');
 save(savePath,'mriTemporalModel');

@@ -98,8 +98,8 @@ cellClassOrder = {'midget','parasol','bistratified'};
 lb = [0.33]; ub = [3]; plb = [0.5]; pub = [2];
 for cc = 1:length(cellClassOrder)
     % hard bounds
-    lb = [lb [ 0 10 0.1 05 zeros(1,nEcc) zeros(1,nEcc)]];
-    ub = [ub [ 1 25 1.0 40 ones(1,nEcc) ones(1,nEcc)]];
+    lb = [lb [ 00 10 0.1 10 zeros(1,nEcc) zeros(1,nEcc)]];
+    ub = [ub [ 10 30 1.0 40 ones(1,nEcc) repmat(10,1,nEcc)]];
     % Plausible bounds vary by cell class
     switch cellClassOrder{cc}
         case 'midget'
@@ -109,7 +109,7 @@ for cc = 1:length(cellClassOrder)
             plb = [plb [ 0.01 20 0.2 10 repmat(0.2,1,nEcc) zeros(1,nEcc)]];
             pub = [pub [ 0.10 25 0.5 20 repmat(0.8,1,nEcc) ones(1,nEcc)]];
         case 'bistratified'
-            plb = [plb [ 0.01 20 0.2 15 repmat(0.2,1,nEcc) zeros(1,nEcc)]];
+            plb = [plb [ 0.01 20 0.2 10 repmat(0.2,1,nEcc) zeros(1,nEcc)]];
             pub = [pub [ 0.10 25 0.5 25 repmat(0.8,1,nEcc) ones(1,nEcc)]];
     end
 end
@@ -124,7 +124,7 @@ myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI))) + ...
 
 % Non-linear constraint that surround index decreases with eccentricity
 if useMonotonicConstraint
-    myNonbcon = @(pMRI) nonbcon(pMRI);
+    myNonbcon = @(pMRI) nonbcon(pMRI,studiedEccentricites,cellClassOrder,nUniqueParams,nFixedParams);
 else
     myNonbcon = [];
 end
@@ -145,8 +145,17 @@ end % main function
 %% nonbcon
 
 % Enforce constraint of declining surround index with eccentricity
-function c = nonbcon(p)
-nEcc = 6; nFixed = 5;
-surroundIndex = p(:,nFixed+1:nFixed+nEcc);
-c = sum(diff(surroundIndex,1,2)>0,2);
+function c = nonbcon(pMRI,studiedEccentricites,cellClassOrder,nUniqueParams,nFixedParams)
+
+nEccs = length(studiedEccentricites);
+
+for whichCell=1:length(cellClassOrder)
+    paramIndices = 1+nUniqueParams+(whichCell-1)*(nFixedParams+nEccs*2)+nFixedParams: ...
+        nUniqueParams+(whichCell-1)*(nFixedParams+nEccs*2)+nFixedParams+nEccs;
+    surroundIndex = pMRI(:,paramIndices);
+    c(:,whichCell) = sum(diff(surroundIndex,1,2)>0,2);
+end
+
+c = sum(c,2);
+
 end

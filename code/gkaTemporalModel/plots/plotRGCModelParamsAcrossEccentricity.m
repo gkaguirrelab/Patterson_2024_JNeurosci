@@ -26,6 +26,7 @@ nBlockParams = size(pRGC,1);
 
 % Plot the parameters vs. eccentricity and obtain params x eccentricity
 % Loop across cells
+
 for cc=1:3
     figure
 

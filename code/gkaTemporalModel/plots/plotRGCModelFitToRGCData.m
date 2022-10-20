@@ -4,6 +4,9 @@
 clear
 close all
 
+% Where to save figures
+savePath = fullfile('~','Desktop','mtSinaiTemporalModelPlots');
+
 % Load the empirical RGC data
 rcgData = loadRGCResponseData();
 
@@ -96,6 +99,6 @@ for ee = 1:nEccBands
     title(sprintf('Eccentricity = %2.1f',eccDegs(ee)));
 
     plotName = ['bistratifiedTemporalRF_' num2str(eccDegs(ee),2) '_ModelFit.pdf' ];
-    saveas(gcf,fullfile('~/Desktop',plotName));
+    saveas(gcf,fullfile(savePath,plotName));
 
 end

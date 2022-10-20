@@ -1,5 +1,8 @@
 % plotRGCModelComponents
 
+% Where to save figures
+savePath = fullfile('~','Desktop','mtSinaiTemporalModelPlots');
+
 % Load the RGC temporal model
 loadPath = fullfile(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath'))))),'data','temporalModelResults','rgcTemporalModel.mat');
 load(loadPath,'rgcTemporalModel');
@@ -10,16 +13,15 @@ cfCone = rgcTemporalModel.cfCone;
 coneDelay = rgcTemporalModel.coneDelay;
 LMRatio = rgcTemporalModel.LMRatio;
 pFitByEccen = rgcTemporalModel.pFitByEccen;
-blockParamNames = rgcTemporalModel.meta.blockParamNames;
 eccFields = rgcTemporalModel.meta.eccFields;
 eccBins = rgcTemporalModel.meta.eccBins;
 lbBlock = rgcTemporalModel.meta.lbBlock;
 ubBlock = rgcTemporalModel.meta.ubBlock;
+cellClassIndices = rgcTemporalModel.meta.cellClassIndices;
 
 nEccBands = length(eccFields);
 nBlockParams = size(pRGC,1);
 
-cellClassIndices = rgcTemporalModel.meta.cellClassIndices;
 
 % Plot parasol bipolar response across eccentricity
 myFreqs = logspace(log10(0.5),log10(100),101);
@@ -106,8 +108,8 @@ for xx = 1:length(stageList)
             subPlotIndex = subPlotIndex+1;
         end
     end
-    saveName = [stageList{xx} '_' cellList{cc} '_' stimulusDirections{ss} '.pdf'];
-    saveas(f(xx),fullfile('~','Desktop',saveName));
+    saveName = [stageList{xx} '_' cellList{cc} '_' stimulusDirections{ss} '_RGCModelComponents.pdf'];
+    saveas(f(xx),fullfile(savePath,saveName));
 end
 
 % 

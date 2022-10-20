@@ -98,13 +98,13 @@ cellClassOrder = {'midget','parasol','bistratified'};
 lb = [0.33]; ub = [3]; plb = [0.5]; pub = [2];
 for cc = 1:length(cellClassOrder)
     % hard bounds
-    lb = [lb [ 00 10 0.1 10 zeros(1,nEcc) zeros(1,nEcc)]];
-    ub = [ub [ 10 30 1.0 40 ones(1,nEcc) repmat(10,1,nEcc)]];
+    lb = [lb [ 00 10 0.1 07.5 zeros(1,nEcc) zeros(1,nEcc)]];
+    ub = [ub [ 10 30 1.0 40.0 ones(1,nEcc) repmat(10,1,nEcc)]];
     % Plausible bounds vary by cell class
     switch cellClassOrder{cc}
         case 'midget'
             plb = [plb [ 0.01 20 0.2 15 repmat(0.2,1,nEcc) zeros(1,nEcc)]];
-            pub = [pub [ 0.10 25 0.5 25 repmat(0.8,1,nEcc) ones(1,nEcc)]];
+            pub = [pub [ 0.10 30 0.5 25 repmat(0.8,1,nEcc) ones(1,nEcc)]];
         case 'parasol'
             plb = [plb [ 0.01 20 0.2 10 repmat(0.2,1,nEcc) zeros(1,nEcc)]];
             pub = [pub [ 0.10 25 0.5 20 repmat(0.8,1,nEcc) ones(1,nEcc)]];

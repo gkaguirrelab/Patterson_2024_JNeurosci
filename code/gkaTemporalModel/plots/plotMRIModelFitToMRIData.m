@@ -15,7 +15,7 @@ load(loadPath,'rgcTemporalModel');
 loadPath = fullfile(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath'))))),'data','temporalModelResults','mriTemporalModel.mat');
 load(loadPath,'mriTemporalModel');
 
-
+savePath = fullfile('~','Desktop','mtSinaiTemporalModelPlots');
 
 % Extract some meta info from the mriTemporalModel
 studiedFreqs = mriTemporalModel.meta.studiedFreqs;
@@ -77,8 +77,8 @@ for whichSub = 1:length(subjects)
     end
 
     % Save the plot
-    plotName = [stimulusDirections{whichStim} '_' subjects{whichSub} '_ModelFit.pdf' ];
-    saveas(gcf,fullfile('~/Desktop',plotName));
+    plotName = [stimulusDirections{whichStim} '_' subjects{whichSub} '_MRIModelFit.pdf' ];
+    saveas(gcf,fullfile(savePath,plotName));
 
     figure
     for whichCell = 1:length(cellClassOrder)
@@ -93,10 +93,14 @@ for whichSub = 1:length(subjects)
         ylim([0 1]);
 
         subplot(1,2,2)
-        semilogy(log10(studiedEccentricites),pMRI(paramIndices+1),['*' plotColor{whichCell}]);
+        semilogy(log10(studiedEccentricites),pMRI(paramIndices+nEccs),['*' plotColor{whichCell}]);
         hold on
         xlabel('Eccentricity [log deg]');
         ylabel('Gain parameter');
-
     end
+
+        % Save the plot
+    plotName = [subjects{whichSub} '_MRIModelParams.pdf' ];
+    saveas(gcf,fullfile(savePath,plotName));
+
 end

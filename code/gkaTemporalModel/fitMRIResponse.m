@@ -87,30 +87,37 @@ load(loadPath,'rgcTemporalModel');
 
 % Extract this value for later
 nEcc = length(studiedEccentricites);
-nUniqueParams = 1;
-nFixedParams = 4;
+nUniqueParams = 6;
+nFixedParams = 2;
 
 % The model includes parameters for each of the cell classes
 cellClassOrder = {'midget','parasol','bistratified'};
 
-% Set up the bounds. Initialize these vectors with the unique parameter
-% LMRatio, that is commmon to all cell classes and eccentricities
-lb = [0.33]; ub = [3]; plb = [0.5]; pub = [2];
+% Set up the bounds.
+% Initialize these vectors with the second order filter corner frequency
+% and "quality" index. These are applied for the cortical model to the
+% post-receptoral channels in the order "LminusM","S","LMS"
+lb = repmat([05 0.1],1,3);
+ub = repmat([30 1.0],1,3);
+plb = repmat([10 0.2],1,3);
+pub = repmat([25 0.5],1,3);
+
 for cc = 1:length(cellClassOrder)
+
     % hard bounds
-    lb = [lb [ 00 10 0.1 07.5 zeros(1,nEcc) zeros(1,nEcc)]];
-    ub = [ub [ 10 30 1.0 40.0 ones(1,nEcc) repmat(10,1,nEcc)]];
+    lb = [lb [ 00 07.5 zeros(1,nEcc) zeros(1,nEcc)]];
+    ub = [ub [ 10 40.0 ones(1,nEcc) repmat(10,1,nEcc)]];
     % Plausible bounds vary by cell class
     switch cellClassOrder{cc}
         case 'midget'
-            plb = [plb [ 0.01 20 0.2 15 repmat(0.2,1,nEcc) zeros(1,nEcc)]];
-            pub = [pub [ 0.10 30 0.5 25 repmat(0.8,1,nEcc) ones(1,nEcc)]];
+            plb = [plb [ 0.01 15 repmat(0.2,1,nEcc) zeros(1,nEcc)]];
+            pub = [pub [ 0.10 25 repmat(0.8,1,nEcc) ones(1,nEcc)]];
         case 'parasol'
-            plb = [plb [ 0.01 20 0.2 10 repmat(0.2,1,nEcc) zeros(1,nEcc)]];
-            pub = [pub [ 0.10 25 0.5 20 repmat(0.8,1,nEcc) ones(1,nEcc)]];
+            plb = [plb [ 0.01 10 repmat(0.2,1,nEcc) zeros(1,nEcc)]];
+            pub = [pub [ 0.10 20 repmat(0.8,1,nEcc) ones(1,nEcc)]];
         case 'bistratified'
-            plb = [plb [ 0.01 20 0.2 10 repmat(0.2,1,nEcc) zeros(1,nEcc)]];
-            pub = [pub [ 0.10 25 0.5 25 repmat(0.8,1,nEcc) ones(1,nEcc)]];
+            plb = [plb [ 0.01 10 repmat(0.2,1,nEcc) zeros(1,nEcc)]];
+            pub = [pub [ 0.10 25 repmat(0.8,1,nEcc) ones(1,nEcc)]];
     end
 end
 

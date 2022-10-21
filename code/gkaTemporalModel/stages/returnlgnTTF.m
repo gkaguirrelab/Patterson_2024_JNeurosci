@@ -1,10 +1,11 @@
-function [lgnAmplitude,lgnPhase] = returnlgnTTF(cellClass,stimulusDirection,rgcTemporalModel,pMRICellBlock,LMRatio,studiedFreqs,studiedEccentricites,nFixed)
+function [lgnAmplitude,lgnPhase] = returnlgnTTF(cellClass,stimulusDirection,rgcTemporalModel,pMRICellBlock,studiedFreqs,studiedEccentricites,nFixed)
 
 % Some things we need to know
 nV1Eccs = length(studiedEccentricites);
 
 % Unpack model parameters
 lgnGain = pMRICellBlock(1);
+surroundDelay = pMRICellBlock(2);
 surroundIndexV1 = pMRICellBlock(nFixed+1:nFixed+nV1Eccs);
 nSubtractions = 1; % One delayed surround stage at the LGN
 
@@ -25,7 +26,9 @@ eccDegVals = 1:20:61;
 
 % Set up the call to the post retinal RF generator as a function of
 % eccentricity
-rfPostRetinalFunc = @(eccDeg) returnPostRetinalRF(cellClass,stimulusDirection,rgcTemporalModel,eccDeg,mypMRI(eccDeg),LMRatio,nSubtractions);
+rfPostRetinalFunc = @(eccDeg) returnPostRetinalRF(...
+    cellClass,stimulusDirection,rgcTemporalModel,eccDeg,nSubtractions,...
+    surroundDelay,interpSurroundIndex(eccDeg),[],[]);
 
 % Obtain the average TTF across the eccentricities
 lgnAmplitude = zeros(size(studiedFreqs)); lgnPhase = zeros(size(studiedFreqs));

@@ -5,7 +5,6 @@ nStims = length(stimulusDirections);
 nEccs = length(studiedEccentricites);
 nFreqs = length(studiedFreqs);
 nParamsPerCellBlock = nFixedParams+nEccs*2;
-LMRatio = pMRI(1);
 
 % Loop through the stimulus directions and assemble the response
 responseMat = zeros(nStims,nFreqs);
@@ -34,7 +33,7 @@ for ss = 1:nStims
         % Get the TTF
         responseAtStim = responseAtStim + ...
             returnlgnTTF(cellClasses{cc},stimulusDirections{ss},...
-            rgcTemporalModel,pMRICellBlock,LMRatio,...
+            rgcTemporalModel,pMRICellBlock,...
             studiedFreqs,studiedEccentricites,nFixedParams);
 
     end

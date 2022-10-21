@@ -1,14 +1,11 @@
-function [v1Amplitude,v1Phase] = returnV1TTFForEcc(cellClass,stimulusDirection,rgcTemporalModel,eccDeg,pMRIBlock,LMRatio,freqs)
+function [v1Amplitude,v1Phase] = returnV1TTFForEcc(cellClass,stimulusDirection,rgcTemporalModel,eccDeg,freqs,v1Gain,surroundDelay,surroundIndex,secondOrderFc,secondOrderQ)
 
-% Unpack model parameters
-v1Gain = pMRIBlock(end);
 nSubtractions = 2; % Two delayed surround stages: LGN and then V1
 
 % Get the post retinal temporal RF model
-rfPostRetinal = returnPostRetinalRF(cellClass,stimulusDirection,rgcTemporalModel,eccDeg,pMRIBlock,LMRatio,nSubtractions);
+rfPostRetinal = returnPostRetinalRF(cellClass,stimulusDirection,rgcTemporalModel,eccDeg,nSubtractions,surroundDelay,surroundIndex,secondOrderFc,secondOrderQ);
 
-% Derive the amplitude and phase from the Fourier model, combining the two
-% LMS components if present
+% Derive the amplitude and phase from the Fourier model
 ttfComplex = double(subs(rfPostRetinal,freqs));
 v1Amplitude = abs(ttfComplex);
 v1Phase = unwrap(angle(ttfComplex));

@@ -1,4 +1,4 @@
-function response = assembleLGNResponseAcrossStims(pMRI,stimulusDirections,studiedEccentricites,studiedFreqs,cellClassOrder,rgcTemporalModel,nUniqueParams,nFixedParams)
+function response = assembleLGNResponseAcrossStims(pMRI,stimulusDirections,studiedEccentricites,studiedFreqs,rgcTemporalModel,nUniqueParams,nFixedParams)
 
 % Identify the studied eccentricities and stimulus frequencies
 nStims = length(stimulusDirections);

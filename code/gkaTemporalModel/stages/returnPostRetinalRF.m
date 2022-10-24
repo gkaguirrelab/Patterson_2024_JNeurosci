@@ -52,11 +52,11 @@ midgetFraction = @(eccDeg) 0.8928*(1+eccDeg/41.03).^(-1);
     semilogy(0:1:90,bistratifiedFraction(0:1:90),'-r')
 %}
 pp(1) = -0.000002818937309; pp(2) = 0.001127464065019; pp(3) = 0.009832178782458;
-bistratifiedFraction = @(eccDeg) (eccDeg>0.5).*( pp(1).*eccDeg.^2+pp(2).*eccDeg+pp(3));
+bistratifiedFraction = @(eccDeg) (eccDeg>0.5).*( pp(1).*eccDeg.^2+pp(2).*eccDeg+pp(3) );
 
 % At each eccentricity, what fraction of the total number of RGCs is of a
-% given cell class? We simply assume that the bistratified RGCs make up a
-% uniform 10% of all RGCs across eccentricity
+% given cell class? The parasol denisty is what is left over after we
+% account for midget and bistratified classes.
 switch cellClass
     case 'midget'
         proportionFunc = @(ecc) midgetFraction(ecc);

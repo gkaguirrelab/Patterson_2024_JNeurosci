@@ -91,7 +91,7 @@ nUniqueParams = 0;
 nFixedParams = 4;
 
 % The model includes parameters for each of the cell classes
-cellClassOrder = {'midget','parasol','bistratified','midget'};
+cellClassOrder = {'midget.LminusM','parasol.LMS','bistratified.S','midget.LMS'};
 
 % Set up the bounds. The first four parameters vary by channel, but are
 % locked across eccentricity:
@@ -104,24 +104,24 @@ cellClassOrder = {'midget','parasol','bistratified','midget'};
 % - surround gain
 lb = []; ub = []; plb = []; pub = [];
 for cc = 1:length(cellClassOrder)
-    lb =  [ lb 0000 005 0.1 01 zeros(1,nEcc) zeros(1,nEcc)];
-    ub =  [ ub 1.00 100 2.0 40 ones(1,nEcc) ones(1,nEcc)];
-    plb = [plb 0.01 020 0.5 10 repmat(0.2,1,nEcc) repmat(0.1,1,nEcc)];
-    pub = [pub 0.10 040 1.0 25 repmat(0.8,1,nEcc) repmat(0.8,1,nEcc)];
+    lb =  [ lb 0000 10 0.1 01 zeros(1,nEcc) zeros(1,nEcc)];
+    ub =  [ ub 1.00 30 1.0 40 ones(1,nEcc) ones(1,nEcc)];
+    plb = [plb 0.01 15 0.3 10 repmat(0.2,1,nEcc) repmat(0.1,1,nEcc)];
+    pub = [pub 0.10 25 0.6 30 repmat(0.8,1,nEcc) repmat(0.8,1,nEcc)];
 end
 
 % We will try and find a solution that matches the second order filter
 % corner frequency and quality index across cell classes 
 fixedParamsToShrink = [2 3 4];
+shrinkPenaltyScale = [10 10 10];
 
 % Returns the TTF, and handles reshaping into a linear vector
-myV1TTF = @(pMRI) assembleV1ResponseAcrossStimsAndEcc(pMRI,stimulusDirections,studiedEccentricites,studiedFreqs,cellClassOrder,rgcTemporalModel,nUniqueParams,nFixedParams);
-myLGNTTF = @(pMRI) assembleLGNResponseAcrossStims(pMRI,stimulusDirections,studiedEccentricites,studiedFreqs,cellClassOrder,rgcTemporalModel,nUniqueParams,nFixedParams);
+myV1TTF = @(pMRI) assembleV1ResponseAcrossStimsAndEcc(pMRI,stimulusDirections,studiedEccentricites,studiedFreqs,rgcTemporalModel,nUniqueParams,nFixedParams);
+myLGNTTF = @(pMRI) assembleLGNResponseAcrossStims(pMRI,stimulusDirections,studiedEccentricites,studiedFreqs,rgcTemporalModel,nUniqueParams,nFixedParams);
 
 % Calculate a penalty that aims to shrink parameters to match across cell
 % classes
-myShrinkPenalty = @(pMRI) calculateShrinkPenalty(pMRI,fixedParamsToShrink,studiedEccentricites,cellClassOrder,nUniqueParams,nFixedParams);
-%myShrinkPenalty = @(pMRI) 0;
+myShrinkPenalty = @(pMRI) calculateShrinkPenalty(pMRI,fixedParamsToShrink,shrinkPenaltyScale,studiedEccentricites,nUniqueParams,nFixedParams);
 
 % The weighted objective
 myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI))) + ...
@@ -162,7 +162,7 @@ end
 
 % Shrink penalty encourages the achromatic and chromatic cell classes to
 % each have similar temporal parameters
-function shrinkPenalty = calculateShrinkPenalty(pMRI,fixedParamsToShrink,studiedEccentricites,cellClassOrder,nUniqueParams,nFixedParams)
+function shrinkPenalty = calculateShrinkPenalty(pMRI,fixedParamsToShrink,shrinkPenaltyScale,studiedEccentricites,nUniqueParams,nFixedParams)
 nEccs = length(studiedEccentricites);
 nParamsPerCellBlock = nFixedParams+nEccs*2;
 for ii = 1:length(fixedParamsToShrink)
@@ -174,5 +174,5 @@ for ii = 1:length(fixedParamsToShrink)
     shrinkPenalty(ii) = std(valChromatic)./mean(valChromatic) + ...
         std(valAchromatic)./mean(valAchromatic);
 end
-shrinkPenalty = sum(shrinkPenalty);
+shrinkPenalty = sum(shrinkPenalty.*shrinkPenaltyScale);
 end

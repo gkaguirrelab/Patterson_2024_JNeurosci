@@ -30,7 +30,7 @@ nEccs = length(studiedEccentricites);
 nFreqs = length(studiedFreqs);
 freqsForPlotting = logspace(0,2,50);
 nFreqsForPlotting = length(freqsForPlotting);
-cellClassOrder = {'midget','parasol','bistratified'};
+cellClassOrder = {'midgetChrom','parasol','bistratified','midgetAchrom'};
 
 for whichSub = 1:length(subjects)
 

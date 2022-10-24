@@ -87,47 +87,46 @@ load(loadPath,'rgcTemporalModel');
 
 % Extract this value for later
 nEcc = length(studiedEccentricites);
-nUniqueParams = 6;
-nFixedParams = 2;
+nUniqueParams = 0;
+nFixedParams = 4;
 
 % The model includes parameters for each of the cell classes
-cellClassOrder = {'midget','parasol','bistratified'};
+cellClassOrder = {'midget','parasol','bistratified','midget'};
 
-% Set up the bounds.
-% Initialize these vectors with the second order filter corner frequency
-% and "quality" index. These are applied for the cortical model to the
-% post-receptoral channels in the order "LminusM","S","LMS"
-lb = repmat([05 0.1],1,3);
-ub = repmat([30 1.0],1,3);
-plb = repmat([10 0.2],1,3);
-pub = repmat([25 0.5],1,3);
-
+% Set up the bounds. The first four parameters vary by channel, but are
+% locked across eccentricity:
+% - lgn gain
+% - second order filter corner frequency
+% - second order filter "quality" index
+% - surround delay
+% The next set of parameters vary by channel and by eccentricity
+% - surround index
+% - surround gain
+lb = []; ub = []; plb = []; pub = [];
 for cc = 1:length(cellClassOrder)
-
-    % hard bounds
-    lb = [lb [ 00 07.5 zeros(1,nEcc) zeros(1,nEcc)]];
-    ub = [ub [ 10 40.0 ones(1,nEcc) repmat(10,1,nEcc)]];
-    % Plausible bounds vary by cell class
-    switch cellClassOrder{cc}
-        case 'midget'
-            plb = [plb [ 0.01 15 repmat(0.2,1,nEcc) zeros(1,nEcc)]];
-            pub = [pub [ 0.10 25 repmat(0.8,1,nEcc) ones(1,nEcc)]];
-        case 'parasol'
-            plb = [plb [ 0.01 10 repmat(0.2,1,nEcc) zeros(1,nEcc)]];
-            pub = [pub [ 0.10 20 repmat(0.8,1,nEcc) ones(1,nEcc)]];
-        case 'bistratified'
-            plb = [plb [ 0.01 10 repmat(0.2,1,nEcc) zeros(1,nEcc)]];
-            pub = [pub [ 0.10 25 repmat(0.8,1,nEcc) ones(1,nEcc)]];
-    end
+    lb =  [ lb 0000 005 0.1 01 zeros(1,nEcc) zeros(1,nEcc)];
+    ub =  [ ub 1.00 100 2.0 40 ones(1,nEcc) ones(1,nEcc)];
+    plb = [plb 0.01 020 0.5 10 repmat(0.2,1,nEcc) repmat(0.1,1,nEcc)];
+    pub = [pub 0.10 040 1.0 25 repmat(0.8,1,nEcc) repmat(0.8,1,nEcc)];
 end
+
+% We will try and find a solution that matches the second order filter
+% corner frequency and quality index across cell classes 
+fixedParamsToShrink = [2 3 4];
 
 % Returns the TTF, and handles reshaping into a linear vector
 myV1TTF = @(pMRI) assembleV1ResponseAcrossStimsAndEcc(pMRI,stimulusDirections,studiedEccentricites,studiedFreqs,cellClassOrder,rgcTemporalModel,nUniqueParams,nFixedParams);
 myLGNTTF = @(pMRI) assembleLGNResponseAcrossStims(pMRI,stimulusDirections,studiedEccentricites,studiedFreqs,cellClassOrder,rgcTemporalModel,nUniqueParams,nFixedParams);
 
+% Calculate a penalty that aims to shrink parameters to match across cell
+% classes
+myShrinkPenalty = @(pMRI) calculateShrinkPenalty(pMRI,fixedParamsToShrink,studiedEccentricites,cellClassOrder,nUniqueParams,nFixedParams);
+%myShrinkPenalty = @(pMRI) 0;
+
 % The weighted objective
 myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI))) + ...
-    norm(lgnW.*(lgnY - myLGNTTF(pMRI)));
+    norm(lgnW.*(lgnY - myLGNTTF(pMRI))) + ...
+    myShrinkPenalty(pMRI);
 
 % Non-linear constraint that surround index decreases with eccentricity
 if useMonotonicConstraint
@@ -149,20 +148,31 @@ end % main function
 
 %% LOCAL FUNCTIONS
 
-%% nonbcon
-
 % Enforce constraint of declining surround index with eccentricity
 function c = nonbcon(pMRI,studiedEccentricites,cellClassOrder,nUniqueParams,nFixedParams)
-
 nEccs = length(studiedEccentricites);
-
 for whichCell=1:length(cellClassOrder)
     paramIndices = 1+nUniqueParams+(whichCell-1)*(nFixedParams+nEccs*2)+nFixedParams: ...
         nUniqueParams+(whichCell-1)*(nFixedParams+nEccs*2)+nFixedParams+nEccs;
     surroundIndex = pMRI(:,paramIndices);
     c(:,whichCell) = sum(diff(surroundIndex,1,2)>0,2);
 end
-
 c = sum(c,2);
+end
 
+% Shrink penalty encourages the achromatic and chromatic cell classes to
+% each have similar temporal parameters
+function shrinkPenalty = calculateShrinkPenalty(pMRI,fixedParamsToShrink,studiedEccentricites,cellClassOrder,nUniqueParams,nFixedParams)
+nEccs = length(studiedEccentricites);
+nParamsPerCellBlock = nFixedParams+nEccs*2;
+for ii = 1:length(fixedParamsToShrink)
+    valChromatic = [];
+    for cc=1:2
+        valChromatic(cc)=pMRI(nUniqueParams+(cc-1)*nParamsPerCellBlock+fixedParamsToShrink(ii));
+        valAchromatic(cc)=pMRI(nUniqueParams+(cc-1+2)*nParamsPerCellBlock+fixedParamsToShrink(ii));
+    end
+    shrinkPenalty(ii) = std(valChromatic)./mean(valChromatic) + ...
+        std(valAchromatic)./mean(valAchromatic);
+end
+shrinkPenalty = sum(shrinkPenalty);
 end

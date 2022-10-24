@@ -17,13 +17,13 @@ for ss = 1:nStims
     switch stimulusDirections{ss}
         case 'LminusM'
             cellClasses = {'midget'};
-            secondOrderFc = pMRI(1); secondOrderQ = pMRI(2);
+            cellClassIndex = 1;
         case 'S'
             cellClasses = {'bistratified'};
-            secondOrderFc = pMRI(3); secondOrderQ = pMRI(4);
+            cellClassIndex = 2;
         case 'LMS'
             cellClasses = {'parasol','midget'};
-            secondOrderFc = pMRI(5); secondOrderQ = pMRI(6);
+            cellClassIndex = [3 4];
     end
 
     % Loop over eccentricities
@@ -34,14 +34,13 @@ for ss = 1:nStims
 
         for cc = 1:length(cellClasses)
 
-            % What is the index in the param structure of this cell class?
-            cellClassIndex = find(strcmp(cellClassOrder,cellClasses{cc}));
-
-            % Grab the block of pMRI parameters that correspond to this
-            % cell class and eccentricity
-            surroundDelay = pMRI(1+nUniqueParams+(cellClassIndex-1)*nParamsPerCellBlock+1);
-            surroundIndex = pMRI(1+nUniqueParams+(cellClassIndex-1)*nParamsPerCellBlock+1+ee);
-            v1Gain = pMRI(1+nUniqueParams+(cellClassIndex-1)*nParamsPerCellBlock+nEccs+1+ee);
+            % Grab MRI parameters that correspond to this cell class,
+            % stimulus, and eccentricity
+            secondOrderFc = pMRI(nUniqueParams+(cellClassIndex(cc)-1)*nParamsPerCellBlock+2)
+            secondOrderQ = pMRI(nUniqueParams+(cellClassIndex(cc)-1)*nParamsPerCellBlock+3)
+            surroundDelay = pMRI(nUniqueParams+(cellClassIndex(cc)-1)*nParamsPerCellBlock+4)
+            surroundIndex = pMRI(nUniqueParams+(cellClassIndex(cc)-1)*nParamsPerCellBlock+4+ee);
+            v1Gain = pMRI(nUniqueParams+(cellClassIndex(cc)-1)*nParamsPerCellBlock+4+nEccs+ee);
 
             % Get the TTF
             thisResponse = ...

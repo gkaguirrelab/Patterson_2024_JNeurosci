@@ -5,7 +5,7 @@ nV1Eccs = length(studiedEccentricites);
 
 % Unpack model parameters
 lgnGain = pMRICellBlock(1);
-surroundDelay = pMRICellBlock(2);
+surroundDelay = pMRICellBlock(4);
 surroundIndexV1 = pMRICellBlock(nFixed+1:nFixed+nV1Eccs);
 nSubtractions = 1; % One delayed surround stage at the LGN
 

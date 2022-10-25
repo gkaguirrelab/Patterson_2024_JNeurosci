@@ -1,6 +1,4 @@
-function [v1Amplitude,v1Phase] = returnV1TTFForEcc(cellClass,stimulusDirection,rgcTemporalModel,eccDeg,freqs,v1Gain,surroundDelay,surroundIndex,secondOrderFc,secondOrderQ)
-
-nSubtractions = 2; % Two delayed surround stages: LGN and then V1
+function [v1Amplitude,v1Phase] = returnV1TTFForEcc(cellClass,stimulusDirection,rgcTemporalModel,eccDeg,freqs,v1Gain,surroundDelay,surroundIndex,secondOrderFc,secondOrderQ,nSubtractions)
 
 % Get the post retinal temporal RF model
 rfPostRetinal = returnPostRetinalRF(cellClass,stimulusDirection,rgcTemporalModel,eccDeg,nSubtractions,surroundDelay,surroundIndex,secondOrderFc,secondOrderQ);

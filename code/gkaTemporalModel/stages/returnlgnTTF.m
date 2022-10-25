@@ -22,7 +22,7 @@ mypMRI = @(eccDeg) [pMRICellBlock(1:nFixed) interpSurroundIndex(eccDeg)];
 % retina in contributing its population of RGCs to the average response.
 % The effective weight of an annular area may be low due to a small number
 % of RGCs, but each area is treated equivalently.
-eccDegVals = 1:20:61;
+eccDegVals = 1:5:81;
 
 % Set up the call to the post retinal RF generator as a function of
 % eccentricity

@@ -38,8 +38,8 @@ for whichSub = 1:length(subjects)
     v1Y = mriTemporalModel.(subjects{whichSub}).data.v1Y;
     lgnY = mriTemporalModel.(subjects{whichSub}).data.lgnY;
 
-    v1YFit = assembleV1ResponseAcrossStimsAndEcc(pMRI,stimulusDirections,studiedEccentricites,freqsForPlotting,cellClassOrder,rgcTemporalModel,nUniqueParams,nFixedParams);
-    lgnYFit = assembleLGNResponseAcrossStims(pMRI,stimulusDirections,studiedEccentricites,freqsForPlotting,cellClassOrder,rgcTemporalModel,nUniqueParams,nFixedParams);
+    [~,v1YFitMatrix] = assembleV1ResponseAcrossStimsAndEcc(pMRI,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel,nUniqueParams,nFixedParams);
+    lgnYFit = assembleLGNResponseAcrossStims(pMRI,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel,nUniqueParams,nFixedParams);
 
     for whichStim = 1:length(stimulusDirections)
         figure
@@ -55,7 +55,11 @@ for whichSub = 1:length(subjects)
             subplot(2,4,ee+(ee>3))
             semilogx(studiedFreqs,v1Y(v1DataIndices),['o' plotColor{whichStim}]);
             hold on
-            semilogx(freqsForPlotting,v1YFit(v1FitIndices),['-' plotColor{whichStim}]);
+            lineStyle = {'-.',':'};
+            for cc=1:2
+            semilogx(freqsForPlotting,squeeze(v1YFitMatrix(whichStim,ee,cc,:)),[lineStyle{cc} plotColor{whichStim}]);
+            end
+            semilogx(freqsForPlotting,sum(squeeze(v1YFitMatrix(whichStim,ee,:,:))),['-' plotColor{whichStim}]);            
             refline(0,0);
             title([stimulusDirections{whichStim} ', ' subjects{whichSub} ', ecc = ' num2str(studiedEccentricites(ee),2) '°']);
             ylim([-1 7]);
@@ -74,6 +78,19 @@ for whichSub = 1:length(subjects)
         refline(0,0);
         title([stimulusDirections{whichStim} ', ' subjects{whichSub} ', LGN']);
         ylim([-0.5 4]);
+
+        % Show the cortical filter
+        subplot(2,4,4)
+        secondOrderFc = pMRI( (whichStim-1)*(nUniqueParams/3)+1 );
+        secondOrderQ = pMRI( (whichStim-1)*(nUniqueParams/3)+2 );
+        syms f; rf = stageSecondOrderLP(f,secondOrderFc,secondOrderQ);
+        myFreqs = logspace(log10(0.5),log10(100),101);
+        ttfComplex = double(subs(rf,myFreqs));
+        gainVals = abs(ttfComplex);
+        semilogx(myFreqs,gainVals,['-' plotColor{whichStim}]);
+        xlabel('frequency [Hz]'); ylabel('gain');
+
+
     end
 
     % Save the plot
@@ -86,15 +103,17 @@ for whichSub = 1:length(subjects)
         subplot(1,2,1)
         paramIndices = 1+nUniqueParams+(whichCell-1)*(nFixedParams+nEccs*2)+nFixedParams: ...
             nUniqueParams+(whichCell-1)*(nFixedParams+nEccs*2)+nFixedParams+nEccs;
-        plot(log10(studiedEccentricites),pMRI(paramIndices),['*' plotColor{whichCell}]);
+        plot(log10(studiedEccentricites),pMRI(paramIndices),['o' plotColor{whichCell}]);
         hold on
+        plot(log10(studiedEccentricites),pMRI(paramIndices),['-' plotColor{whichCell}]);
         xlabel('Eccentricity [log deg]');
         ylabel('Suppression index');
         ylim([0 1]);
 
         subplot(1,2,2)
-        semilogy(log10(studiedEccentricites),pMRI(paramIndices+nEccs),['*' plotColor{whichCell}]);
+        semilogy(log10(studiedEccentricites),pMRI(paramIndices+nEccs),['o' plotColor{whichCell}]);
         hold on
+        semilogy(log10(studiedEccentricites),pMRI(paramIndices+nEccs),['-' plotColor{whichCell}]);
         xlabel('Eccentricity [log deg]');
         ylabel('Gain parameter');
     end

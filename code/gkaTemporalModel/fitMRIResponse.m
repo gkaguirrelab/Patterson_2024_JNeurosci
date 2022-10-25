@@ -87,50 +87,63 @@ load(loadPath,'rgcTemporalModel');
 
 % Extract this value for later
 nEcc = length(studiedEccentricites);
-nUniqueParams = 0;
-nFixedParams = 4;
+nUniqueParams = 9;
+nFixedParams = 1;
 
 % The model includes parameters for each of the cell classes
-cellClassOrder = {'midget.LminusM','parasol.LMS','bistratified.S','midget.LMS'};
+postReceptoralPaths = {'midget.LminusM','parasol.LMS','bistratified.S','midget.LMS'};
 
-% Set up the bounds. The first four parameters vary by channel, but are
-% locked across eccentricity:
-% - lgn gain
-% - second order filter corner frequency
-% - second order filter "quality" index
-% - surround delay
-% The next set of parameters vary by channel and by eccentricity
-% - surround index
-% - surround gain
-lb = []; ub = []; plb = []; pub = [];
-for cc = 1:length(cellClassOrder)
-    lb =  [ lb 0000 10 0.1 01 zeros(1,nEcc) zeros(1,nEcc)];
-    ub =  [ ub 1.00 30 1.0 40 ones(1,nEcc) ones(1,nEcc)];
-    plb = [plb 0.01 15 0.3 10 repmat(0.2,1,nEcc) repmat(0.1,1,nEcc)];
-    pub = [pub 0.10 25 0.6 30 repmat(0.8,1,nEcc) repmat(0.8,1,nEcc)];
+% Set up the parameters. The first set of "unique" parameters have 3,
+% separate entries for the chromatic and achromatic responses,
+% respectively. These parameters do not differ by eccentricity
+% - second order filter corner frequency (Hz)
+% - second order filter "quality" index (a.u.)
+% - surround delay (msecs)
+% There is one "fixed" parameter that varies among the 4, post-receptoral
+% paths that scales the gain of this response at the LGN
+% - lgn gain (a.u.)
+% The final set of parameters vary by post-receptoral pathway and by
+% V1 eccentricity band:
+% - surround index (a.u.)
+% - surround gain (a.u.)
+%
+lb = []; plb = []; pub = []; ub = [];
+for ss = 1:3 % post-receptoral stimulus directions
+    lb =  [ lb 10 0.1 01];
+    plb = [plb 15 0.3 5];
+    pub = [pub 25 0.6 30];
+    ub =  [ ub 90 0.8 50];
+end
+for cc = 1:length(postReceptoralPaths)
+    lb =  [ lb 0000 zeros(1,nEcc) zeros(1,nEcc)];
+    plb = [plb 0.01 repmat(0.2,1,nEcc) repmat(0.01,1,nEcc)];
+    pub = [pub 0.10 repmat(0.8,1,nEcc) repmat(0.8,1,nEcc)];
+    ub =  [ ub 1.00 ones(1,nEcc) repmat(10,1,nEcc)];
 end
 
-% We will try and find a solution that matches the second order filter
-% corner frequency and quality index across cell classes 
-fixedParamsToShrink = [2 3 4];
-shrinkPenaltyScale = [10 10 10];
+% Lock a bunch of params so that we only search the bistratified set
+% [1:3 4:6 7:9 10:22 23:35 36:48 49:61]
+% SFloat = [1:3 7:9 10:22 36:48 49:61];
+% LminusMFloat = [4:6 7:9 23:35 36:48 49:61];
+ LMSFloat = [1:3 4:6 10:22 23:35];
+ thisFloat = LMSFloat;
+lb(thisFloat) = p0(thisFloat);
+plb(thisFloat) = p0(thisFloat);
+pub(thisFloat) = p0(thisFloat);
+ub(thisFloat) = p0(thisFloat);
 
 % Returns the TTF, and handles reshaping into a linear vector
 myV1TTF = @(pMRI) assembleV1ResponseAcrossStimsAndEcc(pMRI,stimulusDirections,studiedEccentricites,studiedFreqs,rgcTemporalModel,nUniqueParams,nFixedParams);
 myLGNTTF = @(pMRI) assembleLGNResponseAcrossStims(pMRI,stimulusDirections,studiedEccentricites,studiedFreqs,rgcTemporalModel,nUniqueParams,nFixedParams);
 
-% Calculate a penalty that aims to shrink parameters to match across cell
-% classes
-myShrinkPenalty = @(pMRI) calculateShrinkPenalty(pMRI,fixedParamsToShrink,shrinkPenaltyScale,studiedEccentricites,nUniqueParams,nFixedParams);
-
+v1W = ones(size(v1W))
 % The weighted objective
 myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI))) + ...
-    norm(lgnW.*(lgnY - myLGNTTF(pMRI))) + ...
-    myShrinkPenalty(pMRI);
+    norm(lgnW.*(lgnY - myLGNTTF(pMRI)));
 
 % Non-linear constraint that surround index decreases with eccentricity
 if useMonotonicConstraint
-    myNonbcon = @(pMRI) nonbcon(pMRI,studiedEccentricites,cellClassOrder,nUniqueParams,nFixedParams);
+    myNonbcon = @(pMRI) nonbcon(pMRI,studiedEccentricites,postReceptoralPaths,nUniqueParams,nFixedParams);
 else
     myNonbcon = [];
 end
@@ -149,30 +162,13 @@ end % main function
 %% LOCAL FUNCTIONS
 
 % Enforce constraint of declining surround index with eccentricity
-function c = nonbcon(pMRI,studiedEccentricites,cellClassOrder,nUniqueParams,nFixedParams)
+function c = nonbcon(pMRI,studiedEccentricites,postReceptoralPaths,nUniqueParams,nFixedParams)
 nEccs = length(studiedEccentricites);
-for whichCell=1:length(cellClassOrder)
+for whichCell=1:length(postReceptoralPaths)
     paramIndices = 1+nUniqueParams+(whichCell-1)*(nFixedParams+nEccs*2)+nFixedParams: ...
         nUniqueParams+(whichCell-1)*(nFixedParams+nEccs*2)+nFixedParams+nEccs;
     surroundIndex = pMRI(:,paramIndices);
     c(:,whichCell) = sum(diff(surroundIndex,1,2)>0,2);
 end
 c = sum(c,2);
-end
-
-% Shrink penalty encourages the achromatic and chromatic cell classes to
-% each have similar temporal parameters
-function shrinkPenalty = calculateShrinkPenalty(pMRI,fixedParamsToShrink,shrinkPenaltyScale,studiedEccentricites,nUniqueParams,nFixedParams)
-nEccs = length(studiedEccentricites);
-nParamsPerCellBlock = nFixedParams+nEccs*2;
-for ii = 1:length(fixedParamsToShrink)
-    valChromatic = [];
-    for cc=1:2
-        valChromatic(cc)=pMRI(nUniqueParams+(cc-1)*nParamsPerCellBlock+fixedParamsToShrink(ii));
-        valAchromatic(cc)=pMRI(nUniqueParams+(cc-1+2)*nParamsPerCellBlock+fixedParamsToShrink(ii));
-    end
-    shrinkPenalty(ii) = std(valChromatic)./mean(valChromatic) + ...
-        std(valAchromatic)./mean(valAchromatic);
-end
-shrinkPenalty = sum(shrinkPenalty.*shrinkPenaltyScale);
 end

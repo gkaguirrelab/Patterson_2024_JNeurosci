@@ -121,10 +121,18 @@ for whichSub = 1:length(subjects)
         ylabel('Suppression index');
         ylim([0 1]);
 
+        % Plot the gain index vs. eccentricity
         subplot(1,2,2)
         semilogy(log10(studiedEccentricites),pMRI(paramIndices+nEccs),['o' plotColor{whichCell}]);
         hold on
         semilogy(log10(studiedEccentricites),pMRI(paramIndices+nEccs),['-' plotColor{whichCell}]);
+
+        % Add the LGN gain values
+        if whichCell < 4
+        semilogy(0,pMRI(whichCell*3),['*' plotColor{whichCell}]);
+        end
+
+        xlim([-0.1 2]);
         xlabel('Eccentricity [log deg]');
         ylabel('Gain parameter');
     end

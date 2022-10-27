@@ -178,7 +178,7 @@ indexToShrinkSets = {...
     [12 27] ... % The V1 chromatic surround delays
     [42 57] ... % The V1 achromatic surround delays
     [10 25 40] ... % 2nd order V1 corner frequency for all except achromatic midget
-    [11 26 41] ... % 2nd order quality index for all except achromatic midget
+%    [11 26 41] ... % 2nd order quality index for all except achromatic midget
     };
 
 shrinkPenalty = 0;

@@ -1,4 +1,4 @@
-function [rfPostRetinal, rfRGC, rfBipolar, rfCone] = returnPostRetinalRF(cellClass,stimulusDirection,rgcTemporalModel,eccDeg,nSubtractions,surroundDelay,surroundIndex,secondOrderFc,secondOrderQ)
+function [rfPostRetinal, rfRGC, rfBipolar, rfCone] = returnPostRetinalRF(cellClass,stimulusDirection,rgcTemporalModel,eccDeg,nSubtractions,surroundDelay,surroundIndex,gain,secondOrderFc,secondOrderQ)
 
 % Obtain the chromatic weights
 [chromaticCenterWeight,chromaticSurroundWeight] = ...
@@ -18,16 +18,23 @@ end
 % Copy the RGC model into the post-retinal variables
 rfPostRetinal = rfRGC;
 
-% Apply iterative, delayed surround subtraction. The expectation is one
-% iteration for LGN, two iterations for V1
+% Apply iterative, delayed surround subtraction and gain scaling. The
+% expectation is one iteration for LGN, two iterations for V1. Include a
+% second-order low-pass filter at the final step
 syms f
 for ii = 1:nSubtractions
-    rfPostRetinal = rfPostRetinal - surroundIndex * rfPostRetinal.*stageDelay(f,surroundDelay/1000);
-end
 
-% Apply a post-lgn, second order low pass filter
-if nSubtractions > 1
-    rfPostRetinal = rfPostRetinal.*stageSecondOrderLP(f,secondOrderFc,secondOrderQ);
+    % Delayed surround subtraction
+    rfPostRetinal = rfPostRetinal - surroundIndex(ii) * rfPostRetinal.*stageDelay(f,surroundDelay(ii)/1000);
+
+    % Second order low pass filter
+    if nSubtractions > 1 && ~isempty(secondOrderFc) && ii==nSubtractions
+        rfPostRetinal = rfPostRetinal.*stageSecondOrderLP(f,secondOrderFc,secondOrderQ);
+    end
+
+    % Gain
+    rfPostRetinal = gain(ii)*rfPostRetinal;
+
 end
 
 % Drasdo 2007 equation for the midget fraction as a function of

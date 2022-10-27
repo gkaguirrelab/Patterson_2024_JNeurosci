@@ -31,6 +31,7 @@ nFreqs = length(studiedFreqs);
 freqsForPlotting = logspace(0,2,50);
 nFreqsForPlotting = length(freqsForPlotting);
 cellClassOrder = {'midgetChrom','parasol','bistratified','midgetAchrom'};
+nParamsPerCellBlock = nFixedParams+nEccs*2;
 
 for whichSub = 1:length(subjects)
 
@@ -39,7 +40,7 @@ for whichSub = 1:length(subjects)
     lgnY = mriTemporalModel.(subjects{whichSub}).data.lgnY;
 
     [~,v1YFitMatrix] = assembleV1ResponseAcrossStimsAndEcc(pMRI,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel,nUniqueParams,nFixedParams);
-    lgnYFit = assembleLGNResponseAcrossStims(pMRI,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel,nUniqueParams,nFixedParams);
+    [~,lgnYFitMatrix] = assembleLGNResponseAcrossStims(pMRI,stimulusDirections,freqsForPlotting,rgcTemporalModel);
 
     for whichStim = 1:length(stimulusDirections)
         figure
@@ -57,9 +58,9 @@ for whichSub = 1:length(subjects)
             hold on
             lineStyle = {'-.',':'};
             for cc=1:2
-            semilogx(freqsForPlotting,squeeze(v1YFitMatrix(whichStim,ee,cc,:)),[lineStyle{cc} plotColor{whichStim}]);
+                semilogx(freqsForPlotting,squeeze(v1YFitMatrix(whichStim,ee,cc,:)),[lineStyle{cc} plotColor{whichStim}]);
             end
-            semilogx(freqsForPlotting,sum(squeeze(v1YFitMatrix(whichStim,ee,:,:))),['-' plotColor{whichStim}]);            
+            semilogx(freqsForPlotting,sum(squeeze(v1YFitMatrix(whichStim,ee,:,:))),['-' plotColor{whichStim}]);
             refline(0,0);
             title([stimulusDirections{whichStim} ', ' subjects{whichSub} ', ecc = ' num2str(studiedEccentricites(ee),2) '°']);
             ylim([-1 7]);
@@ -68,29 +69,39 @@ for whichSub = 1:length(subjects)
         % Add the LGN response
         lgnDataIndices = 1+(whichStim-1)*(nFreqs): ...
             (whichStim-1)*(nFreqs)+nFreqs;
-        lgnFitIndices = 1+(whichStim-1)*(nFreqsForPlotting): ...
-            (whichStim-1)*(nFreqsForPlotting)+nFreqsForPlotting;
 
         subplot(2,4,8)
         semilogx(studiedFreqs,lgnY(lgnDataIndices),['o' plotColor{whichStim}]);
         hold on
-        semilogx(freqsForPlotting,lgnYFit(lgnFitIndices),['-' plotColor{whichStim}]);
+        for cc=1:2
+            semilogx(freqsForPlotting,squeeze(lgnYFitMatrix(whichStim,cc,:)),[lineStyle{cc} plotColor{whichStim}]);
+        end
+        semilogx(freqsForPlotting,sum(squeeze(lgnYFitMatrix(whichStim,:,:))),['-' plotColor{whichStim}]);
         refline(0,0);
         title([stimulusDirections{whichStim} ', ' subjects{whichSub} ', LGN']);
         ylim([-0.5 4]);
 
         % Show the cortical filter
         subplot(2,4,4)
-        secondOrderFc = pMRI( (whichStim-1)*(nUniqueParams/3)+1 );
-        secondOrderQ = pMRI( (whichStim-1)*(nUniqueParams/3)+2 );
+        secondOrderFc = pMRI(nUniqueParams+(whichStim-1)*nParamsPerCellBlock+1);
+        secondOrderQ = pMRI(nUniqueParams+(whichStim-1)*nParamsPerCellBlock+2);
+
         syms f; rf = stageSecondOrderLP(f,secondOrderFc,secondOrderQ);
         myFreqs = logspace(log10(0.5),log10(100),101);
         ttfComplex = double(subs(rf,myFreqs));
         gainVals = abs(ttfComplex);
-        semilogx(myFreqs,gainVals,['-' plotColor{whichStim}]);
+        semilogx(myFreqs,gainVals,['-.' plotColor{whichStim}]);
         xlabel('frequency [Hz]'); ylabel('gain');
+        if whichStim==3
+            secondOrderFc = pMRI(nUniqueParams+(4-1)*nParamsPerCellBlock+1);
+            secondOrderQ = pMRI(nUniqueParams+(4-1)*nParamsPerCellBlock+2);
 
-
+            syms f; rf = stageSecondOrderLP(f,secondOrderFc,secondOrderQ);
+            ttfComplex = double(subs(rf,myFreqs));
+            gainVals = abs(ttfComplex);
+            hold on
+            semilogx(myFreqs,gainVals,[':' plotColor{whichStim}]);
+        end
     end
 
     % Save the plot
@@ -118,7 +129,7 @@ for whichSub = 1:length(subjects)
         ylabel('Gain parameter');
     end
 
-        % Save the plot
+    % Save the plot
     plotName = [subjects{whichSub} '_MRIModelParams.pdf' ];
     saveas(gcf,fullfile(savePath,plotName));
 

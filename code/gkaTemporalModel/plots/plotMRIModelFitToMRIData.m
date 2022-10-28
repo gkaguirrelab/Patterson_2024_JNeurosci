@@ -31,6 +31,7 @@ nFreqs = length(studiedFreqs);
 freqsForPlotting = logspace(0,2,50);
 nFreqsForPlotting = length(freqsForPlotting);
 cellClassOrder = {'midgetChrom','parasol','bistratified','midgetAchrom'};
+chromAchromIndex = [1 1 2];
 nParamsPerCellBlock = nFixedParams+nEccs*2;
 
 for whichSub = 1:length(subjects)
@@ -50,8 +51,6 @@ for whichSub = 1:length(subjects)
 
             v1DataIndices = 1+(whichStim-1)*(nEccs*nFreqs)+(ee-1)*(nFreqs): ...
                 (whichStim-1)*(nEccs*nFreqs)+(ee-1)*(nEccs)+nFreqs;
-            v1FitIndices = 1+(whichStim-1)*(nEccs*nFreqsForPlotting)+(ee-1)*(nFreqsForPlotting): ...
-                (whichStim-1)*(nEccs*nFreqsForPlotting)+(ee-1)*(nFreqsForPlotting)+nFreqsForPlotting;
 
             subplot(2,4,ee+(ee>3))
             semilogx(studiedFreqs,v1Y(v1DataIndices),['o' plotColor{whichStim}]);
@@ -83,8 +82,8 @@ for whichSub = 1:length(subjects)
 
         % Show the cortical filter
         subplot(2,4,4)
-        secondOrderFc = pMRI(nUniqueParams+(whichStim-1)*nParamsPerCellBlock+1);
-        secondOrderQ = pMRI(nUniqueParams+(whichStim-1)*nParamsPerCellBlock+2);
+        secondOrderFc = pMRI(5+(chromAchromIndex(whichStim)-1)*3+1);
+        secondOrderQ = pMRI(5+(chromAchromIndex(whichStim)-1)*3+2);
 
         syms f; rf = stageSecondOrderLP(f,secondOrderFc,secondOrderQ);
         myFreqs = logspace(log10(0.5),log10(100),101);
@@ -92,16 +91,6 @@ for whichSub = 1:length(subjects)
         gainVals = abs(ttfComplex);
         semilogx(myFreqs,gainVals,['-.' plotColor{whichStim}]);
         xlabel('frequency [Hz]'); ylabel('gain');
-        if whichStim==3
-            secondOrderFc = pMRI(nUniqueParams+(4-1)*nParamsPerCellBlock+1);
-            secondOrderQ = pMRI(nUniqueParams+(4-1)*nParamsPerCellBlock+2);
-
-            syms f; rf = stageSecondOrderLP(f,secondOrderFc,secondOrderQ);
-            ttfComplex = double(subs(rf,myFreqs));
-            gainVals = abs(ttfComplex);
-            hold on
-            semilogx(myFreqs,gainVals,[':' plotColor{whichStim}]);
-        end
     end
 
     % Save the plot

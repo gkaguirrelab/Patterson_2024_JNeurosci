@@ -24,18 +24,21 @@ for ss = 1:nStims
         case 'LminusM'
             cellClasses = {'midget'};
             cellClassIndex = 1;
+            achromChromIndex = 1;
         case 'S'
             cellClasses = {'bistratified'};
             cellClassIndex = 2;
+            achromChromIndex = 1;
         case 'LMS'
             cellClasses = {'parasol','midget'};
             cellClassIndex = [3 4];
+            achromChromIndex = 2;
     end
 
     nCellClasses = length(cellClasses);
 
     % Loop over eccentricities
-    parfor ee=1:nEccs
+    for ee=1:nEccs
 
         for cc = 1:nCellClasses
 
@@ -50,11 +53,12 @@ for ss = 1:nStims
                     lgnGain = pMRI(5);
             end
 
-            % Grab "fixed" MRI parameters for this post-receptoral path,
-            % which vary by cell type and stimulus direction
-            secondOrderFc = pMRI(nUniqueParams+(cellClassIndex(cc)-1)*nParamsPerCellBlock+1);
-            secondOrderQ = pMRI(nUniqueParams+(cellClassIndex(cc)-1)*nParamsPerCellBlock+2);
-            v1SurroundDelay = pMRI(nUniqueParams+(cellClassIndex(cc)-1)*nParamsPerCellBlock+3);
+            % Grab the V1 MRI parameters that are fixed across
+            % eccentricity, but vary with stimulus class (chromatic or
+            % achromatic)
+            secondOrderFc = pMRI(5+(achromChromIndex-1)*3+1);
+            secondOrderQ = pMRI(5+(achromChromIndex-1)*3+2);
+            v1SurroundDelay = pMRI(5+(achromChromIndex-1)*3+3);
 
             % Grab the "floating" parameters that vary with eccentricity
             v1SurroundIndex = pMRI(nUniqueParams+(cellClassIndex(cc)-1)*nParamsPerCellBlock+nFixedParams+ee);

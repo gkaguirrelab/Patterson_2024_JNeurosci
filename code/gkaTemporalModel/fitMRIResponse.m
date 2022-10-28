@@ -87,41 +87,43 @@ load(loadPath,'rgcTemporalModel');
 
 % Extract this value for later
 nEcc = length(studiedEccentricites);
-nUniqueParams = 5;
-nFixedParams = 3;
-
-% The influence of the shrink penalty
-shrinkScaleFactor = 10;
+nUniqueParams = 11;
+nFixedParams = 0;
 
 % The model includes parameters for each of the cell classes
 postReceptoralPaths = {'midget.LminusM','parasol.LMS','bistratified.S','midget.LMS'};
 
-% Set up the parameters. The first set of "lgn" parameters are:
-% - lgn surround delay (shared by all cell classes and eccentricity)
-% - lgn surround index (shared by all cell classes and eccentricity)
-% - lgn surround gain (varies by cell class)
-% We then have blocks of parameters for each post-receptoral channel. First
-% are the "fixed" parameters that do not vary by eccentricity:
-% - second order filter corner frequency (Hz)
-% - second order filter "quality" index (a.u.)
-% - surround delay (msecs)
-% The final set of parameters vary by post-receptoral pathway and by
-% V1 eccentricity band:
-% - surround index (a.u.)
-% - surround gain (a.u.)
+% Set up the parameters.
 
-% lgn parameters, organized as midget, bistratified, parasol
+% lgn parameters, organized as
+% - lgn surround delay
+% - lgn surround index
+% - lgn gain (varies by midget, bistratified, parasol)
 lb =  [05 0.1 repmat(0000,1,3)];
 plb = [10 0.3 repmat(0.01,1,3)];
 pub = [15 0.6 repmat(0.10,1,3)];
 ub =  [20 0.7 repmat(1.00,1,3)];
 
-% v1 parameters, organized as LminusM, S, LMS-parasol, LMS-midget
-for cc = 1:length(postReceptoralPaths)
-    lb =  [ lb 05 0.1 05 zeros(1,nEcc) repmat(0.3,1,nEcc)];
-    plb = [plb 15 0.3 10 repmat(0.2,1,nEcc) repmat(0.5,1,nEcc)];
-    pub = [pub 25 0.6 30 repmat(0.8,1,nEcc) repmat(5,1,nEcc)];
-    ub =  [ ub 90 0.7 40 ones(1,nEcc) repmat(100,1,nEcc)];
+% v1 parameters organized as chromatic, achromatic
+% - second order filter corner frequency (Hz)
+% - second order filter "quality" index (a.u.)
+% - surround delay (msecs)
+for pp = 1:2
+    lb =  [ lb 05 0.1 05];
+    plb = [plb 15 0.3 10];
+    pub = [pub 25 0.6 30];
+    ub =  [ ub 90 0.7 40];
+end
+
+% v1 paramters that vary by eccentricity, organized as LminusM, S,
+% LMS-parasol, LMS-midget:
+% - surround index (a.u.)
+% - surround gain (a.u.)
+for pp = 1:length(postReceptoralPaths)
+    lb =  [ lb zeros(1,nEcc) repmat(0.3,1,nEcc)];
+    plb = [plb repmat(0.2,1,nEcc) repmat(0.5,1,nEcc)];
+    pub = [pub repmat(0.8,1,nEcc) repmat(5,1,nEcc)];
+    ub =  [ ub ones(1,nEcc) repmat(100,1,nEcc)];
 end
 
 % Returns the TTF, and handles reshaping into a linear vector
@@ -129,12 +131,11 @@ myV1TTF = @(pMRI) assembleV1ResponseAcrossStimsAndEcc(pMRI,stimulusDirections,st
 myLGNTTF = @(pMRI) assembleLGNResponseAcrossStims(pMRI,stimulusDirections,studiedFreqs,rgcTemporalModel);
 
 % Shrink penalty that attempts to match various parameters
-myShrinkPenalty = @(pMRI) calculateShrinkPenalty(pMRI,shrinkScaleFactor);
+% myShrinkPenalty = @(pMRI) calculateShrinkPenalty(pMRI,shrinkScaleFactor);
 
 % The weighted objective
 myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI))) + ...
-    norm(lgnW.*(lgnY - myLGNTTF(pMRI))) + ...
-    myShrinkPenalty(pMRI);
+    norm(lgnW.*(lgnY - myLGNTTF(pMRI)));
 
 % Non-linear constraint that surround index decreases with eccentricity
 if useMonotonicConstraint
@@ -153,7 +154,6 @@ optionsBADS.Display = 'iter';
 end % main function
 
 
-
 %% LOCAL FUNCTIONS
 
 % Enforce constraint of declining surround index with eccentricity
@@ -166,26 +166,4 @@ for whichCell=1:length(postReceptoralPaths)
     c(:,whichCell) = sum(diff(surroundIndex,1,2)>0,2);
 end
 c = sum(c,2);
-end
-
-% Shrink penalty encourages the LGN stage to have the same temporal delay
-% and index of suppression across 
-function shrinkPenalty = calculateShrinkPenalty(pMRI,shrinkScaleFactor)
-
-indexToShrinkSets = {...
-    [8 23] ... % The V1 chromatic surround delay
-    [38 53] ... % The V1 achromatic surround delay
-    [6 21] ... % 2nd order V1 corner frequency for chromatic
-    [7 22] ... % 2nd order V1 quality index for chromatic
-    [36 51] ... % 2nd order V1 corner frequency for achromatic
-    [37 52] ... % 2nd order V1 quality index for achromatic
-    };
-
-shrinkPenalty = 0;
-for ii=1:length(indexToShrinkSets)
-    shrinkPenalty = shrinkPenalty + std(pMRI(indexToShrinkSets{ii}))./mean(pMRI(indexToShrinkSets{ii}));
-end
-
-shrinkPenalty = shrinkPenalty * shrinkScaleFactor;
-
 end

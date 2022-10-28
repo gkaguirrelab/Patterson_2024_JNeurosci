@@ -87,7 +87,7 @@ load(loadPath,'rgcTemporalModel');
 
 % Extract this value for later
 nEcc = length(studiedEccentricites);
-nUniqueParams = 9;
+nUniqueParams = 5;
 nFixedParams = 3;
 
 % The influence of the shrink penalty
@@ -111,14 +111,14 @@ postReceptoralPaths = {'midget.LminusM','parasol.LMS','bistratified.S','midget.L
 % - surround gain (a.u.)
 
 % lgn parameters, organized as midget, bistratified, parasol
-lb =  repmat([5 0.1 0000],1,3);
-plb = repmat([10 0.3 0.01],1,3);
-pub = repmat([15 0.6 0.10],1,3);
-ub =  repmat([20 0.7 1.00],1,3);
+lb =  [05 0.1 repmat(0000,1,3)];
+plb = [10 0.3 repmat(0.01,1,3)];
+pub = [15 0.6 repmat(0.10,1,3)];
+ub =  [20 0.7 repmat(1.00,1,3)];
 
 % v1 parameters, organized as LminusM, S, LMS-parasol, LMS-midget
 for cc = 1:length(postReceptoralPaths)
-    lb =  [ lb 10 0.1 10 zeros(1,nEcc) repmat(0.3,1,nEcc)];
+    lb =  [ lb 05 0.1 10 zeros(1,nEcc) repmat(0.3,1,nEcc)];
     plb = [plb 15 0.3 12 repmat(0.2,1,nEcc) repmat(0.5,1,nEcc)];
     pub = [pub 25 0.6 30 repmat(0.8,1,nEcc) repmat(5,1,nEcc)];
     ub =  [ ub 90 0.7 40 ones(1,nEcc) repmat(100,1,nEcc)];
@@ -173,12 +173,12 @@ end
 function shrinkPenalty = calculateShrinkPenalty(pMRI,shrinkScaleFactor)
 
 indexToShrinkSets = {...
-    [1 4 7] ... % The surround delay at the LGN stage
-    [2 5 8] ... % The surround index at the LGN stage
-    [12 27] ... % The V1 chromatic surround delays
-    [42 57] ... % The V1 achromatic surround delays
-    [10 25 40] ... % 2nd order V1 corner frequency for all except achromatic midget
-%    [11 26 41] ... % 2nd order quality index for all except achromatic midget
+    [8 23] ... % The V1 chromatic surround delay
+    [38 53] ... % The V1 achromatic surround delay
+    [6 21] ... % 2nd order V1 corner frequency for chromatic
+    [7 22] ... % 2nd order V1 quality index for chromatic
+    [36 51] ... % 2nd order V1 corner frequency for achromatic
+    [37 52] ... % 2nd order V1 quality index for achromatic
     };
 
 shrinkPenalty = 0;

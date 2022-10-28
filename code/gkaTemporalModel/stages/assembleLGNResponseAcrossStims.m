@@ -7,6 +7,10 @@ nFreqs = length(freqs);
 % Loop through the stimulus directions and assemble the response
 responseMat = zeros(nStims,2,nFreqs);
 
+% Grab the lgn surround delay and index
+surroundDelay = pMRI(1);
+surroundIndex = pMRI(2);
+
 % Loop over the stims
 for ss = 1:nStims
 
@@ -23,21 +27,15 @@ for ss = 1:nStims
     responseForCell = zeros(1,length(freqs));
     for cc = 1:length(cellClasses)
 
-                    % Grab the LGN parameters, which are organized by RGC class
-            switch cellClasses{cc}
-                case 'midget'
-                    surroundDelay = pMRI(1);
-                    surroundIndex = pMRI(2);
-                    gain = pMRI(3);
-                case 'bistratified'
-                    surroundDelay = pMRI(4);
-                    surroundIndex = pMRI(5);
-                    gain = pMRI(6);
-                case 'parasol'
-                    surroundDelay = pMRI(7);
-                    surroundIndex = pMRI(8);
-                    gain = pMRI(9);
-            end
+        % Grab the LGN parameters, which are organized by RGC class
+        switch cellClasses{cc}
+            case 'midget'
+                gain = pMRI(3);
+            case 'bistratified'
+                gain = pMRI(4);
+            case 'parasol'
+                gain = pMRI(5);
+        end
 
         % Get the TTF
         responseForCell = responseForCell + ...

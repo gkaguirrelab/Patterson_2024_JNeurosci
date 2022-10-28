@@ -129,7 +129,7 @@ for whichSub = 1:length(subjects)
 
         % Add the LGN gain values
         if whichCell < 4
-        semilogy(0,pMRI(whichCell*3),['*' plotColor{whichCell}]);
+        semilogy(0,pMRI(2+whichCell),['*' plotColor{whichCell}]);
         end
 
         xlim([-0.1 2]);

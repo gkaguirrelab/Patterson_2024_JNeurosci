@@ -7,6 +7,11 @@ nFreqs = length(studiedFreqs);
 nParamsPerCellBlock = nFixedParams+nEccs*2;
 nSubtractions = 2; % Perform two levels of surround-delayed subtraction for V1
 
+% The shared LGN parameters
+lgnSurroundDelay = pMRI(1);
+lgnSurroundIndex = pMRI(2);
+
+% Initialize the response matrix
 responseMat = zeros(nStims,nEccs,2,nFreqs);
 
 % Loop through the stimulus directions and assemble the response
@@ -35,20 +40,14 @@ for ss = 1:nStims
         for cc = 1:nCellClasses
 
             % Grab the LGN parameters, which are organized by RGC class
-            lgnSurroundDelay = []; lgnSurroundIndex = []; lgnGain = [];
+            lgnGain = [];
             switch cellClasses{cc}
                 case 'midget'
-                    lgnSurroundDelay = pMRI(1);
-                    lgnSurroundIndex = pMRI(2);
                     lgnGain = pMRI(3);
                 case 'bistratified'
-                    lgnSurroundDelay = pMRI(4);
-                    lgnSurroundIndex = pMRI(5);
-                    lgnGain = pMRI(6);
+                    lgnGain = pMRI(4);
                 case 'parasol'
-                    lgnSurroundDelay = pMRI(7);
-                    lgnSurroundIndex = pMRI(8);
-                    lgnGain = pMRI(9);
+                    lgnGain = pMRI(5);
             end
 
             % Grab "fixed" MRI parameters for this post-receptoral path,

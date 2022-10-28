@@ -15,7 +15,7 @@ searchFlag = true;
 
 % Do we wish to use the monotonic constraint upon surround index in the
 % search?
-useMonotonicConstraint = true;
+useMonotonicConstraint = false;
 
 
 %% Load the Mt. Sinai data

@@ -91,7 +91,7 @@ nUniqueParams = 5;
 nFixedParams = 3;
 
 % The influence of the shrink penalty
-shrinkScaleFactor = 5;
+shrinkScaleFactor = 10;
 
 % The model includes parameters for each of the cell classes
 postReceptoralPaths = {'midget.LminusM','parasol.LMS','bistratified.S','midget.LMS'};
@@ -118,8 +118,8 @@ ub =  [20 0.7 repmat(1.00,1,3)];
 
 % v1 parameters, organized as LminusM, S, LMS-parasol, LMS-midget
 for cc = 1:length(postReceptoralPaths)
-    lb =  [ lb 05 0.1 10 zeros(1,nEcc) repmat(0.3,1,nEcc)];
-    plb = [plb 15 0.3 12 repmat(0.2,1,nEcc) repmat(0.5,1,nEcc)];
+    lb =  [ lb 05 0.1 05 zeros(1,nEcc) repmat(0.3,1,nEcc)];
+    plb = [plb 15 0.3 10 repmat(0.2,1,nEcc) repmat(0.5,1,nEcc)];
     pub = [pub 25 0.6 30 repmat(0.8,1,nEcc) repmat(5,1,nEcc)];
     ub =  [ ub 90 0.7 40 ones(1,nEcc) repmat(100,1,nEcc)];
 end

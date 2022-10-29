@@ -11,8 +11,8 @@
 
 %% Housekeeping
 rng;
-searchFlag = false;
-
+rgcSearchFlag = false;
+verboseFlag = false;
 
 %% Load the flicker response data
 rgcData = loadRGCResponseData();
@@ -91,9 +91,9 @@ pub = [repmat(pubBlock,1,nBlocks) 18 15 1.10];
 ub = [repmat(ubBlock,1,nBlocks) 20 18 2.00];
 
 % Here is a seed from a prior search with good performance
-% midget - fValGain: 1.66, fValPhase: 0.67, fValShrink: 0.01 
-% parasol - fValGain: 3.29, fValPhase: 0.00, fValShrink: 3.43 
-% bistratified - fValGain: 0.89, fValPhase: 0.60, fValShrink: 0.02 
+% midget - fValGain: 1.66, fValPhase: 0.67, fValShrink: 0.01
+% parasol - fValGain: 3.29, fValPhase: 0.00, fValShrink: 3.43
+% bistratified - fValGain: 0.89, fValPhase: 0.60, fValShrink: 0.02
 p0 = [ ...
     0.2469418824, 0.5922375411, 5.8056983257, 39.0848216414, 1.3149221987, 0.8983960792, 2.1111500710, 0.7764686763, ...
     0.6415928598, 0.6496570826, 17.3118880045, 42.4663314968, 1.3954235017, 0.8984520018, 2.1172960848, 0.0508179903, ...
@@ -121,7 +121,7 @@ optionsBADS.UncertaintyHandling = 0;
 
 
 %% Search
-if searchFlag
+if rgcSearchFlag
     pRGC = bads(myObj,p0,lb,ub,plb,pub,myNonbcon,optionsBADS);
 else
     pRGC = p0;
@@ -130,18 +130,20 @@ end
 
 %% Report results
 % Call the objective at the solution to report the fVals
-myFit(pRGC,true);
+myFit(pRGC,verboseFlag);
 
 % Print the parameters in a format to be used as a seed in future searches
-str = 'p0 = [...\n';
-for ss=1:length(pRGC)
-    str = [str sprintf('%2.10f, ',pRGC(ss))];
-    if mod(ss,nBlockParams)==0
-        str = [str '...\n'];
+if verboseFlag
+    str = 'p0 = [...\n';
+    for ss=1:length(pRGC)
+        str = [str sprintf('%2.10f, ',pRGC(ss))];
+        if mod(ss,nBlockParams)==0
+            str = [str '...\n'];
+        end
     end
+    str = [str(1:end-2) ' ];\n'];
+    fprintf(str);
 end
-str = [str(1:end-2) ' ];\n'];
-fprintf(str);
 
 % Reshape and store the parameters
 LMRatio = pRGC(end);

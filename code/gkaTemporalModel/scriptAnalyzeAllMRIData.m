@@ -21,7 +21,7 @@ savePath = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data
 
 
 %% Create the RGC temporal sensitivity model
-fitRGCFResponse
+rgcTemporalModel = fitRGCFResponse(false,false);
 
 
 %% Load the Mt. Sinai data
@@ -89,7 +89,8 @@ for whichSub = 1:2
         if mriSearchFlag
 
             % Report our progress
-            str=['Subject: ' subjects{whichSub} sprintf(', boot: %d ...',bb)];
+            curTime = char(datetime('now','TimeZone','local','Format','d-MMM-y HH:mm:ss'));
+            str=[curTime ' - Subject: ' subjects{whichSub} sprintf(', boot: %d ...',bb)];
             fprintf(str);
 
             % Let's see how long this takes
@@ -110,7 +111,25 @@ for whichSub = 1:2
             pMRI = pMRI0;
             fVal = nan;
         end
-    end
+
+        % Save the model parameters and data after each iteration
+        mriTemporalModel.(subjects{whichSub}).pMRI(bb,:) = pMRI;
+        mriTemporalModel.(subjects{whichSub}).pMRI0(bb,:) = pMRI0;
+        mriTemporalModel.(subjects{whichSub}).fVal(bb,:) = fVal;
+        mriTemporalModel.(subjects{whichSub}).v1Y(bb,:) = v1Y;
+        mriTemporalModel.(subjects{whichSub}).v1W(bb,:) = v1W;
+        mriTemporalModel.(subjects{whichSub}).lgnY(bb,:) = lgnY;
+        mriTemporalModel.(subjects{whichSub}).lgnW(bb,:) = lgnW;
+
+        % Save after each iteration, in case something breaks during the search
+        save(savePath,'mriTemporalModel');
+
+    end % boots
+
+end % subjects
+
+
+
 
 %     Print the parameters in a format to be used as a seed in future searches
 %     nUniqueParams = 11;
@@ -126,16 +145,3 @@ for whichSub = 1:2
 %     end
 %     str = [str(1:end-2) ' ... %% V1 ' postReceptoralPaths{pathIndex} ' \n ]; \n'];
 %     fprintf(str);
-
-    % Save the model parameters and data
-    mriTemporalModel.(subjects{whichSub}).pMRI(:,bb) = pMRI;
-    mriTemporalModel.(subjects{whichSub}).fVal(:,bb) = fVal;
-    mriTemporalModel.(subjects{whichSub}).data.v1Y(:,bb) = v1Y;
-    mriTemporalModel.(subjects{whichSub}).data.v1W(:,bb) = v1W;
-    mriTemporalModel.(subjects{whichSub}).data.lgnY(:,bb) = lgnY;
-    mriTemporalModel.(subjects{whichSub}).data.lgnW(:,bb) = lgnW;
-
-    % Save after each iteration, in case something breaks during the search
-    save(savePath,'mriTemporalModel');
-
-end

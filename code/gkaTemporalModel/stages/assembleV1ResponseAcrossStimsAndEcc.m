@@ -38,7 +38,7 @@ for ss = 1:nStims
     nCellClasses = length(cellClasses);
 
     % Loop over eccentricities
-    for ee=1:nEccs
+    parfor ee=1:nEccs
 
         for cc = 1:nCellClasses
 

@@ -1,5 +1,5 @@
-%% fitRGCFResponseData
-%
+function rgcTemporalModel = fitRGCFResponse(rgcSearchFlag,verboseFlag)
+
 % Loads RGC temporal sensitivity data from Solomon et al (2002, 2005) and
 % then fits these data in the complex fourier domain using a cascading
 % low-pass filter model.
@@ -11,8 +11,13 @@
 
 %% Housekeeping
 rng;
-rgcSearchFlag = false;
-verboseFlag = false;
+if nargin==0
+    rgcSearchFlag = false;
+    verboseFlag = false;
+end
+if nargin==1
+    verboseFlag = false;
+end
 
 %% Load the flicker response data
 rgcData = loadRGCResponseData();
@@ -152,8 +157,9 @@ cfCone = pRGC(end-2);
 pRGC = reshape(pRGC(1:nBlockParams*nEccBands*nCellClasses),[nBlockParams,nEccBands,nCellClasses]);
 
 % Report the common params
-fprintf('cfCone: %2.2f, coneDelay: %2.2f, LMRatio: %2.2f \n',cfCone,coneDelay,LMRatio)
-
+if verboseFlag
+    fprintf('cfCone: %2.2f, coneDelay: %2.2f, LMRatio: %2.2f \n',cfCone,coneDelay,LMRatio)
+end
 
 %% Interpolate params across eccentricity
 
@@ -199,7 +205,7 @@ rgcTemporalModel.meta.ubBlock = ubBlock;
 savePath = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults','rgcTemporalModel.mat');
 save(savePath,'rgcTemporalModel');
 
-
+end
 
 
 %% %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

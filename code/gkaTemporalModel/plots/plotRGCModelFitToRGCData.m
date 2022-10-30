@@ -20,7 +20,6 @@ cfCone = rgcTemporalModel.cfCone;
 coneDelay = rgcTemporalModel.coneDelay;
 LMRatio = rgcTemporalModel.LMRatio;
 pFitByEccen = rgcTemporalModel.pFitByEccen;
-blockParamNames = rgcTemporalModel.meta.blockParamNames;
 eccFields = rgcTemporalModel.meta.eccFields;
 eccBins = rgcTemporalModel.meta.eccBins;
 eccDegs = rgcTemporalModel.meta.eccDegs;
@@ -39,7 +38,7 @@ for ee = 1:nEccBands
     eccField = eccFields{ee};
 
     % Plot the midget temporal RFs
-    figHandle = figure();
+    figHandle = figure('Position',  [100, 100, 200, 400]);
 
     % Get the midget temporal RFs for LminusM defined by these parameters
     [chromaticCenterWeight,chromaticSurroundWeight] = returnRGCChromaticWeights('midget','LminusM',eccDegs(ee),LMRatio);
@@ -48,19 +47,22 @@ for ee = 1:nEccBands
 
     [rfRGC, ~, rfCone] = returnRGCRF(pBlock,cfCone,coneDelay,1,1);
     plotRF(rfRGC,figHandle,'-k');
-    plotRF(rfCone,figHandle,'-g',3);
+    plotRF(rfCone,figHandle,'-g',3); box off
 
     subplot(3,1,1);
-    loglog(rcgData.midget.(eccField).LminusM.f,rcgData.midget.(eccField).LminusM.g,'*r');
-    loglog(rcgData.midget.(eccField).LMS.f,rcgData.midget.(eccField).LMS.g,'*k');
+    loglog(rcgData.midget.(eccField).LminusM.f,rcgData.midget.(eccField).LminusM.g,'or');
+    loglog(rcgData.midget.(eccField).LMS.f,rcgData.midget.(eccField).LMS.g,'ok');
     title(sprintf('Eccentricity = %2.1f',eccDegs(ee)));
+    box off
+
     subplot(3,1,2);
-    semilogx(rcgData.midget.(eccField).LminusM.f,rcgData.midget.(eccField).LminusM.p,'*r');
-    semilogx(rcgData.midget.(eccField).LMS.f,rcgData.midget.(eccField).LMS.p,'*k');
+    semilogx(rcgData.midget.(eccField).LminusM.f,rcgData.midget.(eccField).LminusM.p,'or');
+    semilogx(rcgData.midget.(eccField).LMS.f,rcgData.midget.(eccField).LMS.p,'ok');
+    box off
 
     % Save the plot
     plotName = ['midgetTemporalRF_' num2str(eccDegs(ee),2) '_ModelFit.pdf' ];
-    saveas(gcf,fullfile('~/Desktop',plotName));
+    saveas(gcf,fullfile(savePath,plotName));
 
     % Extract the parasol parameter values for this eccentricity band
     pBlock = squeeze(pRGC(:,ee,2));
@@ -69,16 +71,19 @@ for ee = 1:nEccBands
     [rfRGC, ~, rfCone] = returnRGCRF(pBlock,cfCone,coneDelay,1,1);
 
     % Plot the parasol temporal RF
-    figHandle = figure();
+    figHandle = figure('Position',  [100, 100, 200, 400]);
     plotRF(rfRGC,figHandle,'-k');
-    plotRF(rfCone,figHandle,'-g',3);
+    plotRF(rfCone,figHandle,'-g',3);   box off
     subplot(3,1,1);
     hold on
-    loglog(rcgData.parasol.(eccField).LMS.f,rcgData.parasol.(eccField).LMS.g,'*k');
+    loglog(rcgData.parasol.(eccField).LMS.f,rcgData.parasol.(eccField).LMS.g,'ok');
     title(sprintf('Eccentricity = %2.1f',eccDegs(ee)));
+    box off
+    subplot(3,1,2);
+    box off
 
     plotName = ['parasolTemporalRF_' num2str(eccDegs(ee),2) '_ModelFit.pdf' ];
-    saveas(gcf,fullfile('~/Desktop',plotName));
+    saveas(gcf,fullfile(savePath,plotName));
 
     % Extract the bistratified parameter values for this eccentricity band
     pBlock = squeeze(pRGC(:,ee,3));
@@ -87,16 +92,20 @@ for ee = 1:nEccBands
     [rfRGC, ~, rfCone] = returnRGCRF(pBlock,cfCone,coneDelay,1,1);
 
     % Plot the bistratified temporal RF
-    figHandle = figure();
+    figHandle = figure('Position',  [100, 100, 200, 400]);
     plotRF(rfRGC,figHandle,'-b');
-    plotRF(rfCone,figHandle,'-g',3);
+    plotRF(rfCone,figHandle,'-g',3);   box off
+
     subplot(3,1,1);
     hold on
-    loglog(rcgData.bistratified.(eccField).S.f,rcgData.bistratified.(eccField).S.g,'*b');
+    loglog(rcgData.bistratified.(eccField).S.f,rcgData.bistratified.(eccField).S.g,'ob');
+    title(sprintf('Eccentricity = %2.1f',eccDegs(ee)));
+    box off
+
     subplot(3,1,2);
     hold on
-    semilogx(rcgData.bistratified.(eccField).S.f,rcgData.bistratified.(eccField).S.p,'*b');
-    title(sprintf('Eccentricity = %2.1f',eccDegs(ee)));
+    semilogx(rcgData.bistratified.(eccField).S.f,rcgData.bistratified.(eccField).S.p,'ob');
+    box off
 
     plotName = ['bistratifiedTemporalRF_' num2str(eccDegs(ee),2) '_ModelFit.pdf' ];
     saveas(gcf,fullfile(savePath,plotName));

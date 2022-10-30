@@ -69,8 +69,10 @@ for ee = 1:length(myEccs)
 end
 
 stageList = {'cone','bipolar','rgc'};
+zLimMax = [50,50,10];
 cellList = {'parasol','midget','bistratified'};
 stimList = {{'LMS'},{'LMS','LminusM'},{'S'}};
+
 
 [X,Y] = meshgrid(log10(myFreqs),myEccs);
 map = [ linspace(0,1,255);[linspace(0,0.5,127) linspace(0.5,0,128)];[linspace(0,0.5,127) linspace(0.5,0,128)]]';
@@ -91,7 +93,7 @@ for xx = 1:length(stageList)
             s.EdgeAlpha = 0.75;
             view([145 20]);
             ylim([0 90]);
-            %        zlim([0 zLimMax]);
+            zlim([0 zLimMax(xx)]);
             a = gca;
             a.Color = 'none';
             a.XTickLabel={'1','10','100'};

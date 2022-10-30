@@ -194,6 +194,7 @@ rgcTemporalModel.coneDelay = coneDelay;
 rgcTemporalModel.cfCone = cfCone;
 rgcTemporalModel.pMean = pMean;
 rgcTemporalModel.pFitByEccen = pFitByEccen;
+rgcTemporalModel.meta.blockParamNames = blockParamNames;
 rgcTemporalModel.meta.ubBlock = ubBlock;
 rgcTemporalModel.meta.cellClassIndices = cellClassIndices;
 rgcTemporalModel.meta.eccFields = eccFields;

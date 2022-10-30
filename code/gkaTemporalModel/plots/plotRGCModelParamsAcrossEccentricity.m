@@ -8,6 +8,9 @@ close all
 loadPath = fullfile(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath'))))),'data','temporalModelResults','rgcTemporalModel.mat');
 load(loadPath,'rgcTemporalModel');
 
+% Where to save figures
+savePath = fullfile('~','Desktop','mtSinaiTemporalModelPlots');
+
 % Extract some info from the stored model structure
 pRGC = rgcTemporalModel.p;
 cfCone = rgcTemporalModel.cfCone;

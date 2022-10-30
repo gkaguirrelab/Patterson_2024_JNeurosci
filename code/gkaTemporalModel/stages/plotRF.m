@@ -50,7 +50,7 @@ if any(whichPanel==1)
         hold on
     end
     semilogx(myFreqs,gainVals,lineStyle,'LineWidth',LineWidth);
- %   ylim([1e-2 1e1]);
+    ylim([-1 10]);
     xlabel('frequency [Hz]'); ylabel('gain');
 end
 
@@ -62,7 +62,7 @@ if any(whichPanel==2)
         hold on
     end
     semilogx(myFreqs,unwrap(angleVals)*(180/pi),lineStyle,'LineWidth',LineWidth);
-%    ylim([-1000 100]);
+    ylim([-1000 200]);
     xlabel('frequency [Hz]'); ylabel('phase [deg]');
 end
 

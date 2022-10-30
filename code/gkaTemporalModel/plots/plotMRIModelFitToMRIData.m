@@ -12,20 +12,20 @@ loadPath = fullfile(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath'
 load(loadPath,'rgcTemporalModel');
 
 % Load the MRI temporal model
-loadPath = fullfile(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath'))))),'data','temporalModelResults','mriTemporalModel.mat');
-load(loadPath,'mriTemporalModel');
+loadPath = fullfile(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath'))))),'data','temporalModelResults','mriFullResultSet.mat');
+load(loadPath,'mriFullResultSet');
 
 savePath = fullfile('~','Desktop','mtSinaiTemporalModelPlots');
 
 % Extract some meta info from the mriTemporalModel
-studiedFreqs = mriTemporalModel.meta.studiedFreqs;
-studiedEccentricites = mriTemporalModel.meta.studiedEccentricites;
-subjects = mriTemporalModel.meta.subjects;
-stimulusDirections = mriTemporalModel.meta.stimulusDirections;
-plotColor = mriTemporalModel.meta.plotColor;
-nFixedParams = mriTemporalModel.meta.nFixedParams;
-nFloatByEccParams = mriTemporalModel.meta.nFloatByEccParams;
-nUniqueParams = mriTemporalModel.meta.nUniqueParams;
+studiedFreqs = mriFullResultSet.meta.studiedFreqs;
+studiedEccentricites = mriFullResultSet.meta.studiedEccentricites;
+subjects = mriFullResultSet.meta.subjects;
+stimulusDirections = mriFullResultSet.meta.stimulusDirections;
+plotColor = mriFullResultSet.meta.plotColor;
+nFixedParams = mriFullResultSet.meta.nFixedParams;
+nFloatByEccParams = mriFullResultSet.meta.nFloatByEccParams;
+nUniqueParams = mriFullResultSet.meta.nUniqueParams;
 nEccs = length(studiedEccentricites);
 nFreqs = length(studiedFreqs);
 freqsForPlotting = logspace(0,2,50);
@@ -36,9 +36,9 @@ nParamsPerCellBlock = nFixedParams+nEccs*2;
 
 for whichSub = 1:length(subjects)
 
-    pMRI = mriTemporalModel.(subjects{whichSub}).pMRI;
-    v1Y = mriTemporalModel.(subjects{whichSub}).data.v1Y;
-    lgnY = mriTemporalModel.(subjects{whichSub}).data.lgnY;
+    pMRI = mean(mriFullResultSet.(subjects{whichSub}).pMRI);
+    v1Y = mean(mriFullResultSet.(subjects{whichSub}).v1Y);
+    lgnY = mean(mriFullResultSet.(subjects{whichSub}).lgnY);
 
     [~,v1YFitMatrix] = assembleV1ResponseAcrossStimsAndEcc(pMRI,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel,nUniqueParams,nFixedParams);
     [~,lgnYFitMatrix] = assembleLGNResponseAcrossStims(pMRI,stimulusDirections,freqsForPlotting,rgcTemporalModel);

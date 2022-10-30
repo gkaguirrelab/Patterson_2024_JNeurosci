@@ -14,7 +14,7 @@ mriSearchFlag = true;
 useMonotonicConstraint = false;
 
 % How many bootstrap resamplings of the data to conduct
-nBoots = 1;
+nBoots = 8;
 
 % Where we will save the temporal model results
 saveDir = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults');
@@ -110,7 +110,7 @@ for whichSub = 1:2
             str=[sprintf('fVal = %2.2f, search time (mins) = %2.1f',fVal,searchTimeSecs/60)  '\n'];
             fprintf(str);
 
-        else
+        else            
             pMRI = pMRI0;
             fVal = nan;
         end

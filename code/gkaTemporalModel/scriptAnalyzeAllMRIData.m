@@ -14,10 +14,10 @@ mriSearchFlag = true;
 useMonotonicConstraint = false;
 
 % How many bootstrap resamplings of the data to conduct
-nBoots = 2;
+nBoots = 1;
 
 % Where we will save the temporal model results
-savePath = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults','mriTemporalModel.mat');
+saveDir = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults');
 
 
 %% Create the RGC temporal sensitivity model
@@ -56,6 +56,9 @@ mriTemporalModel.meta.nFloatByEccParams = 2;
 mriTemporalModel.meta.nUniqueParams = 11;
 mriTemporalModel.meta.nBoots = nBoots;
 
+% Store a source version of the output variable.
+mriTemporalModelSource = mriTemporalModel;
+
 % Loop over subjects
 for whichSub = 1:2
 
@@ -63,7 +66,7 @@ for whichSub = 1:2
     for bb = 1:nBoots
 
         % Get a resample with replacement of the acquisitions
-        bootIdx = datasample(1:nAcqs,nAcqs);
+        bootIdx = sort(datasample(1:nAcqs,nAcqs));
 
         % Assemble the data
         lgnY = []; lgnW = []; v1Y = []; v1W = [];
@@ -112,17 +115,22 @@ for whichSub = 1:2
             fVal = nan;
         end
 
-        % Save the model parameters and data after each iteration
-        mriTemporalModel.(subjects{whichSub}).pMRI(bb,:) = pMRI;
-        mriTemporalModel.(subjects{whichSub}).pMRI0(bb,:) = pMRI0;
-        mriTemporalModel.(subjects{whichSub}).fVal(bb,:) = fVal;
-        mriTemporalModel.(subjects{whichSub}).v1Y(bb,:) = v1Y;
-        mriTemporalModel.(subjects{whichSub}).v1W(bb,:) = v1W;
-        mriTemporalModel.(subjects{whichSub}).lgnY(bb,:) = lgnY;
-        mriTemporalModel.(subjects{whichSub}).lgnW(bb,:) = lgnW;
+        % Save the model parameters in an iteration structure and save this
+        mriTemporalModel = mriTemporalModelSource;
+        mriTemporalModel.(subjects{whichSub}).bootIdx = bootIdx;
+        mriTemporalModel.(subjects{whichSub}).pMRI = pMRI;
+        mriTemporalModel.(subjects{whichSub}).pMRI0 = pMRI0;
+        mriTemporalModel.(subjects{whichSub}).fVal = fVal;
+        mriTemporalModel.(subjects{whichSub}).v1Y = v1Y;
+        mriTemporalModel.(subjects{whichSub}).v1W = v1W;
+        mriTemporalModel.(subjects{whichSub}).lgnY = lgnY;
+        mriTemporalModel.(subjects{whichSub}).lgnW = lgnW;
 
-        % Save after each iteration, in case something breaks during the search
-        save(savePath,'mriTemporalModel');
+        % Save after each iteration, with a suffix that identifies the
+        % particular resampling indicies
+        bootLabel = regexprep(num2str(bootIdx),' +', '-');
+        saveSpot = fullfile(saveDir,subjects{whichSub},['mriTemporalModel_' bootLabel '.mat']);
+        save(saveSpot,'mriTemporalModel');
 
     end % boots
 

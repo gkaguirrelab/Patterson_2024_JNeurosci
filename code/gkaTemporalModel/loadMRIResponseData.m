@@ -6,43 +6,32 @@ function mriData = loadMRIResponseData()
 % frequencies. The response for each acquisition is retained to support
 % subsequent boot-strap resampling of the data.
 
-% Get the localSaveDir pref
-localSaveDir = getpref('mriSinaiAnalysis','localSaveDir');
+% Define the localSaveDir
+localDataDir = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data');
 
-% These variables define the subject names, stimulus directions, and the
-% analysis IDs
+% These variables define the subject names, stimulus directions. The
+% Flywheel analysis IDs are listed for completeness, but not used here.
+% Other software downloads the files from Flywheel.
+analysisIDs = {'6117d4db18adcc19d6e0f820','611d158fa296f805e7a2da75'};
 subjectNames = {'HEROgka1','HEROasb1'};
 shortNames = {'gka','asb'};
-analysisIDs = {'6117d4db18adcc19d6e0f820','611d158fa296f805e7a2da75'};
 stimulusDirections = {'LminusM','S','LMS'};
 allFreqs = [0,2,4,8,16,32,64];
 nFreqs = length(allFreqs);
 
-% Create a flywheel object. You need to set you flywheelAPIKey in the
-% "flywheelMRSupport" local hook.
-fw = flywheel.Flywheel(getpref('flywheelMRSupport','flywheelAPIKey'));
-
 % Load the retino maps
-tmpPath = fullfile(localSaveDir,'retinoFiles','TOME_3021_inferred_varea.dtseries.nii');
+tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_varea.dtseries.nii');
 vArea = cifti_read(tmpPath); vArea = vArea.cdata;
-tmpPath = fullfile(localSaveDir,'retinoFiles','TOME_3021_inferred_eccen.dtseries.nii');
+tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_eccen.dtseries.nii');
 eccenMap = cifti_read(tmpPath); eccenMap = eccenMap.cdata;
-tmpPath = fullfile(localSaveDir,'retinoFiles','TOME_3021_inferred_angle.dtseries.nii');
+tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_angle.dtseries.nii');
 polarMap = cifti_read(tmpPath); polarMap = polarMap.cdata;
-tmpPath = fullfile(localSaveDir,'retinoFiles','TOME_3021_inferred_sigma.dtseries.nii');
+tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_sigma.dtseries.nii');
 sigmaMap = cifti_read(tmpPath); sigmaMap = sigmaMap.cdata;
 
-% Load the subcortical ROIs
-projectID = '5ca7803af546b60029ef118e';
-subCorticalROIsFullNames = {'LGN_bilateral.dtseries.nii','thalamus_bilateral.dtseries.nii','midbrain_bilateral.dtseries.nii'};
-subCorticalROIsLabels = {'LGN','thalamus','midbrain'};
-for rr = 1:length(subCorticalROIsFullNames)
-    tmpPath = fullfile(localSaveDir,'retinoFiles',subCorticalROIsFullNames{rr});
-    fw.downloadFileFromProject(projectID,subCorticalROIsFullNames{rr},tmpPath);
-    tmpRegion = cifti_read(tmpPath); tmpRegion = tmpRegion.cdata;
-    str = [subCorticalROIsLabels{rr} 'ROI = tmpRegion;'];
-    eval(str);
-end
+% Load the LGN ROI.
+tmpPath = fullfile(localDataDir,'retinoFiles','LGN_bilateral.dtseries.nii');
+LGNROI = cifti_read(tmpPath); LGNROI = LGNROI.cdata;
 
 % This is the threshold for the goodness of fit to the fMRI time-series
 % data. We only analyze those voxels with this quality fit or better
@@ -55,7 +44,7 @@ eccenDivs = [0 90./(2.^(5:-1:0))];
 for ss = 1:length(subjectNames)
 
     % Load the results file for this subject
-    filePath = fullfile(localSaveDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_mtSinai_results.mat']);
+    filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_mtSinai_results.mat']);
     load(filePath,'results')
 
     % Grab the stimLabels

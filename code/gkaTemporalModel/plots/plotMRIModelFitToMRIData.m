@@ -37,8 +37,11 @@ nParamsPerCellBlock = nFixedParams+nEccs*2;
 for whichSub = 1:length(subjects)
 
     pMRI = mean(mriFullResultSet.(subjects{whichSub}).pMRI);
+    pMRIIQR = iqr(mriFullResultSet.(subjects{whichSub}).pMRI);
     v1Y = mean(mriFullResultSet.(subjects{whichSub}).v1Y);
+    v1IQR = iqr(mriFullResultSet.(subjects{whichSub}).v1Y);
     lgnY = mean(mriFullResultSet.(subjects{whichSub}).lgnY);
+    lgnIQR = mean(mriFullResultSet.(subjects{whichSub}).lgnY);
 
     [~,v1YFitMatrix] = assembleV1ResponseAcrossStimsAndEcc(pMRI,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel,nUniqueParams,nFixedParams);
     [~,lgnYFitMatrix] = assembleLGNResponseAcrossStims(pMRI,stimulusDirections,freqsForPlotting,rgcTemporalModel);
@@ -55,6 +58,13 @@ for whichSub = 1:length(subjects)
             subplot(2,4,ee+(ee>3))
             semilogx(studiedFreqs,v1Y(v1DataIndices),['o' plotColor{whichStim}]);
             hold on
+
+            % path error bars
+            X = [studiedFreqs fliplr(studiedFreqs)];
+            Y = [v1Y(v1DataIndices)+v1IQR(v1DataIndices), fliplr(v1Y(v1DataIndices)-v1IQR(v1DataIndices))];
+            p = patch(X,Y,plotColor{whichStim});
+            set(p,'edgecolor','none','facealpha',0.1);
+
             lineStyle = {'-.',':'};
             for cc=1:2
                 semilogx(freqsForPlotting,squeeze(v1YFitMatrix(whichStim,ee,cc,:)),[lineStyle{cc} plotColor{whichStim}]);
@@ -72,6 +82,12 @@ for whichSub = 1:length(subjects)
         subplot(2,4,8)
         semilogx(studiedFreqs,lgnY(lgnDataIndices),['o' plotColor{whichStim}]);
         hold on
+        % path error bars
+        X = [studiedFreqs fliplr(studiedFreqs)];
+        Y = [lgnY(lgnDataIndices)+lgnIQR(lgnDataIndices), fliplr(lgnY(lgnDataIndices)-lgnIQR(lgnDataIndices))];
+        p = patch(X,Y,plotColor{whichStim});
+        set(p,'edgecolor','none','facealpha',0.1);
+
         for cc=1:2
             semilogx(freqsForPlotting,squeeze(lgnYFitMatrix(whichStim,cc,:)),[lineStyle{cc} plotColor{whichStim}]);
         end
@@ -91,11 +107,12 @@ for whichSub = 1:length(subjects)
         gainVals = abs(ttfComplex);
         semilogx(myFreqs,gainVals,['-.' plotColor{whichStim}]);
         xlabel('frequency [Hz]'); ylabel('gain');
-    end
 
-    % Save the plot
-    plotName = [stimulusDirections{whichStim} '_' subjects{whichSub} '_MRIModelFit.pdf' ];
-    saveas(gcf,fullfile(savePath,plotName));
+        % Save the plot
+        plotName = [stimulusDirections{whichStim} '_' subjects{whichSub} '_MRIModelFit.pdf' ];
+        saveas(gcf,fullfile(savePath,plotName));
+
+    end
 
     figure
     for whichCell = 1:length(cellClassOrder)
@@ -118,7 +135,7 @@ for whichSub = 1:length(subjects)
 
         % Add the LGN gain values
         if whichCell < 4
-        semilogy(0,pMRI(2+whichCell),['*' plotColor{whichCell}]);
+            semilogy(0,pMRI(2+whichCell),['*' plotColor{whichCell}]);
         end
 
         xlim([-0.1 2]);

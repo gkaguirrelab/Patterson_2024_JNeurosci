@@ -36,9 +36,10 @@ nParamsPerCellBlock = nFixedParams+nEccs*2;
 
 for whichSub = 1:length(subjects)
 
-    load(fullfile(loadPath,subjects{whichSub},['mriTemporalModel_' regexprep(num2str(1:12),' +','-') '.mat']),'mriTemporalModel');
+    %load(fullfile(loadPath,subjects{whichSub},['mriTemporalModel_' regexprep(num2str(1:12),' +','-') '.mat']),'mriTemporalModel');
 
-    pMRI = mriTemporalModel.(subjects{whichSub}).pMRI;
+    pMRI = mean(mriFullResultSet.(subjects{whichSub}).pMRI);
+    pMRISEM = std(mriFullResultSet.(subjects{whichSub}).pMRI);
     v1Y = mriFullResultSet.(subjects{whichSub}).v1YMean;
     v1Ylow = mriFullResultSet.(subjects{whichSub}).v1Y_lowCI;
     v1Yhigh = mriFullResultSet.(subjects{whichSub}).v1Y_highCI;
@@ -125,6 +126,10 @@ for whichSub = 1:length(subjects)
             nUniqueParams+(whichCell-1)*(nFixedParams+nEccs*2)+nFixedParams+nEccs;
         plot(log10(studiedEccentricites),pMRI(paramIndices),['o' plotColor{whichCell}]);
         hold on
+        for ee=1:nEccs
+            plot([log10(studiedEccentricites(ee)) log10(studiedEccentricites(ee))],...
+                [pMRI(paramIndices(ee))+pMRISEM(paramIndices(ee)) pMRI(paramIndices(ee))-pMRISEM(paramIndices(ee))],['-' plotColor{whichCell}]);
+        end        
         plot(log10(studiedEccentricites),pMRI(paramIndices),['-' plotColor{whichCell}]);
         xlabel('Eccentricity [log deg]');
         ylabel('Suppression index');
@@ -134,6 +139,10 @@ for whichSub = 1:length(subjects)
         subplot(1,2,2)
         semilogy(log10(studiedEccentricites),pMRI(paramIndices+nEccs),['o' plotColor{whichCell}]);
         hold on
+        for ee=1:nEccs
+            plot([log10(studiedEccentricites(ee)) log10(studiedEccentricites(ee))],...
+                [pMRI(paramIndices(ee)+nEccs)+pMRISEM(paramIndices(ee)+nEccs) pMRI(paramIndices(ee)+nEccs)-pMRISEM(paramIndices(ee)+nEccs)],['-' plotColor{whichCell}]);
+        end        
         semilogy(log10(studiedEccentricites),pMRI(paramIndices+nEccs),['-' plotColor{whichCell}]);
 
         % Add the LGN gain values

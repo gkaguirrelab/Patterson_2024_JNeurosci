@@ -61,8 +61,8 @@ load(loadPath,'rgcTemporalModel');
 
 % Extract this value for later
 nEcc = length(studiedEccentricites);
-nUniqueParams = 11;
-nFixedParams = 0;
+nUniqueParams = 9;
+nFixedParams = 1;
 
 % The model includes parameters for each of the "post receptoral paths",
 % which is realized here as the interaction of retinal ganglion cell
@@ -83,23 +83,25 @@ ub =  [20 0.7 repmat(1.00,1,3)];
 % v1 parameters organized as chromatic, achromatic
 % - second order filter corner frequency (Hz)
 % - second order filter "quality" index (a.u.)
-% - surround delay (msecs)
 for pp = 1:2
-    lb =  [ lb 05 0.1 05];
-    plb = [plb 15 0.3 10];
-    pub = [pub 25 0.6 30];
-    ub =  [ ub 90 0.7 40];
+    lb =  [ lb 05 0.1];
+    plb = [plb 15 0.3];
+    pub = [pub 25 0.6];
+    ub =  [ ub 90 0.7];
 end
 
-% v1 paramters that vary by eccentricity, organized as:
+% v1 parameters that are organized by "pathway" that are fixed with
+% eccentricity, organized as:
 % LminusM, S, LMS-parasol, LMS-midget:
+% - surround delay (msecs)
+% v1 paramters that vary by eccentricity
 % - surround index (a.u.)
 % - surround gain (a.u.)
 for pp = 1:length(postReceptoralPaths)
-    lb =  [ lb zeros(1,nEcc) repmat(0.3,1,nEcc)];
-    plb = [plb repmat(0.2,1,nEcc) repmat(0.5,1,nEcc)];
-    pub = [pub repmat(0.8,1,nEcc) repmat(5,1,nEcc)];
-    ub =  [ ub ones(1,nEcc) repmat(100,1,nEcc)];
+    lb =  [ lb 05 zeros(1,nEcc) repmat(0.3,1,nEcc)];
+    plb = [plb 10 repmat(0.2,1,nEcc) repmat(0.5,1,nEcc)];
+    pub = [pub 30 repmat(0.8,1,nEcc) repmat(5,1,nEcc)];
+    ub =  [ ub 40 ones(1,nEcc) repmat(100,1,nEcc)];
 end
 
 % Returns the TTF, and handles reshaping into a linear vector
@@ -119,7 +121,7 @@ end
 
 % Options - the objective function is deterministic
 optionsBADS.UncertaintyHandling = 0;
-optionsBADS.Display = 'off';
+optionsBADS.Display = 'iter';
 
 % search
 [pMRI,fVal] = bads(myObj,p0,lb,ub,plb,pub,myNonbcon,optionsBADS);

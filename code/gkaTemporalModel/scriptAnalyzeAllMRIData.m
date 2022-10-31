@@ -14,7 +14,7 @@ mriSearchFlag = true;
 useMonotonicConstraint = false;
 
 % How many bootstrap resamplings of the data to conduct
-nBoots = 8;
+nBoots = 1;
 
 % Where we will save the temporal model results
 saveDir = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults');
@@ -37,7 +37,7 @@ studiedEccentricites = eccDegBinEdges(4:2:14);
 subjects = {'gka','asb'};
 stimulusDirections = {'LminusM','S','LMS'};
 plotColor = {'r','b','k','g'};
-postReceptoralPaths = {'midget.LminusM','parasol.LMS','bistratified.S','midget.LMS'};
+postReceptoralPaths = {'midget.LminusM','bistratified.S','parasol.LMS','midget.LMS'};
 
 % The number of acquisitions obtained for each measurement
 nAcqs = 12;
@@ -51,9 +51,10 @@ mriTemporalModel.meta.studiedEccentricites = studiedEccentricites;
 mriTemporalModel.meta.subjects = subjects;
 mriTemporalModel.meta.stimulusDirections = stimulusDirections;
 mriTemporalModel.meta.plotColor = plotColor;
-mriTemporalModel.meta.nFixedParams = 0;
+mriTemporalModel.meta.postReceptoralPaths = postReceptoralPaths;
+mriTemporalModel.meta.nFixedParams = 1;
 mriTemporalModel.meta.nFloatByEccParams = 2;
-mriTemporalModel.meta.nUniqueParams = 11;
+mriTemporalModel.meta.nUniqueParams = 9;
 mriTemporalModel.meta.nBoots = nBoots;
 
 % Store a source version of the output variable.
@@ -86,7 +87,7 @@ for whichSub = 1:2
         end
 
         % Load a search seed
-        pMRI0 = storedSearchSeeds(whichSub,useMonotonicConstraint);
+        pMRI0 = storedSearchSeeds(whichSub);
 
         % Perform the search
         if mriSearchFlag
@@ -140,16 +141,18 @@ end % subjects
 
 
 %     Print the parameters in a format to be used as a seed in future searches
-%     nUniqueParams = 11;
-%     pathIndex = 1;
-%     str = ['pMRI0 = [ ...\n' sprintf('%2.10f, %2.10f, %2.10f, %2.10f, %2.10f, ... ',pMRI(1:5)) '%% lgn \n'];
-%     str = [str sprintf('%2.10f, %2.10f, %2.10f, %2.10f, %2.10f, %2.10f, ... ',pMRI(6:11)) '%% V1 chromatic, achromatic \n'];
-%     for ss=nUniqueParams+1:length(pMRI)
-%         str = [str sprintf('%2.10f, ',pMRI(ss))];
-%         if mod(ss-nUniqueParams,12)==0 && ss~=length(pMRI)
-%             str = [str '... %% V1 ' postReceptoralPaths{pathIndex} ' \n'];
-%             pathIndex = pathIndex+1;
-%         end
-%     end
-%     str = [str(1:end-2) ' ... %% V1 ' postReceptoralPaths{pathIndex} ' \n ]; \n'];
-%     fprintf(str);
+%{
+    nUniqueParams = mriTemporalModel.meta.nUniqueParams;
+    nParamsPerBlock = mriTemporalModel.meta.nFloatByEccParams * nEcc + mriTemporalModel.meta.nFixedParams;
+    pathIndex = 1;
+    str = ['pMRI0 = [ ...\n' sprintf([repmat('%2.10f, ',1,nUniqueParams) '... '],pMRI(1:nUniqueParams)) '%% lgn \n'];
+    for ss=nUniqueParams+1:length(pMRI)
+        str = [str sprintf('%2.10f, ',pMRI(ss))];
+        if mod(ss-nUniqueParams,nParamsPerBlock)==0 && ss~=length(pMRI)
+            str = [str '... %% V1 ' postReceptoralPaths{pathIndex} ' \n'];
+            pathIndex = pathIndex+1;
+        end
+    end
+    str = [str(1:end-2) ' ... %% V1 ' postReceptoralPaths{pathIndex} ' \n ]; \n'];
+    fprintf(str); 
+%}

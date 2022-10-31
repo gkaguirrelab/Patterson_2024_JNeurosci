@@ -26,11 +26,11 @@ plotColor = mriFullResultSet.meta.plotColor;
 nFixedParams = mriFullResultSet.meta.nFixedParams;
 nFloatByEccParams = mriFullResultSet.meta.nFloatByEccParams;
 nUniqueParams = mriFullResultSet.meta.nUniqueParams;
+postReceptoralPaths = mriTemporalModel.meta.postReceptoralPaths;
 nEccs = length(studiedEccentricites);
 nFreqs = length(studiedFreqs);
 freqsForPlotting = logspace(0,2,50);
 nFreqsForPlotting = length(freqsForPlotting);
-cellClassOrder = {'midgetChrom','parasol','bistratified','midgetAchrom'};
 chromAchromIndex = [1 1 2];
 nParamsPerCellBlock = nFixedParams+nEccs*2;
 
@@ -119,7 +119,7 @@ for whichSub = 1:length(subjects)
     end
 
     figure
-    for whichCell = 1:length(cellClassOrder)
+    for whichCell = 1:length(postReceptoralPaths)
         % Plot the surround suppression index vs. eccentricity
         subplot(1,2,1)
         paramIndices = 1+nUniqueParams+(whichCell-1)*(nFixedParams+nEccs*2)+nFixedParams: ...

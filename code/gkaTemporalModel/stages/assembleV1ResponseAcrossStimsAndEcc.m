@@ -23,16 +23,16 @@ for ss = 1:nStims
     switch stimulusDirections{ss}
         case 'LminusM'
             cellClasses = {'midget'};
-            cellClassIndex = 1;
-            achromChromIndex = 1;
+            pathwayIndex = 1;
+            chromAchromIndex = 1;
         case 'S'
             cellClasses = {'bistratified'};
-            cellClassIndex = 2;
-            achromChromIndex = 1;
+            pathwayIndex = 2;
+            chromAchromIndex = 1;
         case 'LMS'
             cellClasses = {'parasol','midget'};
-            cellClassIndex = [3 4];
-            achromChromIndex = 2;
+            pathwayIndex = [3 4];
+            chromAchromIndex = 2;
     end
 
     nCellClasses = length(cellClasses);
@@ -56,13 +56,16 @@ for ss = 1:nStims
             % Grab the V1 MRI parameters that are fixed across
             % eccentricity, but vary with stimulus class (chromatic or
             % achromatic)
-            secondOrderFc = pMRI(5+(achromChromIndex-1)*3+1);
-            secondOrderQ = pMRI(5+(achromChromIndex-1)*3+2);
-            v1SurroundDelay = pMRI(5+(achromChromIndex-1)*3+3);
+            secondOrderFc = pMRI(5+(chromAchromIndex-1)*2+1);
+            secondOrderQ = pMRI(5+(chromAchromIndex-1)*2+2);
+
+            % Grab the V1 MRI parameters that are fixed across
+            % eccentricity, but vary with post-receptoral path 
+            v1SurroundDelay = pMRI(nUniqueParams+(pathwayIndex(cc)-1)*nParamsPerCellBlock+1);
 
             % Grab the "floating" parameters that vary with eccentricity
-            v1SurroundIndex = pMRI(nUniqueParams+(cellClassIndex(cc)-1)*nParamsPerCellBlock+nFixedParams+ee);
-            v1Gain = pMRI(nUniqueParams+(cellClassIndex(cc)-1)*nParamsPerCellBlock+nFixedParams+nEccs+ee);
+            v1SurroundIndex = pMRI(nUniqueParams+(pathwayIndex(cc)-1)*nParamsPerCellBlock+nFixedParams+ee);
+            v1Gain = pMRI(nUniqueParams+(pathwayIndex(cc)-1)*nParamsPerCellBlock+nFixedParams+nEccs+ee);
 
             % Assemble the staged parameters
             surroundDelay = [lgnSurroundDelay v1SurroundDelay];

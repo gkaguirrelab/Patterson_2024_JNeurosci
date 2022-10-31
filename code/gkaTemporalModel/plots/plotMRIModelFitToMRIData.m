@@ -12,8 +12,8 @@ loadPath = fullfile(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath'
 load(loadPath,'rgcTemporalModel');
 
 % Load the MRI temporal model
-loadPath = fullfile(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath'))))),'data','temporalModelResults','mriFullResultSet.mat');
-load(loadPath,'mriFullResultSet');
+loadPath = fullfile(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath'))))),'data','temporalModelResults');
+load(fullfile(loadPath,'mriFullResultSet.mat'),'mriFullResultSet');
 
 savePath = fullfile('~','Desktop','mtSinaiTemporalModelPlots');
 
@@ -36,12 +36,14 @@ nParamsPerCellBlock = nFixedParams+nEccs*2;
 
 for whichSub = 1:length(subjects)
 
-    pMRI = mean(mriFullResultSet.(subjects{whichSub}).pMRI);
+    load(fullfile(loadPath,subjects{whichSub},['mriTemporalModel_' regexprep(num2str(1:12),' +','-') '.mat']),'mriTemporalModel');
+
+    pMRI = mriTemporalModel.(subjects{whichSub}).pMRI;
     pMRIIQR = iqr(mriFullResultSet.(subjects{whichSub}).pMRI);
-    v1Y = mean(mriFullResultSet.(subjects{whichSub}).v1Y);
+    v1Y = mriTemporalModel.(subjects{whichSub}).v1Y;
     v1IQR = iqr(mriFullResultSet.(subjects{whichSub}).v1Y);
-    lgnY = mean(mriFullResultSet.(subjects{whichSub}).lgnY);
-    lgnIQR = mean(mriFullResultSet.(subjects{whichSub}).lgnY);
+    lgnY = mriTemporalModel.(subjects{whichSub}).lgnY;
+    lgnIQR = iqr(mriFullResultSet.(subjects{whichSub}).lgnY);
 
     [~,v1YFitMatrix] = assembleV1ResponseAcrossStimsAndEcc(pMRI,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel,nUniqueParams,nFixedParams);
     [~,lgnYFitMatrix] = assembleLGNResponseAcrossStims(pMRI,stimulusDirections,freqsForPlotting,rgcTemporalModel);

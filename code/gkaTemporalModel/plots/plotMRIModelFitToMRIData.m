@@ -39,11 +39,12 @@ for whichSub = 1:length(subjects)
     load(fullfile(loadPath,subjects{whichSub},['mriTemporalModel_' regexprep(num2str(1:12),' +','-') '.mat']),'mriTemporalModel');
 
     pMRI = mriTemporalModel.(subjects{whichSub}).pMRI;
-    pMRIIQR = iqr(mriFullResultSet.(subjects{whichSub}).pMRI);
-    v1Y = mriTemporalModel.(subjects{whichSub}).v1Y;
-    v1IQR = iqr(mriFullResultSet.(subjects{whichSub}).v1Y);
-    lgnY = mriTemporalModel.(subjects{whichSub}).lgnY;
-    lgnIQR = iqr(mriFullResultSet.(subjects{whichSub}).lgnY);
+    v1Y = mriFullResultSet.(subjects{whichSub}).v1YMean;
+    v1Ylow = mriFullResultSet.(subjects{whichSub}).v1Y_lowCI;
+    v1Yhigh = mriFullResultSet.(subjects{whichSub}).v1Y_highCI;
+    lgnY = mriFullResultSet.(subjects{whichSub}).lgnYMean;
+    lgnYlow = mriFullResultSet.(subjects{whichSub}).lgnY_lowCI;
+    lgnYhigh = mriFullResultSet.(subjects{whichSub}).lgnY_highCI;
 
     [~,v1YFitMatrix] = assembleV1ResponseAcrossStimsAndEcc(pMRI,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel,nUniqueParams,nFixedParams);
     [~,lgnYFitMatrix] = assembleLGNResponseAcrossStims(pMRI,stimulusDirections,freqsForPlotting,rgcTemporalModel);
@@ -61,9 +62,9 @@ for whichSub = 1:length(subjects)
             semilogx(studiedFreqs,v1Y(v1DataIndices),['o' plotColor{whichStim}]);
             hold on
 
-            % path error bars
+            % patch error bars
             X = [studiedFreqs fliplr(studiedFreqs)];
-            Y = [v1Y(v1DataIndices)+v1IQR(v1DataIndices), fliplr(v1Y(v1DataIndices)-v1IQR(v1DataIndices))];
+            Y = [v1Ylow(v1DataIndices), fliplr(v1Yhigh(v1DataIndices))];
             p = patch(X,Y,plotColor{whichStim});
             set(p,'edgecolor','none','facealpha',0.1);
 
@@ -86,7 +87,7 @@ for whichSub = 1:length(subjects)
         hold on
         % path error bars
         X = [studiedFreqs fliplr(studiedFreqs)];
-        Y = [lgnY(lgnDataIndices)+lgnIQR(lgnDataIndices), fliplr(lgnY(lgnDataIndices)-lgnIQR(lgnDataIndices))];
+            Y = [lgnYlow(lgnDataIndices), fliplr(lgnYhigh(lgnDataIndices))];
         p = patch(X,Y,plotColor{whichStim});
         set(p,'edgecolor','none','facealpha',0.1);
 

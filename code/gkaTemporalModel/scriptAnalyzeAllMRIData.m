@@ -14,7 +14,7 @@ mriSearchFlag = true;
 useMonotonicConstraint = false;
 
 % How many bootstrap resamplings of the data to conduct
-nBoots = 1;
+nBoots = 5;
 
 % Where we will save the temporal model results
 saveDir = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults');
@@ -142,6 +142,7 @@ end % subjects
 
 %     Print the parameters in a format to be used as a seed in future searches
 %{
+    nEcc = 6;
     nUniqueParams = mriTemporalModel.meta.nUniqueParams;
     nParamsPerBlock = mriTemporalModel.meta.nFloatByEccParams * nEcc + mriTemporalModel.meta.nFixedParams;
     pathIndex = 1;

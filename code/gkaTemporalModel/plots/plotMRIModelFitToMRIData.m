@@ -26,7 +26,7 @@ plotColor = mriFullResultSet.meta.plotColor;
 nFixedParams = mriFullResultSet.meta.nFixedParams;
 nFloatByEccParams = mriFullResultSet.meta.nFloatByEccParams;
 nUniqueParams = mriFullResultSet.meta.nUniqueParams;
-postReceptoralPaths = mriTemporalModel.meta.postReceptoralPaths;
+postReceptoralPaths = mriFullResultSet.meta.postReceptoralPaths;
 nEccs = length(studiedEccentricites);
 nFreqs = length(studiedFreqs);
 freqsForPlotting = logspace(0,2,50);
@@ -38,8 +38,8 @@ for whichSub = 1:length(subjects)
 
     %load(fullfile(loadPath,subjects{whichSub},['mriTemporalModel_' regexprep(num2str(1:12),' +','-') '.mat']),'mriTemporalModel');
 
-    pMRI = mean(mriFullResultSet.(subjects{whichSub}).pMRI);
-    pMRISEM = std(mriFullResultSet.(subjects{whichSub}).pMRI);
+    pMRI = mean(mriFullResultSet.(subjects{whichSub}).pMRI,1);
+    pMRISEM = std(mriFullResultSet.(subjects{whichSub}).pMRI,0,1);
     v1Y = mriFullResultSet.(subjects{whichSub}).v1YMean;
     v1Ylow = mriFullResultSet.(subjects{whichSub}).v1Y_lowCI;
     v1Yhigh = mriFullResultSet.(subjects{whichSub}).v1Y_highCI;
@@ -102,8 +102,8 @@ for whichSub = 1:length(subjects)
 
         % Show the cortical filter
         subplot(2,4,4)
-        secondOrderFc = pMRI(5+(chromAchromIndex(whichStim)-1)*3+1);
-        secondOrderQ = pMRI(5+(chromAchromIndex(whichStim)-1)*3+2);
+        secondOrderFc = pMRI(5+(chromAchromIndex(whichStim)-1)*2+1);
+        secondOrderQ = pMRI(5+(chromAchromIndex(whichStim)-1)*2+2);
 
         syms f; rf = stageSecondOrderLP(f,secondOrderFc,secondOrderQ);
         myFreqs = logspace(log10(0.5),log10(100),101);

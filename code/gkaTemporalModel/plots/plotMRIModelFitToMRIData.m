@@ -77,8 +77,9 @@ for whichSub = 1:length(subjects)
             refline(0,0);
             title([stimulusDirections{whichStim} ', ' subjects{whichSub} ', ecc = ' num2str(studiedEccentricites(ee),2) '°']);
             ylim([-1 7]);
-            a=gca;
-            foo=1;
+            a=gca; a.XTick = studiedFreqs; 
+            a.XTickLabel = arrayfun(@num2str, studiedFreqs, 'UniformOutput', 0);
+            a.XTickLabelRotation = 0;
         end
 
         % Add the LGN response
@@ -101,6 +102,9 @@ for whichSub = 1:length(subjects)
         refline(0,0);
         title([stimulusDirections{whichStim} ', ' subjects{whichSub} ', LGN']);
         ylim([-1 7]);
+            a=gca; a.XTick = studiedFreqs; 
+            a.XTickLabel = arrayfun(@num2str, studiedFreqs, 'UniformOutput', 0);
+            a.XTickLabelRotation = 0;
 
         % Show the cortical filter
         subplot(2,4,4)
@@ -113,6 +117,9 @@ for whichSub = 1:length(subjects)
         gainVals = abs(ttfComplex);
         semilogx(myFreqs,gainVals,['-.' plotColor{whichStim}]);
         xlabel('frequency [Hz]'); ylabel('gain');
+            a=gca; a.XTick = studiedFreqs; 
+            a.XTickLabel = arrayfun(@num2str, studiedFreqs, 'UniformOutput', 0);
+            a.XTickLabelRotation = 0;
 
         % Save the plot
         plotName = [stimulusDirections{whichStim} '_' subjects{whichSub} '_MRIModelFit.pdf' ];

@@ -61,7 +61,7 @@ mriTemporalModel.meta.nBoots = nBoots;
 mriTemporalModelSource = mriTemporalModel;
 
 % Loop over subjects
-for whichSub = 1:2
+for whichSub = [2 1]
 
     % Loop over bootstraps
     for bb = 1:nBoots

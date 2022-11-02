@@ -77,6 +77,8 @@ for whichSub = 1:length(subjects)
             refline(0,0);
             title([stimulusDirections{whichStim} ', ' subjects{whichSub} ', ecc = ' num2str(studiedEccentricites(ee),2) '°']);
             ylim([-1 7]);
+            a=gca;
+            foo=1;
         end
 
         % Add the LGN response
@@ -98,7 +100,7 @@ for whichSub = 1:length(subjects)
         semilogx(freqsForPlotting,sum(squeeze(lgnYFitMatrix(whichStim,:,:))),['-' plotColor{whichStim}]);
         refline(0,0);
         title([stimulusDirections{whichStim} ', ' subjects{whichSub} ', LGN']);
-        ylim([-0.5 4]);
+        ylim([-1 7]);
 
         % Show the cortical filter
         subplot(2,4,4)

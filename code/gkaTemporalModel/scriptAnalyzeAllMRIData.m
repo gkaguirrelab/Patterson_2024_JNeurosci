@@ -14,7 +14,7 @@ mriSearchFlag = true;
 useMonotonicConstraint = false;
 
 % How many bootstrap resamplings of the data to conduct
-nBoots = 5;
+nBoots = 6;
 
 % Where we will save the temporal model results
 saveDir = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults');
@@ -101,10 +101,16 @@ for whichSub = [1 2]
             tic
 
             % BADS it
+            try
             [pMRI,fVal] = fitMRIResponse(pMRI0,...
                 stimulusDirections,studiedEccentricites,studiedFreqs,...
                 v1Y,v1W,lgnY,lgnW,...
                 useMonotonicConstraint);
+            catch
+                searchTimeSecs = toc();
+                fprintf('error encountered. Skipping.\n');
+                continue % skip this boot loop
+            end
 
             searchTimeSecs = toc();
 

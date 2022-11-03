@@ -14,7 +14,7 @@ mriSearchFlag = true;
 useMonotonicConstraint = false;
 
 % How many bootstrap resamplings of the data to conduct
-nBoots = 6;
+nBoots = 3;
 
 % Where we will save the temporal model results
 saveDir = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults');

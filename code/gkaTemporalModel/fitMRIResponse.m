@@ -121,7 +121,7 @@ end
 
 % Options - the objective function is deterministic
 optionsBADS.UncertaintyHandling = 0;
-optionsBADS.Display = 'iter';
+optionsBADS.Display = 'off';
 
 % search
 [pMRI,fVal] = bads(myObj,p0,lb,ub,plb,pub,myNonbcon,optionsBADS);

@@ -24,7 +24,7 @@ for ss = 1:nStims
             cellClasses = {'parasol','midget'};
     end
 
-    responseForCell = zeros(1,length(freqs));
+    amplitudeResponseForCell = zeros(1,length(freqs));
     for cc = 1:length(cellClasses)
 
         % Grab the LGN parameters, which are organized by RGC class
@@ -37,13 +37,13 @@ for ss = 1:nStims
                 gain = pMRI(5);
         end
 
-        % Get the TTF
-        responseForCell = responseForCell + ...
+        % Get the TTF lgnAmplitude,lgnPhase
+        amplitudeResponseForCell = amplitudeResponseForCell + ...
             returnlgnTTF(cellClasses{cc},stimulusDirections{ss},...
             rgcTemporalModel,surroundDelay,surroundIndex,gain,freqs);
 
         % Store this response
-        responseMat(ss,cc,:) = responseForCell;
+        responseMat(ss,cc,:) = amplitudeResponseForCell;
 
     end
 

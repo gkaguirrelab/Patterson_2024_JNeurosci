@@ -69,7 +69,9 @@ for ee = 1:length(myEccs)
 end
 
 stageList = {'cone','bipolar','rgc'};
+stageList = {'rgc'};
 zLimMax = [50,50,10];
+zLimMax = [10];
 cellList = {'parasol','midget','bistratified'};
 stimList = {{'LMS'},{'LMS','LminusM'},{'S'}};
 
@@ -78,7 +80,7 @@ stimList = {{'LMS'},{'LMS','LminusM'},{'S'}};
 map = [ linspace(0,1,255);[linspace(0,0.5,127) linspace(0.5,0,128)];[linspace(0,0.5,127) linspace(0.5,0,128)]]';
 
 for xx = 1:length(stageList)
-    f(xx) = figure('Renderer','painters');
+    f(xx) = figure('Renderer','painters','Position',[100 100 600 300]);
     colormap(map)
     subPlotIndex = 1;
     for cc=1:length(cellList)
@@ -86,19 +88,42 @@ for xx = 1:length(stageList)
         stimulusDirections = stimList{cc};
         for ss=1:length(stimulusDirections)
             thisData = plotData.(cellList{cc}).(stimulusDirections{ss}).(stageList{xx});
-            subplot(1,4,subPlotIndex);
+             subplot(2,4,subPlotIndex);
+
             s = mesh(X,Y,thisData);
             s.FaceColor = 'interp';
-            s.FaceAlpha = 0.5;
-            s.EdgeAlpha = 0.75;
-            view([145 20]);
-            ylim([0 90]);
+            s.FaceAlpha = 1;
+            s.EdgeColor = 'none';
+            view([15 30]);
+            ylim([-5 95]);
+            xlim([-0.5 2.15]);
             zlim([0 zLimMax(xx)]);
             a = gca;
             a.Color = 'none';
             a.XTickLabel={'1','10','100'};
             a.YTick=[0 30 60 90];
             a.YTickLabelRotation = 0;
+            a.Color = 'none';
+            a.ZTickLabel = [];
+            box off
+            grid off
+            pbaspect([1 1 1e-6])
+            title([cellList{cc} ' - ' stimulusDirections{ss}])
+
+             subplot(2,4,subPlotIndex+4);
+            s = mesh(X,Y,thisData);
+            s.FaceColor = 'interp';
+            s.FaceAlpha = 0.5;
+            s.EdgeAlpha = 0.75;
+            view([15 30]);
+            ylim([-5 95]);
+            xlim([-0.5 2.15]);
+            zlim([0 zLimMax(xx)]);
+            a = gca;
+            a.Color = 'none';
+            a.YTick=[0 30 60 90];
+            a.YTick = [];
+            a.XTick = [];
             box on
             a.BoxStyle = 'full';
             a.XColor = 'b';
@@ -106,7 +131,6 @@ for xx = 1:length(stageList)
             a.ZColor = 'b';
             axis square
             grid off
-            title([cellList{cc} ' - ' stimulusDirections{ss}])
             subPlotIndex = subPlotIndex+1;
         end
     end

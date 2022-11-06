@@ -38,16 +38,19 @@ for ee = 1:nEccBands
     eccField = eccFields{ee};
 
     % Plot the midget temporal RFs
-    figHandle = figure('Position',  [100, 100, 200, 400]);
+    figHandle = figure();
+    figuresize(200, 400,'pt');
 
-    % Get the midget temporal RFs for LminusM defined by these parameters
+    % Get the midget RFs
     [chromaticCenterWeight,chromaticSurroundWeight] = returnRGCChromaticWeights('midget','LminusM',eccDegs(ee),LMRatio);
     rfRGC = returnRGCRF(pBlock,cfCone,coneDelay,chromaticCenterWeight,chromaticSurroundWeight);
     plotRF(rfRGC,figHandle,'-r');
 
-    [rfRGC, ~, rfCone] = returnRGCRF(pBlock,cfCone,coneDelay,1,1);
+    [rfRGC, rfBipolar, rfCone] = returnRGCRF(pBlock,cfCone,coneDelay,1,1);
     plotRF(rfRGC,figHandle,'-k');
-    plotRF(rfCone,figHandle,'-g',3); box off
+%    plotRF(rfBipolar,figHandle,'-m',3);
+%    plotRF(rfCone,figHandle,'-g',3);
+    box off
 
     subplot(3,1,1);
     loglog(rcgData.midget.(eccField).LminusM.f,rcgData.midget.(eccField).LminusM.g,'or');
@@ -73,7 +76,9 @@ for ee = 1:nEccBands
     % Plot the parasol temporal RF
     figHandle = figure('Position',  [100, 100, 200, 400]);
     plotRF(rfRGC,figHandle,'-k');
-    plotRF(rfCone,figHandle,'-g',3);   box off
+%    plotRF(rfCone,figHandle,'-g',3);
+    box off
+
     subplot(3,1,1);
     hold on
     loglog(rcgData.parasol.(eccField).LMS.f,rcgData.parasol.(eccField).LMS.g,'ok');
@@ -94,7 +99,8 @@ for ee = 1:nEccBands
     % Plot the bistratified temporal RF
     figHandle = figure('Position',  [100, 100, 200, 400]);
     plotRF(rfRGC,figHandle,'-b');
-    plotRF(rfCone,figHandle,'-g',3);   box off
+%    plotRF(rfCone,figHandle,'-g',3);
+    box off
 
     subplot(3,1,1);
     hold on

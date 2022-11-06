@@ -1,4 +1,4 @@
-function plotRF(cellEquation,figHandle,lineStyle,whichPanel,LineWidth)
+function plotRF(cellEquation,figHandle,lineStyle,whichPanel,LineWidth,irfMethod,irfWindowSecs)
 
 % Handle arguments
 if nargin == 1
@@ -6,21 +6,29 @@ if nargin == 1
     lineStyle = '-r';
     whichPanel = [1 2 3];
     LineWidth = 1;
+    irfMethod = 'numeric';
+    irfWindowSecs = 0.1;
 end
 if nargin == 2
     figure(figHandle);
     lineStyle = '-r';
     whichPanel = [1 2 3];
     LineWidth = 1;
+    irfMethod = 'numeric';
+    irfWindowSecs = 0.1;
 end
 if nargin == 3
     figure(figHandle);
     whichPanel = [1 2 3];
     LineWidth = 1;
+    irfMethod = 'numeric';
+    irfWindowSecs = 0.1;
 end
 if nargin == 4
     figure(figHandle);
     LineWidth = 1;
+    irfMethod = 'numeric';
+    irfWindowSecs = 0.1;
 end
 
 % Check if there is anything in the figure yet
@@ -71,18 +79,29 @@ end
 if any(whichPanel==3) && ~any(isnan(ttfComplex))
     subplot(3,1,3)
 
-    % Use the inverse fourier transform to obtain the response in time
-    % after converting units from frequency to radians/sec (w)
-    syms f w x
-    if iscell(cellEquation)
-        irf = zeros(size(myTime));
-        for ii=1:length(cellEquation)
-            cellEquationTime = ifourier(subs(cellEquation{ii},f,w/(2*pi)));
-            irf = irf + (double(subs(cellEquationTime,myTime)));
-        end
-    else
-        cellEquationTime = ifourier(subs(cellEquation,f,w/(2*pi)),w,x);
-        irf = double(subs(cellEquationTime,x,myTime));
+    switch irfMethod
+        case 'analytic'
+
+            % Use the inverse fourier transform to obtain the response in time
+            % after converting units from frequency to radians/sec (w)
+            syms f w x
+            if iscell(cellEquation)
+                irf = zeros(size(myTime));
+                for ii=1:length(cellEquation)
+                    cellEquationTime = ifourier(subs(cellEquation{ii},f,w/(2*pi)));
+                    irf = irf + (double(subs(cellEquationTime,myTime)));
+                end
+            else
+                cellEquationTime = ifourier(subs(cellEquation,f,w/(2*pi)),w,x);
+                irf = double(subs(cellEquationTime,x,myTime));
+            end
+        case 'numeric'
+            myFreqs = linspace(0,1000,201);
+            ttfComplex = double(subs(cellEquation,myFreqs));
+            [irf, sampleRate] = simpleIFFT( myFreqs, abs(ttfComplex), angle(ttfComplex));
+            myTime = 0:sampleRate:(length(irf)-1)*sampleRate;
+            [~,windowIdx] = min(abs(myTime-irfWindowSecs));
+            irf = irf(1:windowIdx); myTime = myTime(1:windowIdx);
     end
 
     % Scale the IRF to unit amplitude

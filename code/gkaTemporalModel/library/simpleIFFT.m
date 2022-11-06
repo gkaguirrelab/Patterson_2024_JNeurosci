@@ -17,28 +17,20 @@
 
 %    phase: a vector of phases (in radians)
 
-function [frq, amp, phase] = simpleFFT( signal, ScanRate)
+function [signal, sampleRate] = simpleIFFT( frq, amp, phase)
 
-n = length(signal); 
+deltaf = frq(2)-frq(1);
 
-z = fft(signal, n); %do the actual work
+halfn = length(frq);
+n = 2*(halfn + 1);
 
-%generate the vector of frequencies
+sampleRate = 0.5/frq(end);
 
-halfn = floor(n / 2)+1;
+theta = [phase phase(end) -fliplr(phase(2:end-1))];
+r = [amp(1) amp(2:end-1) amp(end) fliplr(amp(2:end))];
 
-deltaf = 1 / ( n / ScanRate);
+z = r.*exp(1i.*theta);
 
-frq = (0:(halfn-1)) * deltaf;
+signal = real(ifft(z)); %do the actual work
 
-% convert from 2 sided spectrum to 1 sided
-
-%(assuming that the input is a real signal)
-
-amp(1) = abs(z(1));% ./ (n);
-
-amp(2:(halfn-1)) = abs(z(2:(halfn-1)));% ./ (n / 2); 
-
-amp(halfn) = abs(z(halfn));% ./ (n); 
-
-phase = angle(z(1:halfn));
+end

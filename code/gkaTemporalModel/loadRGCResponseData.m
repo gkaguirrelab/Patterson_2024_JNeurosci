@@ -18,7 +18,15 @@ function rgcData = loadRGCResponseData()
 % extrapolating the fit.
 %
 % Responses were to a spatially uniform, 4.7° diameter modulations at close
-% to 2000 Trolands.
+% to 2000 Trolands. The response units are spikes / sec / % contrast, where
+% contrast is expressed relative to the maximum available contrast for that
+% stimulus direction. The maximum available contrast seems to have been:
+% - 100% LMS
+% - 86% S
+% - 12% L-M
+%
+% The responses of the parasol cells saturate above ~25% LMS contrast, but
+% not so for the midgets.
 %
 
 % Note that there is no measurement at 15 Hz in this first eccentricity

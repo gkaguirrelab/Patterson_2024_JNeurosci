@@ -45,13 +45,14 @@ for ss = 1:length(subjects)
         lgnY(bb,:) = lgnYtemp;
         v1Y(bb,:) = v1Ytemp;
     end
-
     lgnY = sort(lgnY); v1Y = sort(v1Y);
 
     % Initialize the fields for this subject
     mriFullResultSet.(subjects{ss}).pMRI = [];
     mriFullResultSet.(subjects{ss}).v1YMean = mean(v1Y);
+    mriFullResultSet.(subjects{ss}).v1W = 1./std(v1Y);    
     mriFullResultSet.(subjects{ss}).lgnYMean = mean(lgnY);
+    mriFullResultSet.(subjects{ss}).lgnW = 1./std(lgnY);    
     mriFullResultSet.(subjects{ss}).v1Y_lowCI = v1Y(round((0.5-0.68/2)*nBoots),:);
     mriFullResultSet.(subjects{ss}).lgnY_lowCI = lgnY(round((0.5-0.68/2)*nBoots),:);
     mriFullResultSet.(subjects{ss}).v1Y_highCI = v1Y(round((0.5+0.68/2)*nBoots),:);

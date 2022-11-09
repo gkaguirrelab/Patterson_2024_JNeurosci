@@ -1,4 +1,4 @@
-function [pMRI,fVal] = fitMRIResponse(p0,stimulusDirections,studiedEccentricites,studiedFreqs,v1Y,v1W,lgnY,lgnW,useMonotonicConstraint)
+function [pMRI,fVal] = fitMRIResponse(p0,stimulusDirections,studiedEccentricites,studiedFreqs,v1Y,v1W,lgnY,lgnW,useMonotonicConstraint,modelType)
 % Fit the RGC-referred temporal model to combined V1 and LGN data
 %
 % Syntax:
@@ -55,6 +55,10 @@ function [pMRI,fVal] = fitMRIResponse(p0,stimulusDirections,studiedEccentricites
 % Outputs:
 %   p                     - 1x[2+c+6+s*k*2] vector of model fit parameters
 
+if nargin<10
+    modelType = 'full';
+end
+
 % Load the RGC model parameters
 loadPath = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults','rgcTemporalModel.mat');
 load(loadPath,'rgcTemporalModel');
@@ -104,6 +108,42 @@ for pp = 1:length(postReceptoralPaths)
     ub =  [ ub 40 ones(1,nEcc) repmat(100,1,nEcc)];
 end
 
+% For  reduced models, we lock some parameters
+switch modelType
+    case 'rgc'
+        % Zero out the surround weight
+        lb([2 11:16 24:29 37:42 50:56]) = 0;
+        % move the 2nd order filter out of range
+        lb([6 8]) = 200; lb([7 9]) = 0.7;
+        plb([2 11:16 24:29 37:42 50:56]) = 0;
+        plb([6 8]) = 200; plb([7 9]) = 0.7;
+        pub([2 11:16 24:29 37:42 50:56]) = 0;
+        pub([6 8]) = 200; pub([7 9]) = 0.7;
+        ub([2 11:16 24:29 37:42 50:56]) = 0;
+        ub([6 8]) = 200; ub([7 9]) = 0.7;
+        p0([2 11:16 24:29 37:42 50:56]) = 0;
+        p0([6 8]) = 200; p0([7 9]) = 0.7;
+    case 'lgn'
+        lb([11:16 24:29 37:42 50:56]) = 0;
+        lb([6 8]) = 200; lb([7 9]) = 0.7;
+        plb([11:16 24:29 37:42 50:56]) = 0;
+        plb([6 8]) = 200; plb([7 9]) = 0.7;
+        pub([11:16 24:29 37:42 50:56]) = 0;
+        pub([6 8]) = 200; pub([7 9]) = 0.7;
+        ub([11:16 24:29 37:42 50:56]) = 0;
+        ub([6 8]) = 200; ub([7 9]) = 0.7;
+        p0([11:16 24:29 37:42 50:56]) = 0;
+        p0([6 8]) = 200; p0([7 9]) = 0.7;
+    case 'v1'
+        lb([6 8]) = 200; lb([7 9]) = 0.7;
+        plb([6 8]) = 200; plb([7 9]) = 0.7;
+        pub([6 8]) = 200; pub([7 9]) = 0.7;
+        ub([6 8]) = 200; ub([7 9]) = 0.7;
+        p0([6 8]) = 200; p0([7 9]) = 0.7;
+    case 'full'
+        % Make no changes
+end
+
 % Returns the TTF, and handles reshaping into a linear vector
 myV1TTF = @(pMRI) assembleV1ResponseAcrossStimsAndEcc(pMRI,stimulusDirections,studiedEccentricites,studiedFreqs,rgcTemporalModel,nUniqueParams,nFixedParams);
 myLGNTTF = @(pMRI) assembleLGNResponseAcrossStims(pMRI,stimulusDirections,studiedFreqs,rgcTemporalModel);
@@ -121,7 +161,7 @@ end
 
 % Options - the objective function is deterministic
 optionsBADS.UncertaintyHandling = 0;
-optionsBADS.Display = 'off';
+optionsBADS.Display = 'iter';
 
 % search
 [pMRI,fVal] = bads(myObj,p0,lb,ub,plb,pub,myNonbcon,optionsBADS);

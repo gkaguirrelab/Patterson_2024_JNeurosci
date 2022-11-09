@@ -74,7 +74,9 @@ for ee = 1:nEccBands
     [rfRGC, ~, rfCone] = returnRGCRF(pBlock,cfCone,coneDelay,1,1);
 
     % Plot the parasol temporal RF
-    figHandle = figure('Position',  [100, 100, 200, 400]);
+    figHandle = figure();
+    figuresize(200, 400,'pt');
+
     plotRF(rfRGC,figHandle,'-k');
 %    plotRF(rfCone,figHandle,'-g',3);
     box off
@@ -97,7 +99,9 @@ for ee = 1:nEccBands
     [rfRGC, ~, rfCone] = returnRGCRF(pBlock,cfCone,coneDelay,1,1);
 
     % Plot the bistratified temporal RF
-    figHandle = figure('Position',  [100, 100, 200, 400]);
+    figHandle = figure();
+    figuresize(200, 400,'pt');
+
     plotRF(rfRGC,figHandle,'-b');
 %    plotRF(rfCone,figHandle,'-g',3);
     box off

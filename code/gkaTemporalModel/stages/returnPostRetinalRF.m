@@ -18,6 +18,10 @@ end
 % Copy the RGC model into the post-retinal variables
 rfPostRetinal = rfRGC;
 
+% Apply the scaling for stimulus contrast. This converts units from spikes
+% / sec / % contrast to spikes / sec.
+rfPostRetinal = rfPostRetinal * returnStimulusContrastScale(cellClass,stimulusDirection);
+
 % Apply iterative, delayed surround subtraction and gain scaling. The
 % expectation is one iteration for LGN, two iterations for V1. Include a
 % second-order low-pass filter at the final step

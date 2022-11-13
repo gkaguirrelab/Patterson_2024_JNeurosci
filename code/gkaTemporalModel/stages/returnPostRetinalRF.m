@@ -1,4 +1,4 @@
-function [rfPostRetinal, rfRGC, rfBipolar, rfCone] = returnPostRetinalRF(cellClass,stimulusDirection,rgcTemporalModel,eccDeg,nSubtractions,surroundDelay,surroundIndex,gain,secondOrderFc,secondOrderQ)
+function [rfPostRetinal, rfRGC, rfBipolar, rfCone] = returnPostRetinalRF(cellClass,stimulusDirection,rgcTemporalModel,eccDeg,nSubtractions,stimulusContrastScale,surroundDelay,surroundIndex,gain,secondOrderFc,secondOrderQ)
 
 % Obtain the chromatic weights
 [chromaticCenterWeight,chromaticSurroundWeight] = ...
@@ -20,7 +20,7 @@ rfPostRetinal = rfRGC;
 
 % Apply the scaling for stimulus contrast. This converts units from spikes
 % / sec / % contrast to spikes / sec.
-rfPostRetinal = rfPostRetinal * returnStimulusContrastScale(cellClass,stimulusDirection);
+rfPostRetinal = rfPostRetinal * stimulusContrastScale;
 
 % Apply iterative, delayed surround subtraction and gain scaling. The
 % expectation is one iteration for LGN, two iterations for V1. Include a
@@ -36,10 +36,11 @@ for ii = 1:nSubtractions
         rfPostRetinal = rfPostRetinal.*stageSecondOrderLP(f,secondOrderFc,secondOrderQ);
     end
 
-    % Gain
-    rfPostRetinal = gain(ii)*rfPostRetinal;
-
 end
+
+% Only apply the gain correction at the final step, so that the gain is
+% always proportional to the RGC signal
+rfPostRetinal = gain(nSubtractions)*rfPostRetinal;
 
 % Drasdo 2007 equation for the midget fraction as a function of
 % eccentricity

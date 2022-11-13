@@ -1,20 +1,20 @@
 
 %% Housekeeping
 clear
-close all
+%close all
 
 
 %% Are we searching or not?
 % Do we want to conduct a search for the fMRI data, or just use the p0
 % values and make plots?
-mriSearchFlag = true;
+mriSearchFlag = false;
 
 % Do we wish to use the monotonic constraint upon surround index in the
 % search?
 useMonotonicConstraint = false;
 
 % How many bootstrap resamplings of the data to conduct
-nBoots = 3;
+nBoots = 1;
 
 % Where we will save the temporal model results
 saveDir = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults');
@@ -36,8 +36,8 @@ studiedEccentricites = eccDegBinEdges(4:2:14);
 % The identities of the stims and subjects
 subjects = {'gka','asb'};
 stimulusDirections = {'LminusM','S','LMS'};
-plotColor = {'r','b','k','g'};
-postReceptoralPaths = {'midget.LminusM','bistratified.S','parasol.LMS','midget.LMS'};
+plotColor = {'r','b','k'};
+postReceptoralPaths = {'midget','bistratified','parasol'};
 
 % The number of acquisitions obtained for each measurement
 nAcqs = 12;
@@ -52,9 +52,7 @@ mriTemporalModel.meta.subjects = subjects;
 mriTemporalModel.meta.stimulusDirections = stimulusDirections;
 mriTemporalModel.meta.plotColor = plotColor;
 mriTemporalModel.meta.postReceptoralPaths = postReceptoralPaths;
-mriTemporalModel.meta.nFixedParams = 1;
-mriTemporalModel.meta.nFloatByEccParams = 2;
-mriTemporalModel.meta.nUniqueParams = 9;
+mriTemporalModel.meta.nFixedParams = 5;
 mriTemporalModel.meta.nBoots = nBoots;
 
 % Store a source version of the output variable.
@@ -68,6 +66,7 @@ for whichSub = [1 2]
 
         % Get a resample with replacement of the acquisitions
         bootIdx = sort(datasample(1:nAcqs,nAcqs));
+        bootIdx = 1:nAcqs;
 
         % Assemble the data
         lgnY = []; lgnW = []; v1Y = []; v1W = [];
@@ -101,16 +100,16 @@ for whichSub = [1 2]
             tic
 
             % BADS it
-            try
+%            try
             [pMRI,fVal] = fitMRIResponse(pMRI0,...
                 stimulusDirections,studiedEccentricites,studiedFreqs,...
                 v1Y,v1W,lgnY,lgnW,...
                 useMonotonicConstraint);
-            catch
-                searchTimeSecs = toc();
-                fprintf('error encountered. Skipping.\n');
-                continue % skip this boot loop
-            end
+ %           catch
+ %               searchTimeSecs = toc();
+ %               fprintf('error encountered. Skipping.\n');
+ %               continue % skip this boot loop
+ %           end
 
             searchTimeSecs = toc();
 
@@ -121,6 +120,19 @@ for whichSub = [1 2]
             pMRI = pMRI0;
             fVal = nan;
         end
+
+        % Report the parameters
+        str = 'pMRI0 = [ ...\n';
+        pathIndex = 1;
+        for ss=1:length(pMRI)-1
+            str = [str sprintf('%2.10f, ',pMRI(ss))];
+            if mod(ss,(length(pMRI)-1)/3)==0 && ss~=length(pMRI)
+                str = [str '... %% ' postReceptoralPaths{pathIndex} ' \n'];
+                pathIndex = pathIndex+1;
+            end
+        end
+        str = [str sprintf('%2.10f ]; \n',pMRI(end))];
+        fprintf(str);
 
         % Save the model parameters in an iteration structure and save this
         mriTemporalModel = mriTemporalModelSource;
@@ -145,21 +157,3 @@ end % subjects
 
 
 
-
-%     Print the parameters in a format to be used as a seed in future searches
-%{
-    nEcc = 6;
-    nUniqueParams = mriTemporalModel.meta.nUniqueParams;
-    nParamsPerBlock = mriTemporalModel.meta.nFloatByEccParams * nEcc + mriTemporalModel.meta.nFixedParams;
-    pathIndex = 1;
-    str = ['pMRI0 = [ ...\n' sprintf([repmat('%2.10f, ',1,nUniqueParams) '... '],pMRI(1:nUniqueParams)) '%% lgn \n'];
-    for ss=nUniqueParams+1:length(pMRI)
-        str = [str sprintf('%2.10f, ',pMRI(ss))];
-        if mod(ss-nUniqueParams,nParamsPerBlock)==0 && ss~=length(pMRI)
-            str = [str '... %% V1 ' postReceptoralPaths{pathIndex} ' \n'];
-            pathIndex = pathIndex+1;
-        end
-    end
-    str = [str(1:end-2) ' ... %% V1 ' postReceptoralPaths{pathIndex} ' \n ]; \n'];
-    fprintf(str); 
-%}

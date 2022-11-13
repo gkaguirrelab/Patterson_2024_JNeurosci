@@ -1,15 +1,11 @@
-function [response, responseMat] = assembleV1ResponseAcrossStimsAndEcc(pMRI,stimulusDirections,studiedEccentricites,studiedFreqs,rgcTemporalModel,nUniqueParams,nFixedParams)
+function [response, responseMat] = assembleV1ResponseAcrossStimsAndEcc(pMRI,stimulusDirections,studiedEccentricites,studiedFreqs,rgcTemporalModel,nFixedParams)
 
 % Identify the studied eccentricities and stimulus frequencies
 nStims = length(stimulusDirections);
 nEccs = length(studiedEccentricites);
 nFreqs = length(studiedFreqs);
-nParamsPerCellBlock = nFixedParams+nEccs*2;
+nParamsPerCellBlock = nFixedParams+nEccs*3;
 nSubtractions = 2; % Perform two levels of surround-delayed subtraction for V1
-
-% The shared LGN parameters
-lgnSurroundDelay = pMRI(1);
-lgnSurroundIndex = pMRI(2);
 
 % Initialize the response matrix
 responseMat = zeros(nStims,nEccs,2,nFreqs);
@@ -23,16 +19,13 @@ for ss = 1:nStims
     switch stimulusDirections{ss}
         case 'LminusM'
             cellClasses = {'midget'};
-            pathwayIndex = 1;
-            chromAchromIndex = 1;
+            paramBlockIndex = 1;
         case 'S'
             cellClasses = {'bistratified'};
-            pathwayIndex = 2;
-            chromAchromIndex = 1;
+            paramBlockIndex = 2;
         case 'LMS'
             cellClasses = {'parasol','midget'};
-            pathwayIndex = [3 4];
-            chromAchromIndex = 2;
+            paramBlockIndex = [3 1];
     end
 
     nCellClasses = length(cellClasses);
@@ -42,30 +35,31 @@ for ss = 1:nStims
 
         for cc = 1:nCellClasses
 
-            % Grab the LGN parameters, which are organized by RGC class
-            lgnGain = [];
-            switch cellClasses{cc}
-                case 'midget'
-                    lgnGain = pMRI(3);
-                case 'bistratified'
-                    lgnGain = pMRI(4);
-                case 'parasol'
-                    lgnGain = pMRI(5);
+            % Get the gain effect of stimulus contrast
+            stimulusContrastScale = returnStimulusContrastScale(cellClasses{cc},stimulusDirections{ss});
+
+            % Apply the param adjustment to effect of LMS contrast upon
+            % midgets. This covers the fact that we don't exactly know the
+            % relative effectiveness of our stimulus contrast levels for
+            % midget and parasol cells
+            if strcmp(cellClasses{cc},'midget') && strcmp(stimulusDirections{ss},'LMS')
+                stimulusContrastScale = stimulusContrastScale * pMRI(end);
             end
 
-            % Grab the V1 MRI parameters that are fixed across
-            % eccentricity, but vary with stimulus class (chromatic or
-            % achromatic)
-            secondOrderFc = pMRI(5+(chromAchromIndex-1)*2+1);
-            secondOrderQ = pMRI(5+(chromAchromIndex-1)*2+2);
+            % Grab the LGN parameters
+            lgnSurroundDelay = pMRI((paramBlockIndex(cc)-1)*nParamsPerCellBlock + 1);
+            lgnSurroundIndex = pMRI((paramBlockIndex(cc)-1)*nParamsPerCellBlock + 2);
+            lgnGain = pMRI((paramBlockIndex(cc)-1)*nParamsPerCellBlock + 3);
 
             % Grab the V1 MRI parameters that are fixed across
-            % eccentricity, but vary with post-receptoral path 
-            v1SurroundDelay = pMRI(nUniqueParams+(pathwayIndex(cc)-1)*nParamsPerCellBlock+1);
+            % eccentricity
+            secondOrderFc = pMRI((paramBlockIndex(cc)-1)*nParamsPerCellBlock + 4);
+            secondOrderQ = pMRI((paramBlockIndex(cc)-1)*nParamsPerCellBlock + 5);
 
-            % Grab the "floating" parameters that vary with eccentricity
-            v1SurroundIndex = pMRI(nUniqueParams+(pathwayIndex(cc)-1)*nParamsPerCellBlock+nFixedParams+ee);
-            v1Gain = pMRI(nUniqueParams+(pathwayIndex(cc)-1)*nParamsPerCellBlock+nFixedParams+nEccs+ee);
+            % Grab the V1 MRI parameters that vary with eccentricity 
+            v1SurroundDelay = pMRI((paramBlockIndex(cc)-1)*nParamsPerCellBlock + nFixedParams + nEccs*0 + ee);
+            v1SurroundIndex = pMRI((paramBlockIndex(cc)-1)*nParamsPerCellBlock + nFixedParams + nEccs*1 + ee);
+            v1Gain = pMRI((paramBlockIndex(cc)-1)*nParamsPerCellBlock + nFixedParams + nEccs*2 + ee);
 
             % Assemble the staged parameters
             surroundDelay = [lgnSurroundDelay v1SurroundDelay];
@@ -76,7 +70,8 @@ for ss = 1:nStims
             thisResponse = ...
                 returnV1TTFForEcc(cellClasses{cc},stimulusDirections{ss},...
                 rgcTemporalModel,studiedEccentricites(ee),studiedFreqs,...
-                surroundDelay,surroundIndex,gain,secondOrderFc,secondOrderQ,nSubtractions);
+                stimulusContrastScale,surroundDelay,surroundIndex,gain,...
+                secondOrderFc,secondOrderQ,nSubtractions);
 
             % Store this response
             responseMat(ss,ee,cc,:) = thisResponse;

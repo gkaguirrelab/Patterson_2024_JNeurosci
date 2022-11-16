@@ -23,14 +23,13 @@ studiedEccentricites = mriFullResultSet.meta.studiedEccentricites;
 subjects = mriFullResultSet.meta.subjects;
 stimulusDirections = mriFullResultSet.meta.stimulusDirections;
 plotColor = mriFullResultSet.meta.plotColor;
-nFixedParams = mriFullResultSet.meta.nFixedParams;
+paramCounts = mriFullResultSet.meta.paramCounts;
 postReceptoralPaths = mriFullResultSet.meta.postReceptoralPaths;
 nEccs = length(studiedEccentricites);
 nFreqs = length(studiedFreqs);
 freqsForPlotting = logspace(0,2,50);
 nFreqsForPlotting = length(freqsForPlotting);
-chromAchromIndex = [1 1 2];
-nParamsPerCellBlock = nFixedParams+nEccs*2;
+cellClasses = {'midget','bistratified','parasol'};
 
 for whichSub = 1:length(subjects)
 
@@ -44,7 +43,7 @@ for whichSub = 1:length(subjects)
     lgnYlow = mriFullResultSet.(subjects{whichSub}).lgnY_lowCI;
     lgnYhigh = mriFullResultSet.(subjects{whichSub}).lgnY_highCI;
 
-    [~,v1YFitMatrix,rfMatrix] = assembleV1ResponseAcrossStimsAndEcc(pMRI,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel,nFixedParams);
+    [~,v1YFitMatrix,rfMatrix] = assembleV1ResponseAcrossStimsAndEcc(pMRI,cellClasses,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel,paramCounts);
  %   [~,lgnYFitMatrix] = assembleLGNResponseAcrossStims(pMRI,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel,nFixedParams);
 
     for whichStim = 1:length(stimulusDirections)
@@ -69,9 +68,9 @@ for whichSub = 1:length(subjects)
 
             lineStyle = {'-.',':'};
 %             for cc=1:2
-                semilogx(freqsForPlotting,squeeze(v1YFitMatrix(whichStim,ee,1,:)),[lineStyle{1} plotColor{whichStim}]);
+                semilogx(freqsForPlotting,squeeze(v1YFitMatrix(whichStim,ee,:)),[lineStyle{1} plotColor{whichStim}]);
 %             end
-            semilogx(freqsForPlotting,sum(squeeze(v1YFitMatrix(whichStim,ee,:,:))),['-' plotColor{whichStim}]);
+            semilogx(freqsForPlotting,sum(squeeze(v1YFitMatrix(whichStim,ee,:))),['-' plotColor{whichStim}]);
             refline(0,0);
             title([stimulusDirections{whichStim} ', ' subjects{whichSub} ', ecc = ' num2str(studiedEccentricites(ee),2) '°']);
             ylim([-1 7]);

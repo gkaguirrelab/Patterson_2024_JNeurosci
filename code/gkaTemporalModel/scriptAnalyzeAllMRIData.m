@@ -29,7 +29,7 @@ mriData = loadMRIResponseData();
 
 % Define the eccentricity locations of the data. We use the log-mid point
 % within each of the bins for the cortical
-nEcc = 6;
+nEccs = 6;
 eccDegBinEdges = logspace(log10(0.7031),log10(90),15);
 studiedEccentricites = eccDegBinEdges(4:2:14);
 
@@ -52,8 +52,14 @@ mriTemporalModel.meta.subjects = subjects;
 mriTemporalModel.meta.stimulusDirections = stimulusDirections;
 mriTemporalModel.meta.plotColor = plotColor;
 mriTemporalModel.meta.postReceptoralPaths = postReceptoralPaths;
-mriTemporalModel.meta.nFixedParams = 5;
 mriTemporalModel.meta.nBoots = nBoots;
+
+paramCounts.unique = 3;
+paramCounts.lgn = 3;
+paramCounts.v1fixed = 1;
+paramCounts.v1eccen = nEccs*2;
+paramCounts.v1total = paramCounts.v1fixed+paramCounts.v1eccen;
+mriTemporalModel.meta.paramCounts = paramCounts;
 
 % Store a source version of the output variable.
 mriTemporalModelSource = mriTemporalModel;
@@ -78,7 +84,7 @@ for whichSub = [1 2]
             lgnW = [lgnW 1./std(thisMatrix)];
 
             % Extract the relevant V1 data acros eccentricities
-            for ee = 1:nEcc
+            for ee = 1:nEccs
                 thisMatrix = mriData.(subjects{whichSub}).(stimulusDirections{whichStim}).(['ecc' num2str(ee)])(bootIdx,:);
                 v1Y = [v1Y mean(thisMatrix)];
                 v1W = [v1W 1./std(thisMatrix)];
@@ -101,10 +107,11 @@ for whichSub = [1 2]
 
             % BADS it
 %            try
-            [pMRI,fVal] = fitMRIResponse(pMRI0,...
+            result = fitMRIResponse(pMRI0,...
                 stimulusDirections,studiedEccentricites,studiedFreqs,...
                 v1Y,v1W,lgnY,lgnW,...
                 useMonotonicConstraint);
+            result.pMRI0 = pMRI0;
  %           catch
  %               searchTimeSecs = toc();
  %               fprintf('error encountered. Skipping.\n');
@@ -116,30 +123,31 @@ for whichSub = [1 2]
             str=[sprintf('fVal = %2.2f, search time (mins) = %2.1f',fVal,searchTimeSecs/60)  '\n'];
             fprintf(str);
 
-        else            
-            pMRI = pMRI0;
-            fVal = nan;
+        else
+            result.pMRI = pMRI0;
+            result.pMRI0 = pMRI0;
+            result.fVal = nan;
         end
 
         % Report the parameters
         str = 'pMRI0 = [ ...\n';
         pathIndex = 1;
-        for ss=1:length(pMRI)-1
-            str = [str sprintf('%2.10f, ',pMRI(ss))];
-            if mod(ss,(length(pMRI)-1)/3)==0 && ss~=length(pMRI)
+        for ss=1:length(result.pMRI)-1
+            str = [str sprintf('%2.10f, ',result.pMRI(ss))];
+            if mod(ss,(length(result.pMRI)-1)/3)==0 && ss~=length(result.pMRI)
                 str = [str '... %% ' postReceptoralPaths{pathIndex} ' \n'];
                 pathIndex = pathIndex+1;
             end
         end
-        str = [str sprintf('%2.10f ]; \n',pMRI(end))];
+        str = [str sprintf('%2.10f ]; \n',result.pMRI(end))];
         fprintf(str);
 
         % Save the model parameters in an iteration structure and save this
         mriTemporalModel = mriTemporalModelSource;
         mriTemporalModel.(subjects{whichSub}).bootIdx = bootIdx;
-        mriTemporalModel.(subjects{whichSub}).pMRI = pMRI;
-        mriTemporalModel.(subjects{whichSub}).pMRI0 = pMRI0;
-        mriTemporalModel.(subjects{whichSub}).fVal = fVal;
+        mriTemporalModel.(subjects{whichSub}).pMRI = result.pMRI;
+        mriTemporalModel.(subjects{whichSub}).pMRI0 = result.pMRI0;
+        mriTemporalModel.(subjects{whichSub}).fVal = result.fVal;
         mriTemporalModel.(subjects{whichSub}).v1Y = v1Y;
         mriTemporalModel.(subjects{whichSub}).v1W = v1W;
         mriTemporalModel.(subjects{whichSub}).lgnY = lgnY;

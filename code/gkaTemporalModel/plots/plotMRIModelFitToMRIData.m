@@ -44,8 +44,8 @@ for whichSub = 1:length(subjects)
     lgnYlow = mriFullResultSet.(subjects{whichSub}).lgnY_lowCI;
     lgnYhigh = mriFullResultSet.(subjects{whichSub}).lgnY_highCI;
 
-    [~,v1YFitMatrix] = assembleV1ResponseAcrossStimsAndEcc(pMRI,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel,nFixedParams);
-    [~,lgnYFitMatrix] = assembleLGNResponseAcrossStims(pMRI,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel,nFixedParams);
+    [~,v1YFitMatrix,rfMatrix] = assembleV1ResponseAcrossStimsAndEcc(pMRI,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel,nFixedParams);
+ %   [~,lgnYFitMatrix] = assembleLGNResponseAcrossStims(pMRI,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel,nFixedParams);
 
     for whichStim = 1:length(stimulusDirections)
         figure
@@ -68,9 +68,9 @@ for whichSub = 1:length(subjects)
             set(p,'edgecolor','none','facealpha',0.1);
 
             lineStyle = {'-.',':'};
-            for cc=1:2
-                semilogx(freqsForPlotting,squeeze(v1YFitMatrix(whichStim,ee,cc,:)),[lineStyle{cc} plotColor{whichStim}]);
-            end
+%             for cc=1:2
+                semilogx(freqsForPlotting,squeeze(v1YFitMatrix(whichStim,ee,1,:)),[lineStyle{1} plotColor{whichStim}]);
+%             end
             semilogx(freqsForPlotting,sum(squeeze(v1YFitMatrix(whichStim,ee,:,:))),['-' plotColor{whichStim}]);
             refline(0,0);
             title([stimulusDirections{whichStim} ', ' subjects{whichSub} ', ecc = ' num2str(studiedEccentricites(ee),2) '°']);
@@ -81,28 +81,28 @@ for whichSub = 1:length(subjects)
         end
 
         % Add the LGN response
-        lgnDataIndices = 1+(whichStim-1)*(nFreqs): ...
-            (whichStim-1)*(nFreqs)+nFreqs;
-
-        subplot(2,4,8)
-        semilogx(studiedFreqs,lgnY(lgnDataIndices),['o' plotColor{whichStim}]);
-        hold on
-        % patch error bars
-        X = [studiedFreqs fliplr(studiedFreqs)];
-            Y = [lgnYlow(lgnDataIndices), fliplr(lgnYhigh(lgnDataIndices))];
-        p = patch(X,Y,plotColor{whichStim});
-        set(p,'edgecolor','none','facealpha',0.1);
-
-        for cc=1:2
-            semilogx(freqsForPlotting,squeeze(lgnYFitMatrix(whichStim,cc,:)),[lineStyle{cc} plotColor{whichStim}]);
-        end
-        semilogx(freqsForPlotting,sum(squeeze(lgnYFitMatrix(whichStim,:,:))),['-' plotColor{whichStim}]);
-        refline(0,0);
-        title([stimulusDirections{whichStim} ', ' subjects{whichSub} ', LGN']);
-        ylim([-1 7]);
-            a=gca; a.XTick = studiedFreqs; 
-            a.XTickLabel = arrayfun(@num2str, studiedFreqs, 'UniformOutput', 0);
-            a.XTickLabelRotation = 0;
+%         lgnDataIndices = 1+(whichStim-1)*(nFreqs): ...
+%             (whichStim-1)*(nFreqs)+nFreqs;
+% 
+%         subplot(2,4,8)
+%         semilogx(studiedFreqs,lgnY(lgnDataIndices),['o' plotColor{whichStim}]);
+%         hold on
+%         % patch error bars
+%         X = [studiedFreqs fliplr(studiedFreqs)];
+%             Y = [lgnYlow(lgnDataIndices), fliplr(lgnYhigh(lgnDataIndices))];
+%         p = patch(X,Y,plotColor{whichStim});
+%         set(p,'edgecolor','none','facealpha',0.1);
+% 
+%         for cc=1:2
+%             semilogx(freqsForPlotting,squeeze(lgnYFitMatrix(whichStim,cc,:)),[lineStyle{cc} plotColor{whichStim}]);
+%         end
+%         semilogx(freqsForPlotting,sum(squeeze(lgnYFitMatrix(whichStim,:,:))),['-' plotColor{whichStim}]);
+%         refline(0,0);
+%         title([stimulusDirections{whichStim} ', ' subjects{whichSub} ', LGN']);
+%         ylim([-1 7]);
+%             a=gca; a.XTick = studiedFreqs; 
+%             a.XTickLabel = arrayfun(@num2str, studiedFreqs, 'UniformOutput', 0);
+%             a.XTickLabelRotation = 0;
 
         % Show the cortical filter
 %         subplot(2,4,4)

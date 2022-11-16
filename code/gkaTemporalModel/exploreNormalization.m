@@ -1,10 +1,8 @@
 % Where we will save the temporal model results
-saveDir = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults');
+dataDir = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults');
 
-
-%% Create the RGC temporal sensitivity model
-rgcTemporalModel = fitRGCFResponse(false,false);
-
+%% Load the RGC temporal sensitivity model
+load(fullfile(dataDir,'rgcTemporalModel.mat'),'rgcTemporalModel');
 
 %% Load the Mt. Sinai data
 mriData = loadMRIResponseData();
@@ -27,21 +25,44 @@ nAcqs = 12;
 % The frequencies studied
 studiedFreqs = [2 4 8 16 32 64];
 
-eccDeg = studiedEccentricites(6);
+eccDeg = studiedEccentricites(1);
 cellClass = 'midget';
 stimulusDirection = 'LminusM';
 
-p0 = [0.01,1.4,0.07,0.4];
+stimulusContrastScale = returnStimulusContrastScale(cellClass,stimulusDirection);
+rgcRF=returnPostRetinalRF(cellClass,stimulusDirection,rgcTemporalModel,eccDeg,0,stimulusContrastScale,[],[],[],[],[]);
 
-data = mean(mriData.gka.LminusM.ecc6);
-myResponse = @(p) returnPostRetinalIRF(cellClass,stimulusDirection,rgcTemporalModel,eccDeg,p);
-myObj = @(p) norm(data-myResponse(p));
+syms f w x
+rgIRFSym = ifourier(subs(rgcRF,f,w/(2*pi)),w,x);
+deltaT = 0.001;
+myTime = 0:deltaT:0.5;
+irf = double(subs(rgIRFSym,x,myTime))./1e5;
 
-myResponse(p0);
+t1=0.05;
+w=0.4;
+t2=0.1;
+n=1.4;
+sigma = 1;
 
-p=fmincon(myObj,p0);
+figure
+for ff=1:length(studiedFreqs)
+    response = stepConvSinStim(irf,deltaT,studiedFreqs(ff));
+    response = abs(response);
+    responseGamma = stepGammaConv(response,deltaT,t1,0);
+%    responseExp = stepExpDecayConv(abs(responseGamma),deltaT,t2);
+    responseDenom = sigma^n + abs(responseGamma).^n;
+    responseDN = abs(response).^n ./ responseDenom;
+    subplot(3,3,ff)
+    plot(response,'-k'); hold on
+    plot(responseGamma,'-r');plot(responseDN,'-b');
+    meanResp(ff)=mean(responseDN);
+end
 
-semilogx(studiedFreqs,data,'or');
+figure
+data = mean(mriData.gka.LminusM.ecc1);
+semilogx(studiedFreqs,data,'ok');
 hold on
-scaledResponse = (response/max(response))*max(data);
-semilogx(fitFrequencies,scaledResponse,'-r');
+semilogx(studiedFreqs,meanResp,'-r');
+
+foo=1;
+

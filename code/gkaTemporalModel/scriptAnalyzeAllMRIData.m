@@ -7,11 +7,11 @@ clear
 %% Are we searching or not?
 % Do we want to conduct a search for the fMRI data, or just use the p0
 % values and make plots?
-mriSearchFlag = false;
+mriSearchFlag = true;
 
 % Do we wish to use the monotonic constraint upon surround index in the
 % search?
-useMonotonicConstraint = false;
+useMonotonicConstraint = true;
 
 % How many bootstrap resamplings of the data to conduct
 nBoots = 1;

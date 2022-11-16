@@ -58,7 +58,7 @@ if any(whichPanel==1)
         hold on
     end
     semilogx(myFreqs,gainVals,lineStyle,'LineWidth',LineWidth);
-    ylim([-1 10]);
+%    ylim([-1 10]);
     xlabel('frequency [Hz]'); ylabel('gain');
 end
 

@@ -102,7 +102,9 @@ for ff = 1:length(fitFrequencies)
 
 % Make a stimulus
 x = 0:sampleRate:12-sampleRate;
-padTime = repmat(0,1,round(1/sampleRate));
+%padTime = repmat(0,1,round(1/sampleRate));
+
+% Half-cosine ramp at onset and offset
 hc = (-cos(x*2*pi*(1/3))+1)/2;
 hc(and(x>1.5,x<10.5))=1;
 stimulus = sin(x*2*pi*fitFrequencies(ff)).*hc;

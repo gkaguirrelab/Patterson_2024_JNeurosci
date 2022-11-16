@@ -56,10 +56,10 @@ function [pMRI,fVal] = fitMRIResponse(p0,stimulusDirections,studiedEccentricites
 %   p                     - 1x[2+c+6+s*k*2] vector of model fit parameters
 
 if nargin<10
-    modelType = 'v1MidgetParasol';
+    modelType = 'full';
 end
 
-shrinkScaleFactor = 1;
+shrinkScaleFactor = 10;
 
 % Load the RGC model parameters
 loadPath = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults','rgcTemporalModel.mat');
@@ -120,24 +120,24 @@ ub  = [ ub 4.0];
 % For  reduced models, we lock some parameters
 nParamsPerCellBlock = nFixedParams+nEccs*3;
 switch modelType
-    case 'bistratifiedOnly'
-        lockIdx = [1:nParamsPerCellBlock, nParamsPerCellBlock*2+1:nParamsPerCellBlock*3, 70];
-    case 'v1MidgetOnly'
-        lockIdx = [1+nParamsPerCellBlock:nParamsPerCellBlock*3, 70];
+    case 'midgetOnly'
+        lockIdx = [7:11, 1+nParamsPerCellBlock:nParamsPerCellBlock*3, nFixedParams+2:nFixedParams+6, 70];
         v1W(37:end)=0;
-    case 'v1ParasolOnly'
-        lockIdx = [1:nParamsPerCellBlock*2, 70];
+    case 'bistratifiedOnly'
+        lockIdx = [1:nParamsPerCellBlock, 30:34, nParamsPerCellBlock*2+1:nParamsPerCellBlock*3, 70];
+    case 'parasolOnly'
+        lockIdx = [1:nParamsPerCellBlock*2, 53:57];
         v1W(1:end-36)=0;
-    case 'v1MidgetParasol'
-        lockIdx = [1+nParamsPerCellBlock:nParamsPerCellBlock*2];
+    case 'midget+parasol'
+        lockIdx = [7:11, 1+nParamsPerCellBlock:nParamsPerCellBlock*2, 53:57];
         v1W(37:72)=0;
     case 'v1GainOnly'
         lockIdx = [1:17, 24:40, 47:63];
     case 'lgnOnly'
         lockIdx = [4:23, 27:46, 50:59];
     case 'full'
-        lockIdx = [];
-end
+        lockIdx = [7:11, 30:34, 35:40, 53:57, 58:63, 27, 28, 50, 51];
+end    
 lb(lockIdx) = p0(lockIdx); plb(lockIdx) = p0(lockIdx);
 ub(lockIdx) = p0(lockIdx); pub(lockIdx) = p0(lockIdx);
 
@@ -152,12 +152,12 @@ myShrinkPenalty = @(pMRI) calculateShrinkPenalty(pMRI,shrinkScaleFactor,nFixedPa
 % myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI))) + ...
 %     norm(lgnW.*(lgnY - myLGNTTF(pMRI)));
 
-myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI))) + ...
-    myShrinkPenalty(pMRI);
+myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI)));% + ...
+ %   myShrinkPenalty(pMRI);
 
 % Non-linear constraint that surround index decreases with eccentricity
 if useMonotonicConstraint
-    myNonbcon = @(pMRI) nonbcon(pMRI,studiedEccentricites,postReceptoralPaths,nFixedParams);
+    myNonbcon = @(pMRI) nonbcon(pMRI,nFixedParams,nEccs);
 else
     myNonbcon = [];
 end
@@ -175,13 +175,13 @@ end % main function
 %% LOCAL FUNCTIONS
 
 % Enforce constraint of declining surround index with eccentricity
-function c = nonbcon(pMRI,studiedEccentricites,postReceptoralPaths,nFixedParams)
-nEccs = length(studiedEccentricites);
-for whichCell=1:length(postReceptoralPaths)
-    paramIndices = 1+nUniqueParams+(whichCell-1)*(nFixedParams+nEccs*2)+nFixedParams: ...
-        nUniqueParams+(whichCell-1)*(nFixedParams+nEccs*2)+nFixedParams+nEccs;
+function c = nonbcon(pMRI,nFixedParams,nEccs)
+nParamsPerCellBlock = nFixedParams+nEccs*3;
+for pp=1:3
+    indexStart = (pp-1)*nParamsPerCellBlock+nFixedParams;
+    paramIndices = indexStart+nEccs+1:indexStart+2*nEccs;
     surroundIndex = pMRI(:,paramIndices);
-    c(:,whichCell) = sum(diff(surroundIndex,1,2)>0,2);
+    c(:,pp) = sum(diff(surroundIndex,1,2)>0,2);
 end
 c = sum(c,2);
 end
@@ -190,19 +190,19 @@ end
 % Shrink penalty encourages the LGN stage to have the same temporal delay
 % and index of suppression across 
 function shrinkPenalty = calculateShrinkPenalty(pMRI,shrinkScaleFactor,nFixedParams,nEccs)
-
 nParamsPerCellBlock = nFixedParams+nEccs*3;
-
-for pp = 1:3
-    indexStart = (pp-1)*nParamsPerCellBlock+nFixedParams;
-    indexToShrinkSets{pp} = [indexStart+1:indexStart+nEccs];
+% for pp = 1:3
+%     indexStart = (pp-1)*nParamsPerCellBlock+nFixedParams;
+%     indexToShrinkSets{pp} = indexStart+1:indexStart+nEccs;
+% end
+% For these parameters, try to match them across parameter blocks
+blockIndicesToMatch = [12:18];
+for ii=1:length(blockIndicesToMatch)
+    indexToShrinkSets{ii}=blockIndicesToMatch(ii):nParamsPerCellBlock:nParamsPerCellBlock*2+blockIndicesToMatch(ii);
 end
-
 shrinkPenalty = 0;
 for ii=1:length(indexToShrinkSets)
     shrinkPenalty = shrinkPenalty + std(pMRI(indexToShrinkSets{ii}))./mean(pMRI(indexToShrinkSets{ii}));
 end
-
 shrinkPenalty = shrinkPenalty * shrinkScaleFactor;
-
 end

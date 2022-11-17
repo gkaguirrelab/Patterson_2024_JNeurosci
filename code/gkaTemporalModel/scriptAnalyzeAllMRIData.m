@@ -65,7 +65,7 @@ mriTemporalModel.meta.paramCounts = paramCounts;
 mriTemporalModelSource = mriTemporalModel;
 
 % Loop over subjects
-for whichSub = [1 2]
+for whichSub = [2 1]
 
     % Loop over bootstraps
     for bb = 1:nBoots
@@ -120,7 +120,7 @@ for whichSub = [1 2]
 
             searchTimeSecs = toc();
 
-            str=[sprintf('fVal = %2.2f, search time (mins) = %2.1f',fVal,searchTimeSecs/60)  '\n'];
+            str=[sprintf('fVal = %2.2f, search time (mins) = %2.1f',result.fVal,searchTimeSecs/60)  '\n'];
             fprintf(str);
 
         else
@@ -131,15 +131,13 @@ for whichSub = [1 2]
 
         % Report the parameters
         str = 'pMRI0 = [ ...\n';
-        pathIndex = 1;
-        for ss=1:length(result.pMRI)-1
-            str = [str sprintf('%2.10f, ',result.pMRI(ss))];
-            if mod(ss,(length(result.pMRI)-1)/3)==0 && ss~=length(result.pMRI)
-                str = [str '... %% ' postReceptoralPaths{pathIndex} ' \n'];
-                pathIndex = pathIndex+1;
-            end
+        str = [str sprintf(repmat('%2.10f, ',1,paramCounts.unique),result.pMRI(1:paramCounts.unique)) ' ...\n'];
+        str = [str sprintf(repmat('%2.10f, ',1,paramCounts.lgn*3),result.pMRI(paramCounts.unique+1:paramCounts.unique+9)) ' ...\n'];
+        for ss=1:length(stimulusDirections)
+            startIdx = paramCounts.unique+9 + (ss-1)*paramCounts.v1total;
+            str = [str sprintf(repmat('%2.10f, ',1,paramCounts.v1total),result.pMRI(startIdx+1:startIdx+paramCounts.v1total)) ' ...\n'];
         end
-        str = [str sprintf('%2.10f ]; \n',result.pMRI(end))];
+        str = [str ']; \n'];
         fprintf(str);
 
         % Save the model parameters in an iteration structure and save this

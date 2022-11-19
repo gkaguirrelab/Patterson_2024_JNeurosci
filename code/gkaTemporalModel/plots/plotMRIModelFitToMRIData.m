@@ -2,7 +2,7 @@
 
 % Housekeeping
 clear
-close all
+%close all
 
 % Load the empirical RGC data
 rcgData = loadRGCResponseData();
@@ -43,8 +43,8 @@ for whichSub = 1:length(subjects)
     lgnYlow = mriFullResultSet.(subjects{whichSub}).lgnY_lowCI;
     lgnYhigh = mriFullResultSet.(subjects{whichSub}).lgnY_highCI;
 
-    [~,v1YFitMatrix,rfMatrix] = assembleV1ResponseAcrossStimsAndEcc(pMRI,cellClasses,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel,paramCounts);
- %   [~,lgnYFitMatrix] = assembleLGNResponseAcrossStims(pMRI,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel,nFixedParams);
+    [~,v1YFitMatrix,rfMatrix] = assembleV1Response(pMRI,cellClasses,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel,paramCounts);
+    [~,lgnYFitMatrix] = assembleLGNResponse(pMRI,cellClasses,stimulusDirections,freqsForPlotting,rgcTemporalModel,paramCounts);
 
     for whichStim = 1:length(stimulusDirections)
         figure
@@ -53,57 +53,63 @@ for whichSub = 1:length(subjects)
         % Loop over eccentricities
         for ee=1:nEccs
 
+            % The indices of the data to be plotted in the big vector
             v1DataIndices = 1+(whichStim-1)*(nEccs*nFreqs)+(ee-1)*(nFreqs): ...
                 (whichStim-1)*(nEccs*nFreqs)+(ee-1)*(nEccs)+nFreqs;
 
+            % Create a subplot
             subplot(2,4,ee+(ee>3))
+
+            % Show the data itself
             semilogx(studiedFreqs,v1Y(v1DataIndices),['o' plotColor{whichStim}]);
             hold on
 
-            % patch error bars
+            % Add error bars
             X = [studiedFreqs fliplr(studiedFreqs)];
             Y = [v1Ylow(v1DataIndices), fliplr(v1Yhigh(v1DataIndices))];
             p = patch(X,Y,plotColor{whichStim});
             set(p,'edgecolor','none','facealpha',0.1);
 
-            lineStyle = {'-.',':'};
-%             for cc=1:2
-                semilogx(freqsForPlotting,squeeze(v1YFitMatrix(whichStim,ee,:)),[lineStyle{1} plotColor{whichStim}]);
-%             end
-            semilogx(freqsForPlotting,sum(squeeze(v1YFitMatrix(whichStim,ee,:))),['-' plotColor{whichStim}]);
+            % Add the model fit
+            semilogx(freqsForPlotting,squeeze(v1YFitMatrix(whichStim,ee,:)),['-' plotColor{whichStim}]);
+
+            % Clean up
             refline(0,0);
             title([stimulusDirections{whichStim} ', ' subjects{whichSub} ', ecc = ' num2str(studiedEccentricites(ee),2) '°']);
             ylim([-1 7]);
             a=gca; a.XTick = studiedFreqs; 
             a.XTickLabel = arrayfun(@num2str, studiedFreqs, 'UniformOutput', 0);
             a.XTickLabelRotation = 0;
+
         end
 
         % Add the LGN response
-%         lgnDataIndices = 1+(whichStim-1)*(nFreqs): ...
-%             (whichStim-1)*(nFreqs)+nFreqs;
-% 
-%         subplot(2,4,8)
-%         semilogx(studiedFreqs,lgnY(lgnDataIndices),['o' plotColor{whichStim}]);
-%         hold on
-%         % patch error bars
-%         X = [studiedFreqs fliplr(studiedFreqs)];
-%             Y = [lgnYlow(lgnDataIndices), fliplr(lgnYhigh(lgnDataIndices))];
-%         p = patch(X,Y,plotColor{whichStim});
-%         set(p,'edgecolor','none','facealpha',0.1);
-% 
-%         for cc=1:2
-%             semilogx(freqsForPlotting,squeeze(lgnYFitMatrix(whichStim,cc,:)),[lineStyle{cc} plotColor{whichStim}]);
-%         end
-%         semilogx(freqsForPlotting,sum(squeeze(lgnYFitMatrix(whichStim,:,:))),['-' plotColor{whichStim}]);
-%         refline(0,0);
-%         title([stimulusDirections{whichStim} ', ' subjects{whichSub} ', LGN']);
-%         ylim([-1 7]);
-%             a=gca; a.XTick = studiedFreqs; 
-%             a.XTickLabel = arrayfun(@num2str, studiedFreqs, 'UniformOutput', 0);
-%             a.XTickLabelRotation = 0;
+        lgnDataIndices = 1+(whichStim-1)*(nFreqs): ...
+            (whichStim-1)*(nFreqs)+nFreqs;
 
-        % Show the cortical filter
+        % Show the data
+        subplot(2,4,8)
+        semilogx(studiedFreqs,lgnY(lgnDataIndices),['o' plotColor{whichStim}]);
+        hold on
+
+        % patch error bars
+        X = [studiedFreqs fliplr(studiedFreqs)];
+            Y = [lgnYlow(lgnDataIndices), fliplr(lgnYhigh(lgnDataIndices))];
+        p = patch(X,Y,plotColor{whichStim});
+        set(p,'edgecolor','none','facealpha',0.1);
+
+        % Model fit
+        semilogx(freqsForPlotting,lgnYFitMatrix(whichStim,:),['-' plotColor{whichStim}]);
+
+        % Clean up
+        refline(0,0);
+        title([stimulusDirections{whichStim} ', ' subjects{whichSub} ', LGN']);
+        ylim([-1 7]);
+            a=gca; a.XTick = studiedFreqs; 
+            a.XTickLabel = arrayfun(@num2str, studiedFreqs, 'UniformOutput', 0);
+            a.XTickLabelRotation = 0;
+
+        % Show the two filters
 %         subplot(2,4,4)
 %         secondOrderFc = pMRI(5+(chromAchromIndex(whichStim)-1)*2+1);
 %         secondOrderQ = pMRI(5+(chromAchromIndex(whichStim)-1)*2+2);

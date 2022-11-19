@@ -1,6 +1,6 @@
-function [response, responseMat, rfMatrix] = assembleLGNResponseAcrossStims(pMRI,cellClasses,stimulusDirections,studiedFreqs,rgcTemporalModel,paramCounts)
+function [response, responseMat, rfMatrix] = assembleLGNResponse(pMRI,cellClasses,stimulusDirections,studiedFreqs,rgcTemporalModel,paramCounts)
 
-% Identify the studied eccentricities and stimulus frequencies
+% Identify the stimuli and stimulus frequencies
 nStims = length(stimulusDirections);
 nFreqs = length(studiedFreqs);
 
@@ -13,17 +13,20 @@ nEccs = length(modeledEccentricities);
 responseMat = zeros(nStims,nEccs,nFreqs);
 
 % Unpack the "unique" params
-midgetStimSensitivityFactor = pMRI(1);
+midgetChromSensitivityFactor = pMRI(1);
+lgnSecondOrderFc = pMRI(2);
+lgnSecondOrderQ = pMRI(3);
 
 % Loop over eccentricities
 parfor ee=1:nEccs
 
+    activeCells = {}; lgnGain = [];
+
     % Loop through the stimulus directions and assemble the response
     for ss = 1:nStims
 
-        % Identify which cell classes are relevant for this stimulus direction,
-        % as well as the parameters of the cortical, post-receptoral channel
-        % second order filter
+        % Identify which cell classes are relevant for this stimulus
+        % direction.
         switch stimulusDirections{ss}
             case 'LminusM'
                 activeCells = {'midget'};
@@ -46,10 +49,7 @@ parfor ee=1:nEccs
 
             % Unpack the LGN params (organized by cell class)
             cellBlockIdx = find(strcmp(activeCells{cc},cellClasses));
-
-            lgnSurroundDelay = pMRI(paramCounts.unique + (cellBlockIdx-1)*paramCounts.lgn + 1);
-            lgnSurroundIndex = pMRI(paramCounts.unique + (cellBlockIdx-1)*paramCounts.lgn + 2);
-            lgnGain = pMRI(paramCounts.unique + (cellBlockIdx-1)*paramCounts.lgn + 3);
+            lgnGain = pMRI(paramCounts.unique + (cellBlockIdx-1)*paramCounts.lgn + 1);
 
             % Get the gain effect of stimulus contrast
             stimulusContrastScale = returnStimulusContrastScale(activeCells{cc},stimulusDirections{ss});
@@ -59,24 +59,24 @@ parfor ee=1:nEccs
             % relative effectiveness of our stimulus contrast levels for
             % midget and parasol cells
             if strcmp(activeCells{cc},'midget') && strcmp(stimulusDirections{ss},'LMS')
-                stimulusContrastScale = stimulusContrastScale * midgetStimSensitivityFactor;
+                stimulusContrastScale = stimulusContrastScale * midgetChromSensitivityFactor;
             end
 
             % Get the post-retinal temporal RF
             rfPostRetinal(cc) = returnPostRetinalRF(...
                 activeCells{cc},stimulusDirections{ss},rgcTemporalModel,...
-                studiedEccentricites(ee),stimulusContrastScale);
+                modeledEccentricities(ee),stimulusContrastScale);
 
+            % Apply the 2nd order low-pass filter
+            rfPostRetinal = rfPostRetinal.*stageSecondOrderLP(lgnSecondOrderFc,lgnSecondOrderQ);
 
-            % Delayed surround subtraction at the LGN
-            rfPostRetinal(cc) = rfPostRetinal(cc) - lgnSurroundIndex * rfPostRetinal(cc).*stageDelay(lgnSurroundDelay/1000);
         end
 
         % Add the postRetinal RFs together
         rfPostRetinal = sum(rfPostRetinal);
 
         % Gain
-        rfPostRetinal = lgnGain*rfPostRetinal;
+        rfPostRetinal = (lgnGain/1e3)*rfPostRetinal;
 
         % Store the RF
         rfMatrix(ss,ee) = rfPostRetinal;
@@ -94,10 +94,10 @@ end
 
 response = [];
 for ss = 1:nStims
-    for ee=1:nEccs
-        thisVec = mean(squeeze(responseMat(ss,:,:)));
-        response = [response thisVec];
-    end
+    thisVec = mean(squeeze(responseMat(ss,:,:)));
+    response = [response thisVec];
 end
+
+responseMat = squeeze(mean(responseMat,2));
 
 end

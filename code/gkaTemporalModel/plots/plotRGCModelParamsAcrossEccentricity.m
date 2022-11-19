@@ -2,7 +2,7 @@
 
 % Housekeeping
 clear
-close all
+%close all
 
 % Load the RGC temporal model
 loadPath = fullfile(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath'))))),'data','temporalModelResults','rgcTemporalModel.mat');

@@ -54,8 +54,8 @@ mriTemporalModel.meta.plotColor = plotColor;
 mriTemporalModel.meta.postReceptoralPaths = postReceptoralPaths;
 mriTemporalModel.meta.nBoots = nBoots;
 
-paramCounts.unique = 3;
-paramCounts.lgn = 3;
+paramCounts.unique = 5;
+paramCounts.lgn = 1;
 paramCounts.v1fixed = 1;
 paramCounts.v1eccen = nEccs*2;
 paramCounts.v1total = paramCounts.v1fixed+paramCounts.v1eccen;
@@ -65,7 +65,7 @@ mriTemporalModel.meta.paramCounts = paramCounts;
 mriTemporalModelSource = mriTemporalModel;
 
 % Loop over subjects
-for whichSub = [2 1]
+for whichSub = [1 2]
 
     % Loop over bootstraps
     for bb = 1:nBoots
@@ -132,9 +132,9 @@ for whichSub = [2 1]
         % Report the parameters
         str = 'pMRI0 = [ ...\n';
         str = [str sprintf(repmat('%2.10f, ',1,paramCounts.unique),result.pMRI(1:paramCounts.unique)) ' ...\n'];
-        str = [str sprintf(repmat('%2.10f, ',1,paramCounts.lgn*3),result.pMRI(paramCounts.unique+1:paramCounts.unique+9)) ' ...\n'];
+        str = [str sprintf(repmat('%2.10f, ',1,paramCounts.lgn*3),result.pMRI(paramCounts.unique+1:paramCounts.unique+paramCounts.lgn*3)) ' ...\n'];
         for ss=1:length(stimulusDirections)
-            startIdx = paramCounts.unique+9 + (ss-1)*paramCounts.v1total;
+            startIdx = paramCounts.unique+ paramCounts.lgn*3 + (ss-1)*paramCounts.v1total;
             str = [str sprintf(repmat('%2.10f, ',1,paramCounts.v1total),result.pMRI(startIdx+1:startIdx+paramCounts.v1total)) ' ...\n'];
         end
         str = [str ']; \n'];

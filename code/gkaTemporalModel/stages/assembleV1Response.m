@@ -10,7 +10,7 @@ nFreqs = length(studiedFreqs);
 responseMat = zeros(nStims,nEccs,nFreqs);
 
 % Unpack the "unique" params
-midgetChromSensitivityFactor = pMRI(1);
+% pMRI(1) unused
 lgnSecondOrderFc = pMRI(2);
 lgnSecondOrderQ = pMRI(3);
 v1SecondOrderFc = pMRI(4);
@@ -19,7 +19,8 @@ v1SecondOrderQ = pMRI(5);
 % Loop over eccentricities
 parfor ee=1:nEccs
 
-    activeCells = {};
+    % Clear some variables to keep parfor happy
+    activeCells = {}; rfPostRetinal = sym([]);
 
     % Loop through the stimulus directions and assemble the response
     for ss = 1:nStims
@@ -56,21 +57,13 @@ parfor ee=1:nEccs
             % Get the gain effect of stimulus contrast
             stimulusContrastScale = returnStimulusContrastScale(activeCells{cc},stimulusDirections{ss});
 
-            % Apply the param adjustment to effect of L-< contrast upon
-            % midgets. This covers the fact that we don't exactly know the
-            % relative effectiveness of our stimulus contrast levels for
-            % midget and parasol cells, and further will be realted to the
-            % LM cone ratio in a way that I still need to spell out
-            if strcmp(activeCells{cc},'midget') && strcmp(stimulusDirections{ss},'LMS')
-                stimulusContrastScale = stimulusContrastScale * midgetChromSensitivityFactor;
-            end
-
             % Get the post-retinal temporal RF
             rfPostRetinal(cc) = returnPostRetinalRF(...
                 activeCells{cc},stimulusDirections{ss},rgcTemporalModel,...
                 studiedEccentricites(ee),stimulusContrastScale);
 
-            % 2nd order low-pass fiter at the level of the LGN
+            % 2nd order low-pass fiter at the level of the retinto-
+            % geniculate synapse
             rfPostRetinal = rfPostRetinal.*stageSecondOrderLP(lgnSecondOrderFc,lgnSecondOrderQ);
 
         end
@@ -78,7 +71,8 @@ parfor ee=1:nEccs
         % Add the postRetinal RFs together
         rfPostRetinal = sum(rfPostRetinal);
 
-        % Second order low pass filter at the level of V1
+        % Second order low pass filter at the level of genciulo-cortical
+        % synapse
         rfPostRetinal = rfPostRetinal.*stageSecondOrderLP(v1SecondOrderFc,v1SecondOrderQ);
 
         % Delayed surround subtraction at V1
@@ -99,14 +93,19 @@ parfor ee=1:nEccs
         responseMat(ss,ee,:) = v1Amplitude;
 
     end
+
 end
 
+% Assemble the response vector to return
 response = [];
 for ss = 1:nStims
     for ee=1:nEccs
         thisVec = squeeze(responseMat(ss,ee,:))';
-        % Detect if we have a weird response and make it weirder to
-        % penalize it.
+        % We can encounter a situation where the parameters imply a rising
+        % gain at ever lower frequencies, but this is invisble to the fit
+        % as we have a set of discrete frequencies. We try to detect this
+        % case where gain is rising at low frequencies, and make this weird
+        % response even weirder so as to penalize it.
         if thisVec(1)>thisVec(2)
             thisVec(1:3)=thisVec(1:3)*100;
         end

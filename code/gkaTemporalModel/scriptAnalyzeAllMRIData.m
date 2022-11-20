@@ -1,7 +1,7 @@
 
 %% Housekeeping
 clear
-%close all
+close all
 
 
 %% Are we searching or not?
@@ -11,7 +11,16 @@ mriSearchFlag = true;
 
 % Do we wish to use the monotonic constraint upon surround index in the
 % search?
-useMonotonicConstraint = true;
+useMonotonicConstraint = false;
+
+% Which set of parameters will we investigate in the bootstrap analysis?
+modelType = 'bootV1';
+
+% Which seed will we use to guide this bootstrap search
+whichSeed = 'uniform';
+
+% Keep the console quiet
+verbose = false;
 
 % How many bootstrap resamplings of the data to conduct
 nBoots = 1;
@@ -19,10 +28,8 @@ nBoots = 1;
 % Where we will save the temporal model results
 saveDir = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults');
 
-
 %% Create the RGC temporal sensitivity model
 rgcTemporalModel = fitRGCFResponse(false,false);
-
 
 %% Load the Mt. Sinai data
 mriData = loadMRIResponseData();
@@ -72,7 +79,6 @@ for whichSub = [1 2]
 
         % Get a resample with replacement of the acquisitions
         bootIdx = sort(datasample(1:nAcqs,nAcqs));
-        bootIdx = 1:nAcqs;
 
         % Assemble the data
         lgnY = []; lgnW = []; v1Y = []; v1W = [];
@@ -92,7 +98,7 @@ for whichSub = [1 2]
         end
 
         % Load a search seed
-        pMRI0 = storedSearchSeeds(whichSub);
+        pMRI0 = storedSearchSeeds(whichSub,whichSeed);
 
         % Perform the search
         if mriSearchFlag
@@ -107,10 +113,11 @@ for whichSub = [1 2]
 
             % BADS it
 %            try
-            result = fitMRIResponse(pMRI0,...
+            result = fitMRIResponse(...
+                pMRI0,...
                 stimulusDirections,studiedEccentricites,studiedFreqs,...
                 v1Y,v1W,lgnY,lgnW,...
-                useMonotonicConstraint);
+                useMonotonicConstraint,modelType,verbose);
             result.pMRI0 = pMRI0;
  %           catch
  %               searchTimeSecs = toc();
@@ -130,6 +137,7 @@ for whichSub = [1 2]
         end
 
         % Report the parameters
+        if verbose
         str = 'pMRI0 = [ ...\n';
         str = [str sprintf(repmat('%2.10f, ',1,paramCounts.unique),result.pMRI(1:paramCounts.unique)) ' ...\n'];
         str = [str sprintf(repmat('%2.10f, ',1,paramCounts.lgn*3),result.pMRI(paramCounts.unique+1:paramCounts.unique+paramCounts.lgn*3)) ' ...\n'];
@@ -139,6 +147,7 @@ for whichSub = [1 2]
         end
         str = [str ']; \n'];
         fprintf(str);
+        end
 
         % Save the model parameters in an iteration structure and save this
         mriTemporalModel = mriTemporalModelSource;

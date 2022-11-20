@@ -13,14 +13,15 @@ nEccs = length(modeledEccentricities);
 responseMat = zeros(nStims,nEccs,nFreqs);
 
 % Unpack the "unique" params
-midgetChromSensitivityFactor = pMRI(1);
+% pMRI(1) unused
 lgnSecondOrderFc = pMRI(2);
 lgnSecondOrderQ = pMRI(3);
 
 % Loop over eccentricities
 parfor ee=1:nEccs
 
-    activeCells = {}; lgnGain = [];
+    % Clear some variables to keep parfor happy
+    activeCells = {}; lgnGain = []; rfPostRetinal = sym([]);
 
     % Loop through the stimulus directions and assemble the response
     for ss = 1:nStims
@@ -54,20 +55,13 @@ parfor ee=1:nEccs
             % Get the gain effect of stimulus contrast
             stimulusContrastScale = returnStimulusContrastScale(activeCells{cc},stimulusDirections{ss});
 
-            % Apply the param adjustment to effect of LMS contrast upon
-            % midgets. This covers the fact that we don't exactly know the
-            % relative effectiveness of our stimulus contrast levels for
-            % midget and parasol cells
-            if strcmp(activeCells{cc},'midget') && strcmp(stimulusDirections{ss},'LMS')
-                stimulusContrastScale = stimulusContrastScale * midgetChromSensitivityFactor;
-            end
-
             % Get the post-retinal temporal RF
             rfPostRetinal(cc) = returnPostRetinalRF(...
                 activeCells{cc},stimulusDirections{ss},rgcTemporalModel,...
                 modeledEccentricities(ee),stimulusContrastScale);
 
-            % Apply the 2nd order low-pass filter
+            % 2nd order low-pass fiter at the level of the retinto-
+            % geniculate synapse
             rfPostRetinal = rfPostRetinal.*stageSecondOrderLP(lgnSecondOrderFc,lgnSecondOrderQ);
 
         end
@@ -90,14 +84,15 @@ parfor ee=1:nEccs
         responseMat(ss,ee,:) = v1Amplitude;
 
     end
+
 end
 
+% Assemble the response vector to return
 response = [];
 for ss = 1:nStims
     thisVec = mean(squeeze(responseMat(ss,:,:)));
     response = [response thisVec];
 end
-
 responseMat = squeeze(mean(responseMat,2));
 
 end

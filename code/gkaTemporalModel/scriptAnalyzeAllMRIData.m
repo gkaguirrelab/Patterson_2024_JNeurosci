@@ -19,10 +19,10 @@ modelType = 'bootV1';
 whichSeed = 'best';
 
 % Verbose?
-verbose = true;
+verbose = false;
 
 % How many bootstrap resamplings of the data to conduct
-nBoots = 1;
+nBoots = 10;
 
 % Where we will save the temporal model results
 saveDir = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults');

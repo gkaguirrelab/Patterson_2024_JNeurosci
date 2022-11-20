@@ -44,8 +44,8 @@ for whichSub = 1:length(subjects)
     lgnYlow = mriFullResultSet.(subjects{whichSub}).lgnY_lowCI;
     lgnYhigh = mriFullResultSet.(subjects{whichSub}).lgnY_highCI;
 
-    [~,v1YFitMatrix,rfMatrix] = assembleV1Response(pMRI,cellClasses,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel,paramCounts);
-    [~,lgnYFitMatrix] = assembleLGNResponse(pMRI,cellClasses,stimulusDirections,freqsForPlotting,rgcTemporalModel,paramCounts);
+    [~,v1YFitMatrix,v1RFMatrix] = assembleV1Response(pMRI,cellClasses,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel,paramCounts);
+    [~,lgnYFitMatrix,lgnRFMatrix] = assembleLGNResponse(pMRI,cellClasses,stimulusDirections,freqsForPlotting,rgcTemporalModel,paramCounts);
 
     for whichStim = 1:length(stimulusDirections)
         figure
@@ -139,7 +139,7 @@ for whichSub = 1:length(subjects)
 
     end
 
-
+    % Plot the params across eccentricity
     figure
     for whichStim = 1:length(stimulusDirections)
 
@@ -170,4 +170,21 @@ for whichSub = 1:length(subjects)
     plotName = [subjects{whichSub} '_MRIModelParams.pdf' ];
     saveas(gcf,fullfile(savePath,plotName));
 
+    % For one subject and one eccentricity, plot the lgn and V1 IRFs
+    ee=4;
+    if whichSub == 1
+            figHandleLGN = figure('Position',  [100, 100, 200, 400]);
+    figHandleV1 = figure('Position',  [100, 100, 200, 400]);
+        for ss=1:length(stimulusDirections)
+            plotRF(lgnRFMatrix(ss,ee),figHandleLGN,['-' plotColor{ss}]);
+            plotRF(v1RFMatrix(ss,ee),figHandleV1,['-' plotColor{ss}]);
+        end
+
+    % Save the plot
+    plotName = [subjects{whichSub} '_lgnIRFs.pdf' ];
+    saveas(figHandleLGN,fullfile(savePath,plotName));
+    plotName = [subjects{whichSub} '_v1IRFs.pdf' ];
+    saveas(figHandleV1,fullfile(savePath,plotName));
+    end
+    
 end

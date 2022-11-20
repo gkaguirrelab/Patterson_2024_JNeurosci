@@ -105,9 +105,9 @@ pub = [pub 1.0 85 0.5 20 0.5];
 ub =  [ ub 2.0 90 0.7 30 0.7];
 paramCounts.unique = 5;
 
-% LGN BOLD fMRI gain, organized by cell class
+% LGN BOLD fMRI gain, organized by stimulus
 % - BOLD response gain
-for cc = 1:length(cellClasses)
+for cc = 1:length(stimulusDirections)
     lb =  [ lb 0];
     plb = [plb 1];
     pub = [pub 10];

@@ -161,9 +161,16 @@ for whichSub = 1:length(subjects)
         semilogy(log10(studiedEccentricites),v1Gain,['o' plotColor{whichStim}]);
         hold on
         semilogy(log10(studiedEccentricites),v1Gain,['-' plotColor{whichStim}]);
+
+
+        % Add the lgn
+        semilogy(0,pMRI(5+whichStim),['*' plotColor{whichStim}]);
+
+        % Clean up
         xlim([-0.1 2]);
         xlabel('Eccentricity [log deg]');
         ylabel('Gain parameter');
+
     end
 
     % Save the plot

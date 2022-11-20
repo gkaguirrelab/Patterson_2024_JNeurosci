@@ -70,11 +70,11 @@ mriTemporalModel.meta.paramCounts = paramCounts;
 % Store a source version of the output variable.
 mriTemporalModelSource = mriTemporalModel;
 
-% Loop over subjects
-for whichSub = [1 2]
+% Loop over bootstraps
+for bb = 1:nBoots
 
-    % Loop over bootstraps
-    for bb = 1:nBoots
+    % Loop over subjects
+    for whichSub = [1 2]
 
         % Get a resample with replacement of the acquisitions
         bootIdx = sort(datasample(1:nAcqs,nAcqs));
@@ -166,9 +166,9 @@ for whichSub = [1 2]
         saveSpot = fullfile(saveDir,subjects{whichSub},['mriTemporalModel_' bootLabel '.mat']);
         save(saveSpot,'mriTemporalModel');
 
-    end % boots
+    end % subjects 
 
-end % subjects
+end % boots
 
 
 

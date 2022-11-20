@@ -26,6 +26,9 @@ parfor ee=1:nEccs
     % Loop through the stimulus directions and assemble the response
     for ss = 1:nStims
 
+        % Get the gain for this stimulus direction
+        lgnGain = pMRI(paramCounts.unique + (ss-1)*paramCounts.lgn + 1);
+
         % Identify which cell classes are relevant for this stimulus
         % direction.
         switch stimulusDirections{ss}
@@ -47,10 +50,6 @@ parfor ee=1:nEccs
             if cc>nCellsActive
                 continue
             end
-
-            % Unpack the LGN params (organized by cell class)
-            cellBlockIdx = find(strcmp(activeCells{cc},cellClasses));
-            lgnGain = pMRI(paramCounts.unique + (cellBlockIdx-1)*paramCounts.lgn + 1);
 
             % Get the gain effect of stimulus contrast
             stimulusContrastScale = returnStimulusContrastScale(activeCells{cc},stimulusDirections{ss});

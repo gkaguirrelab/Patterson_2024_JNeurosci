@@ -4,10 +4,15 @@ function rgcTemporalModel = fitRGCFResponse(rgcSearchFlag,verboseFlag)
 % then fits these data in the complex fourier domain using a cascading
 % low-pass filter model.
 %
-% The fitting is conducted simultaneously for parasol and midget responses
-% at three eccentricities, and for the gain and phase components of the
-% filter response.
+% The fitting is conducted simultaneously for parasol, midget, and
+% bistratified responses at three eccentricities, and for the gain and
+% phase components of the filter response.
 %
+% Examples:
+%{
+    % Create and save the temporal model results
+    fitRGCFResponse(false,true);
+%}
 
 %% Housekeeping
 rng;
@@ -96,9 +101,9 @@ pub = [repmat(pubBlock,1,nBlocks) 18 15 1.10];
 ub = [repmat(ubBlock,1,nBlocks) 20 18 2.00];
 
 % Here is a seed from a prior search with good performance
-% midget - fValGain: 1.66, fValPhase: 0.67, fValShrink: 0.01
-% parasol - fValGain: 3.29, fValPhase: 0.00, fValShrink: 3.43
-% bistratified - fValGain: 0.89, fValPhase: 0.60, fValShrink: 0.02
+% midget - fValGain: 1.56, fValPhase: 0.66, fValShrink: 0.00 
+% parasol - fValGain: 3.25, fValPhase: 0.00, fValShrink: 2.58 
+% bistratified - fValGain: 0.46, fValPhase: 0.62, fValShrink: 0.00 
 p0 = [ ...
     0.2469418824, 0.5922375411, 5.8056983257, 39.0848216414, 1.3149221987, 0.8983960792, 2.1111500710, 0.7764686763, ...
     0.6415928598, 0.6496570826, 17.3118880045, 42.4663314968, 1.3954235017, 0.8984520018, 2.1172960848, 0.0508179903, ...
@@ -107,8 +112,8 @@ p0 = [ ...
     1.0597182026, 0.8947987072, 2.1840659747, 55.5393972857, 0.7654854182, 0.9387979018, 3.5752151019, 0.9474541004, ...
     1.0453085768, 0.8447868041, 2.1840736126, 58.0722041866, 2.6753874166, 0.9387979452, 3.5752221443, 0.9412647515, ...
     0.8968017565, 0.4126953134, 9.1694768937, 20.9763595134, 0.4257805828, 0.9360351530, 3.1059570000, 0.0625000003, ...
-    0.8968017648, 0.4126953162, 9.1694769106, 25.7811075090, 0.3625485705, 0.9360351565, 3.1059570104, 0.0625000008, ...
-    0.8968017739, 0.4126953171, 9.1694769513, 32.7541112205, 0.2998850563, 0.9360351588, 3.1059570176, 0.0625000008, ...
+    0.8968017565, 0.4126953134, 9.1694768937, 20.9763595134, 0.4257805828, 0.9360351530, 3.1059570000, 0.0625000003, ...
+    0.8968017565, 0.4126953134, 9.1694768937, 20.9763595134, 0.4257805828, 0.9360351530, 3.1059570000, 0.0625000003, ...
     14.2376403809, 13.7579040527, 0.9915176392 ];
 
 
@@ -127,9 +132,10 @@ optionsBADS.UncertaintyHandling = 0;
 
 %% Search
 if rgcSearchFlag
-    pRGC = bads(myObj,p0,lb,ub,plb,pub,myNonbcon,optionsBADS);
+    [pRGC, fVal] = bads(myObj,p0,lb,ub,plb,pub,myNonbcon,optionsBADS);
 else
     pRGC = p0;
+    fVal = myObj(pRGC);
 end
 
 
@@ -139,7 +145,8 @@ myFit(pRGC,verboseFlag);
 
 % Print the parameters in a format to be used as a seed in future searches
 if verboseFlag
-    str = 'p0 = [...\n';
+    fprintf('%% fVal = %2.1f \n',fVal);
+    str = 'p0 = [... \n ';
     for ss=1:length(pRGC)
         str = [str sprintf('%2.10f, ',pRGC(ss))];
         if mod(ss,nBlockParams)==0
@@ -170,9 +177,9 @@ for ee = 1:nEccBands
     eccDegs(ee) = eccBins{ee}(1)+squeeze(pRGC(nBlockParams,ee,1)*range(eccBins{ee}));
 end
 
-% A simple linear interpolation and extrapolation, bounded by maximum
-% returned values from the search
-myInterpObj = @(v,xq,ii) max([repmat(lbBlock(ii),1,length(xq)); min([repmat(max(v),1,length(xq)); interp1(eccDegs,v,xq,'linear','extrap')])]);
+% A simple linear interpolation and extrapolation, bounded by maximum and
+% minimum returned values from the search
+myInterpObj = @(v,xq,ii) max([repmat(min(v),1,length(xq)); min([repmat(max(v),1,length(xq)); interp1(eccDegs,v,xq,'linear','extrap')])]);
 
 % Loop across cells
 for cc=1:nCellClasses

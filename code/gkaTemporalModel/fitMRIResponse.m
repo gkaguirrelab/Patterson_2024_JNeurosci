@@ -1,32 +1,38 @@
-function [pMRI,fVal] = fitMRIResponse(p0,stimulusDirections,studiedEccentricites,studiedFreqs,v1Y,v1W,lgnY,lgnW,useMonotonicConstraint,modelType)
+function results = fitMRIResponse(p0,stimulusDirections,studiedEccentricites,studiedFreqs,v1Y,v1W,lgnY,lgnW,useMonotonicConstraint,modelType,verbose)
 % Fit the RGC-referred temporal model to combined V1 and LGN data
 %
 % Syntax:
-%  [p,fVal] = fitMRIResponseData(p0,stimulusDirections,studiedEccentricites,studiedFreqs,v1Y,v1W,lgnY,lgnW,useMonotonicConstraint)
+%  results = fitMRIResponseData(p0,stimulusDirections,studiedEccentricites,studiedFreqs,v1Y,v1W,lgnY,lgnW,useMonotonicConstraint,modelType)
 %
 % Description:
 %   Model that simultaneously fits TTF responses from the LGN, and from V1
 %   across eccentricity for multiple post-receptoral directions. The model
 %   starts with Fourier-domain models of the chromatic and achromatic
 %   temporal sensitivity functions of the RGCs as a function of
-%   eccentricity. Responses at the LGN are modeled as the RGC responses,
-%   subject to a delayed surround inhibition. Responses at V1 are the
-%   responses from the LGN, subject to another iteration of delayed
-%   surround inhibition, and also subject to a second-order, low-pass
-%   temporal filter. Different sets of parameters modify the chromatic and
-%   achromatic signals arriving from the LGN.
+%   eccentricity. The model imposes a low-pass filter upon the modeled
+%   responses at the retino-geniculate synapse, and again at the
+%   geniculo-cortico synapse. At the level of V1, responses for a
+%   particular post-receptoral direction (achromatic, chromatic red-green,
+%   chromatic blue-yellow) are pooled and subject to delayed surround
+%   inhibition. The surround delay varies by post-receptoral direction, and
+%   the surround weight varries by by both direction and eccentricity. The
+%   fit of the responses to the fMRI data are controlled by gain parameters
+%   at the LGN and V1 stages.
 %
 %   The effect of eccentricity is present in the model in both a fixed and
 %   parameterized form. There is a fixed effect of eccentricity at the
 %   retina, which is derived from the change in the center and surround
 %   cone inputs to the midget RGCs, and by changes in the parameters of the
-%   temporal model used to fit the empirical RGC data. The effect of
-%   eccentricity in the post-retinal model is found in the varying of the
-%   index of surround inhibition, and the gain parameter that scales the
-%   resulting temporal sensitivity function to the observed BOLD fMRI data.
+%   temporal model used to fit the empirical RGC data. Further, the model
+%   accounts for the variation in RGC cell populations with retinal
+%   eccentricity, and the change in annular retinal area with distance from
+%   the fovea. The effect of eccentricity in the post-retinal model is
+%   found in the varying of the index of surround inhibition, and the gain
+%   parameter that scales the resulting temporal sensitivity function to
+%   the observed BOLD fMRI data.
 %
 % Inputs:
-%   p0                    - 1x[2+c+6+s*k*2] vector of parameters for the
+%   p0                    - 1x[5+c+s+s*k*2] vector of parameters for the
 %                           model fit, where c is the number of cell
 %                           classes (midget, parasol, bistratified), s is
 %                           the number of stimulus directions (LminusM, S,
@@ -35,7 +41,7 @@ function [pMRI,fVal] = fitMRIResponse(p0,stimulusDirections,studiedEccentricites
 %                           such as {'LminusM','S','LMS'}
 %   studiedEccentricites  - 1xk array of the centers of the studied
 %                           eccentricity bins.
-%   studiedFreqs          - 1xn vector of frequency values (in Hz). 
+%   studiedFreqs          - 1xn vector of frequency values (in Hz).
 %   v1Y                   - 1x(s*k*n) vector of BOLD amplitudes at each of
 %                           many eccentricities and stimulus frequencies.
 %                           The order of these is:
@@ -51,123 +57,141 @@ function [pMRI,fVal] = fitMRIResponse(p0,stimulusDirections,studiedEccentricites
 %                           non-linear constraint that requires the
 %                           surround index to decrease in value across
 %                           eccentricity positions for a given cell class.
+%   modelType             - Char vector. Defines which parameters will be
+%                           free to vary in the search, and if the v1 or
+%                           lgn objectives will be used. This is to allow
+%                           model fitting in stages in the initial
+%                           parameter search, as there are many parameters.
 %
 % Outputs:
-%   p                     - 1x[2+c+6+s*k*2] vector of model fit parameters
+%   results               - Structure, with the fields:
+%                           - pMRI: 1x[2+c+6+s*k*2] vector fit parameters
+%                           - fVal: the objective function at the solution
+%                           - cellClasses: the input classes
+%                           - stimulusDirections: the input directions
+%                           - paramCounts: Information regarding the number
+%                             of parameters of each type. Used to unpack
+%                             the parameter vector.
+%
 
 if nargin<10
-    modelType = 'v1MidgetParasol';
+    modelType = 'fullV1';
+    verbose = false;
 end
-
-shrinkScaleFactor = 1;
 
 % Load the RGC model parameters
 loadPath = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults','rgcTemporalModel.mat');
 load(loadPath,'rgcTemporalModel');
 
-% Extract this value for later
+% Define a variable with the numner of eccentricities
 nEccs = length(studiedEccentricites);
 
-% The number of parameters that do not vary with eccentricity
-nFixedParams = 5;
+% The three types of cell classes in the model
+cellClasses = {'midget','bistratified','parasol'};
 
-% The model includes parameters for each of the "post receptoral paths",
-% which is realized here as the interaction of retinal ganglion cell
-% classes with stimulus directions.
-postReceptoralPaths = {'midget','bistratified','parasol'};
-
-% Parameters are organized by cell "pathway". The first set are fixed with
-% eccentricity;
-% - lgn surround delay (msecs)
-% - lgn surround index (proportion, in the range 0 - 1)
-% - lgn gain (BOLD % / spikes / sec)
-% - second order filter corner frequency (Hz)
-% - second order filter "quality" index (a.u.)
-%
-% v1 paramters that vary by eccentricity
-% - surround delay (msecs)
-% - surround index (a.u.)
-% - gain (a.u.)
+% Define the bounds
 lb = []; plb = []; pub = []; ub = [];
-for pp = 1:length(postReceptoralPaths)
-    % lgn parameters (surround delay, surround index, gain)
-    lb =  [ lb 02 0.0 0000];
-    plb = [plb 10 0.3 0.01];
-    pub = [pub 15 0.7 0.10];
-    ub =  [ ub 20 1.0 1.00];
 
-    % V1 second order filter corner freq, quality
-    lb =  [ lb 005 0.1];
-    plb = [plb 015 0.3];
-    pub = [pub 035 0.6];
-    ub =  [ ub 100 0.7];
+% "Unique" params. These do not vary by cell class, channel, or
+% eccentricity:
+% - Relative stimulus power of LMS and L-M  on midget cells
+% - lgn second order filter corner freq
+% - lgn second order flter "quality"
+% - V1 second order filter corner freq
+% - V1 second order flter "quality"
+lb =  [ lb 1.0 70 0.1 10 0.1];
+plb = [plb 1.0 75 0.4 15 0.4];
+pub = [pub 1.0 85 0.5 20 0.5];
+ub =  [ ub 1.0 90 0.7 30 0.7];
+paramCounts.unique = 5;
 
-    % V1 params that vary by ecccentricity, surround delay, index, and
-    % overall gain
-    lb =  [ lb repmat(02,1,nEccs) zeros(1,nEccs) repmat(0,1,nEccs)];
-    plb = [plb repmat(10,1,nEccs) repmat(0.2,1,nEccs) repmat(0.5,1,nEccs)];
-    pub = [pub repmat(30,1,nEccs) repmat(0.8,1,nEccs) repmat(5,1,nEccs)];
-    ub =  [ ub repmat(40,1,nEccs) ones(1,nEccs) repmat(100,1,nEccs)];
+% LGN BOLD fMRI gain, organized by cell class
+% - BOLD response gain
+for cc = 1:length(cellClasses)
+    lb =  [ lb 0];
+    plb = [plb 1];
+    pub = [pub 10];
+    ub =  [ ub 100];
+end
+paramCounts.lgn = 1;
+
+% V1 params. These vary by stimulus direction
+% - surround delay
+% - surround index (varies with eccentricity)
+% - BOLD response gain (varies with eccentricity)
+for ss = 1:length(stimulusDirections)
+    lb =  [ lb 3 zeros(1,nEccs) zeros(1,nEccs)];
+    plb = [plb 5 repmat(0.2,1,nEccs) ones(1,nEccs)];
+    pub = [pub 25 repmat(0.8,1,nEccs) repmat(10,1,nEccs)];
+    ub =  [ ub 30 ones(1,nEccs) repmat(100,1,nEccs)];
 end
 
-% A final parameter adjusts the relative stimulus effectiveness of LMS and
-% L-M contrast upon midget cells.
-lb  = [ lb 0.2];
-plb = [plb 0.5];
-pub = [pub 2.0];
-ub  = [ ub 4.0];
+% Some info about the params we will use later to unpack the vector
+paramCounts.v1fixed = 1;
+paramCounts.v1eccen = nEccs*2;
+paramCounts.v1total = paramCounts.v1fixed+paramCounts.v1eccen;
 
-% For  reduced models, we lock some parameters
-nParamsPerCellBlock = nFixedParams+nEccs*3;
+% The objectives, each of which returns TTFs, reshaped across stimulus
+% directions and eccentricities into a single vector
+myV1TTF = @(pMRI) assembleV1Response(pMRI,cellClasses,stimulusDirections,studiedEccentricites,studiedFreqs,rgcTemporalModel,paramCounts);
+myLGNTTF = @(pMRI) assembleLGNResponse(pMRI,cellClasses,stimulusDirections,studiedFreqs,rgcTemporalModel,paramCounts);
+
+% Which parameters and objective(s) shall we use in the search? 
 switch modelType
-    case 'bistratifiedOnly'
-        lockIdx = [1:nParamsPerCellBlock, nParamsPerCellBlock*2+1:nParamsPerCellBlock*3, 70];
-    case 'v1MidgetOnly'
-        lockIdx = [1+nParamsPerCellBlock:nParamsPerCellBlock*3, 70];
+    case 'redGreenOnly'
+        lockIdx = [1 2 3 6:8 22:47];
         v1W(37:end)=0;
-    case 'v1ParasolOnly'
-        lockIdx = [1:nParamsPerCellBlock*2, 70];
-        v1W(1:end-36)=0;
-    case 'v1MidgetParasol'
-        lockIdx = [1+nParamsPerCellBlock:nParamsPerCellBlock*2];
-        v1W(37:72)=0;
-    case 'v1GainOnly'
-        lockIdx = [1:17, 24:40, 47:63];
-    case 'lgnOnly'
-        lockIdx = [4:23, 27:46, 50:59];
+        myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI)));
+    case 'blueYellowOnly'
+        lockIdx = [1:5 6:8 9:21 35:47];
+        v1W(1:36,73:end)=0;
+        myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI)));
+    case 'achromaticOnly'
+        lockIdx = [1:5 6:8 9:34];
+        v1W(1:72)=0;
+        myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI)));
+    case 'fullV1'
+        lockIdx = [1:5 6:8];
+        myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI)));
+    case 'bootV1'
+        lockIdx = [1:5 6:8 9 22 35];
+        myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI)));
+    case 'lgnGain'
+        lockIdx = [1:5 9:47];
+        myObj = @(pMRI) norm(lgnW.*(lgnY - myLGNTTF(pMRI)));
     case 'full'
-        lockIdx = [];
+        lockIdx = [1];
+        myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI))) + ...
+            norm(lgnW.*(lgnY - myLGNTTF(pMRI)));
 end
 lb(lockIdx) = p0(lockIdx); plb(lockIdx) = p0(lockIdx);
 ub(lockIdx) = p0(lockIdx); pub(lockIdx) = p0(lockIdx);
 
-% Returns the TTF, and handles reshaping into a linear vector
-myV1TTF = @(pMRI) assembleV1ResponseAcrossStimsAndEcc(pMRI,stimulusDirections,studiedEccentricites,studiedFreqs,rgcTemporalModel,nFixedParams);
-myLGNTTF = @(pMRI) assembleLGNResponseAcrossStims(pMRI,stimulusDirections,studiedEccentricites,studiedFreqs,rgcTemporalModel,nFixedParams);
-        
-% Define a shrink penalty that attempts to equate params
-myShrinkPenalty = @(pMRI) calculateShrinkPenalty(pMRI,shrinkScaleFactor,nFixedParams,nEccs);
-
-% The weighted objective
-% myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI))) + ...
-%     norm(lgnW.*(lgnY - myLGNTTF(pMRI)));
-
-myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI))) + ...
-    myShrinkPenalty(pMRI);
-
 % Non-linear constraint that surround index decreases with eccentricity
 if useMonotonicConstraint
-    myNonbcon = @(pMRI) nonbcon(pMRI,studiedEccentricites,postReceptoralPaths,nFixedParams);
+    myNonbcon = @(pMRI) nonbcon(pMRI,cellClasses,paramCounts,nEccs);
 else
     myNonbcon = [];
 end
 
-% Options - the objective function is deterministic
+% Options. Indicate that the objective function is deterministic, and
+% handle verbosity
 optionsBADS.UncertaintyHandling = 0;
-optionsBADS.Display = 'iter';
+if verbose
+    optionsBADS.Display = 'iter';
+else
+    optionsBADS.Display = 'off';
+end
 
 % search
 [pMRI,fVal] = bads(myObj,p0,lb,ub,plb,pub,myNonbcon,optionsBADS);
+
+% assemble the results structure
+results.pMRI = pMRI;
+results.fVal = fVal;
+results.cellClasses = cellClasses;
+results.stimulusDirections = stimulusDirections;
+results.paramCounts = paramCounts;
 
 end % main function
 
@@ -175,34 +199,13 @@ end % main function
 %% LOCAL FUNCTIONS
 
 % Enforce constraint of declining surround index with eccentricity
-function c = nonbcon(pMRI,studiedEccentricites,postReceptoralPaths,nFixedParams)
-nEccs = length(studiedEccentricites);
-for whichCell=1:length(postReceptoralPaths)
-    paramIndices = 1+nUniqueParams+(whichCell-1)*(nFixedParams+nEccs*2)+nFixedParams: ...
-        nUniqueParams+(whichCell-1)*(nFixedParams+nEccs*2)+nFixedParams+nEccs;
+function c = nonbcon(pMRI,cellClasses,paramCounts,nEccs)
+for ss=1:3
+    indexStart = paramCounts.unique + paramCounts.lgn*length(cellClasses) + (ss-1)*paramCounts.v1total + paramCounts.v1fixed;
+    paramIndices = indexStart+1:indexStart+nEccs;
     surroundIndex = pMRI(:,paramIndices);
-    c(:,whichCell) = sum(diff(surroundIndex,1,2)>0,2);
+    c(:,ss) = sum(diff(surroundIndex,1,2)>0,2);
 end
 c = sum(c,2);
 end
 
-
-% Shrink penalty encourages the LGN stage to have the same temporal delay
-% and index of suppression across 
-function shrinkPenalty = calculateShrinkPenalty(pMRI,shrinkScaleFactor,nFixedParams,nEccs)
-
-nParamsPerCellBlock = nFixedParams+nEccs*3;
-
-for pp = 1:3
-    indexStart = (pp-1)*nParamsPerCellBlock+nFixedParams;
-    indexToShrinkSets{pp} = [indexStart+1:indexStart+nEccs];
-end
-
-shrinkPenalty = 0;
-for ii=1:length(indexToShrinkSets)
-    shrinkPenalty = shrinkPenalty + std(pMRI(indexToShrinkSets{ii}))./mean(pMRI(indexToShrinkSets{ii}));
-end
-
-shrinkPenalty = shrinkPenalty * shrinkScaleFactor;
-
-end

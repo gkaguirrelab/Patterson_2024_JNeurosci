@@ -2,10 +2,10 @@
 
 % Housekeeping
 clear
-close all
+%close all
 
 % Where to save figures
-savePath = fullfile('~','Desktop','mtSinaiTemporalModelPlots');
+savePath = fullfile('~','Desktop','mtSinaiTemporalModelPlots','RGC data model fit');
 
 % Load the empirical RGC data
 rcgData = loadRGCResponseData();

@@ -3,7 +3,6 @@
 clear
 close all
 
-
 %% Are we searching or not?
 % Do we want to conduct a search for the fMRI data, or just use the p0
 % values and make plots?
@@ -17,10 +16,10 @@ useMonotonicConstraint = false;
 modelType = 'bootV1';
 
 % Which seed will we use to guide this bootstrap search
-whichSeed = 'uniform';
+whichSeed = 'best';
 
-% Keep the console quiet
-verbose = false;
+% Verbose?
+verbose = true;
 
 % How many bootstrap resamplings of the data to conduct
 nBoots = 1;
@@ -111,22 +110,23 @@ for whichSub = [1 2]
             % Let's see how long this takes
             tic
 
-            % BADS it
-%            try
-            result = fitMRIResponse(...
-                pMRI0,...
-                stimulusDirections,studiedEccentricites,studiedFreqs,...
-                v1Y,v1W,lgnY,lgnW,...
-                useMonotonicConstraint,modelType,verbose);
-            result.pMRI0 = pMRI0;
- %           catch
- %               searchTimeSecs = toc();
- %               fprintf('error encountered. Skipping.\n');
- %               continue % skip this boot loop
- %           end
+            % BADS it. We encounter occasional errors (parpool related?) so
+            % place this in a try-catch.
+            try
+                result = fitMRIResponse(...
+                    pMRI0,...
+                    stimulusDirections,studiedEccentricites,studiedFreqs,...
+                    v1Y,v1W,lgnY,lgnW,...
+                    useMonotonicConstraint,modelType,verbose);
+                result.pMRI0 = pMRI0;
+            catch
+                searchTimeSecs = toc();
+                fprintf('error encountered. Skipping.\n');
+                continue % skip this boot loop
+            end
 
+            % Report our search time and outcome
             searchTimeSecs = toc();
-
             str=[sprintf('fVal = %2.2f, search time (mins) = %2.1f',result.fVal,searchTimeSecs/60)  '\n'];
             fprintf(str);
 
@@ -138,15 +138,15 @@ for whichSub = [1 2]
 
         % Report the parameters
         if verbose
-        str = 'pMRI0 = [ ...\n';
-        str = [str sprintf(repmat('%2.10f, ',1,paramCounts.unique),result.pMRI(1:paramCounts.unique)) ' ...\n'];
-        str = [str sprintf(repmat('%2.10f, ',1,paramCounts.lgn*3),result.pMRI(paramCounts.unique+1:paramCounts.unique+paramCounts.lgn*3)) ' ...\n'];
-        for ss=1:length(stimulusDirections)
-            startIdx = paramCounts.unique+ paramCounts.lgn*3 + (ss-1)*paramCounts.v1total;
-            str = [str sprintf(repmat('%2.10f, ',1,paramCounts.v1total),result.pMRI(startIdx+1:startIdx+paramCounts.v1total)) ' ...\n'];
-        end
-        str = [str ']; \n'];
-        fprintf(str);
+            str = 'pMRI0 = [ ...\n';
+            str = [str sprintf(repmat('%2.10f, ',1,paramCounts.unique),result.pMRI(1:paramCounts.unique)) ' ...\n'];
+            str = [str sprintf(repmat('%2.10f, ',1,paramCounts.lgn*3),result.pMRI(paramCounts.unique+1:paramCounts.unique+paramCounts.lgn*3)) ' ...\n'];
+            for ss=1:length(stimulusDirections)
+                startIdx = paramCounts.unique+ paramCounts.lgn*3 + (ss-1)*paramCounts.v1total;
+                str = [str sprintf(repmat('%2.10f, ',1,paramCounts.v1total),result.pMRI(startIdx+1:startIdx+paramCounts.v1total)) ' ...\n'];
+            end
+            str = [str ']; \n'];
+            fprintf(str);
         end
 
         % Save the model parameters in an iteration structure and save this

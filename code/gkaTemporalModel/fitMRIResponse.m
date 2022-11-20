@@ -94,15 +94,15 @@ lb = []; plb = []; pub = []; ub = [];
 
 % "Unique" params. These do not vary by cell class, channel, or
 % eccentricity:
-% - Relative stimulus power of LMS and L-M  on midget cells
+% - Non-linearity of neural --> BOLD activity
 % - lgn second order filter corner freq
 % - lgn second order flter "quality"
 % - V1 second order filter corner freq
 % - V1 second order flter "quality"
-lb =  [ lb 1.0 70 0.1 10 0.1];
-plb = [plb 1.0 75 0.4 15 0.4];
+lb =  [ lb 0.5 70 0.1 10 0.1];
+plb = [plb 0.8 75 0.4 15 0.4];
 pub = [pub 1.0 85 0.5 20 0.5];
-ub =  [ ub 1.0 90 0.7 30 0.7];
+ub =  [ ub 2.0 90 0.7 30 0.7];
 paramCounts.unique = 5;
 
 % LGN BOLD fMRI gain, organized by cell class
@@ -151,7 +151,7 @@ switch modelType
         v1W(1:72)=0;
         myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI)));
     case 'fullV1'
-        lockIdx = [1:5 6:8];
+        lockIdx = [2:5 6:8];
         myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI)));
     case 'bootV1'
         lockIdx = [1:5 6:8 9 22 35];
@@ -160,7 +160,7 @@ switch modelType
         lockIdx = [1:5 9:47];
         myObj = @(pMRI) norm(lgnW.*(lgnY - myLGNTTF(pMRI)));
     case 'full'
-        lockIdx = [1];
+        lockIdx = [];
         myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI))) + ...
             norm(lgnW.*(lgnY - myLGNTTF(pMRI)));
 end

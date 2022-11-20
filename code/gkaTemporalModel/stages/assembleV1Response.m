@@ -10,7 +10,7 @@ nFreqs = length(studiedFreqs);
 responseMat = zeros(nStims,nEccs,nFreqs);
 
 % Unpack the "unique" params
-% pMRI(1) unused
+n = pMRI(1);
 lgnSecondOrderFc = pMRI(2);
 lgnSecondOrderQ = pMRI(3);
 v1SecondOrderFc = pMRI(4);
@@ -88,6 +88,9 @@ parfor ee=1:nEccs
         ttfComplex = double(subs(rfPostRetinal,studiedFreqs));
         v1Amplitude = abs(ttfComplex);
         v1Phase = unwrap(angle(ttfComplex));
+
+        % Apply the non-linear transformation of neural to BOLD response
+        v1Amplitude = v1Amplitude.^n;
 
         % Store this response
         responseMat(ss,ee,:) = v1Amplitude;

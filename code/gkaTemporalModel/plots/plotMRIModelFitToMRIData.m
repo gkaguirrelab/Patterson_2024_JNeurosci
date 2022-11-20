@@ -78,7 +78,7 @@ for whichSub = 1:length(subjects)
             refline(0,0);
             title([stimulusDirections{whichStim} ', ' subjects{whichSub} ', ecc = ' num2str(studiedEccentricites(ee),2) '°']);
             ylim([-1 7]);
-            a=gca; a.XTick = studiedFreqs; 
+            a=gca; a.XTick = studiedFreqs;
             a.XTickLabel = arrayfun(@num2str, studiedFreqs, 'UniformOutput', 0);
             a.XTickLabelRotation = 0;
 
@@ -95,7 +95,7 @@ for whichSub = 1:length(subjects)
 
         % patch error bars
         X = [studiedFreqs fliplr(studiedFreqs)];
-            Y = [lgnYlow(lgnDataIndices), fliplr(lgnYhigh(lgnDataIndices))];
+        Y = [lgnYlow(lgnDataIndices), fliplr(lgnYhigh(lgnDataIndices))];
         p = patch(X,Y,plotColor{whichStim});
         set(p,'edgecolor','none','facealpha',0.1);
 
@@ -106,9 +106,9 @@ for whichSub = 1:length(subjects)
         refline(0,0);
         title([stimulusDirections{whichStim} ', ' subjects{whichSub} ', LGN']);
         ylim([-1 7]);
-            a=gca; a.XTick = studiedFreqs; 
-            a.XTickLabel = arrayfun(@num2str, studiedFreqs, 'UniformOutput', 0);
-            a.XTickLabelRotation = 0;
+        a=gca; a.XTick = studiedFreqs;
+        a.XTickLabel = arrayfun(@num2str, studiedFreqs, 'UniformOutput', 0);
+        a.XTickLabelRotation = 0;
 
         % Show the two filters
         subplot(2,4,4)
@@ -129,9 +129,9 @@ for whichSub = 1:length(subjects)
         gainVals = abs(ttfComplex);
         semilogx(myFreqs,gainVals,'-m');
 
-        a=gca; a.XTick = studiedFreqs; 
-            a.XTickLabel = arrayfun(@num2str, studiedFreqs, 'UniformOutput', 0);
-            a.XTickLabelRotation = 0;
+        a=gca; a.XTick = studiedFreqs;
+        a.XTickLabel = arrayfun(@num2str, studiedFreqs, 'UniformOutput', 0);
+        a.XTickLabelRotation = 0;
 
         % Save the plot
         plotName = [stimulusDirections{whichStim} '_' subjects{whichSub} '_MRIModelFit.pdf' ];
@@ -143,9 +143,9 @@ for whichSub = 1:length(subjects)
     figure
     for whichStim = 1:length(stimulusDirections)
 
-        startIdx = paramCounts.unique + paramCounts.lgn*nCells + (whichStim-1)*paramCounts.v1total + paramCounts.v1fixed;        
-                v1SurroundIndex = pMRI(startIdx+1:startIdx+nEccs);
-                v1Gain = pMRI(startIdx+1+nEccs:startIdx+nEccs+nEccs);
+        startIdx = paramCounts.unique + paramCounts.lgn*nCells + (whichStim-1)*paramCounts.v1total + paramCounts.v1fixed;
+        v1SurroundIndex = pMRI(startIdx+1:startIdx+nEccs);
+        v1Gain = pMRI(startIdx+1+nEccs:startIdx+nEccs+nEccs);
 
         % Plot the surround suppression index vs. eccentricity
         subplot(1,2,1)

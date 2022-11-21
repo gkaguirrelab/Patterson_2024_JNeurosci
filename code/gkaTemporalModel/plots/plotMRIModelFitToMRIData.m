@@ -153,10 +153,15 @@ for whichSub = 1:length(subjects)
         subplot(1,2,1)
         plot(log10(studiedEccentricites),v1SurroundIndex,['o' plotColor{whichStim}]);
         hold on
-        for ee=1:nEccs
-            semilogy([log10(studiedEccentricites(ee)) log10(studiedEccentricites(ee))],[v1SurroundIndex(ee)-v1SurroundIndexSEM(ee), v1SurroundIndex(ee)+v1SurroundIndexSEM(ee)],['-' plotColor{whichStim}])
-        end
         plot(log10(studiedEccentricites),v1SurroundIndex,['-' plotColor{whichStim}]);
+
+        % Add error bars
+        X = [log10(studiedEccentricites) fliplr(log10(studiedEccentricites))];
+        Y = [v1SurroundIndex-v1SurroundIndexSEM, fliplr(v1SurroundIndex+v1SurroundIndexSEM)];
+        p = patch(X,Y,plotColor{whichStim});
+        set(p,'edgecolor','none','facealpha',0.1);
+
+        % Clean up
         xlabel('Eccentricity [log deg]');
         ylabel('Suppression index');
         ylim([0 1]);
@@ -165,11 +170,12 @@ for whichSub = 1:length(subjects)
         subplot(1,2,2)
         semilogy(log10(studiedEccentricites),v1Gain,['o' plotColor{whichStim}]);
         hold on
-        for ee=1:nEccs
-            semilogy([log10(studiedEccentricites(ee)) log10(studiedEccentricites(ee))],[v1Gain(ee)-v1GainSEM(ee), v1Gain(ee)+v1GainSEM(ee)],['-' plotColor{whichStim}])
-        end
         semilogy(log10(studiedEccentricites),v1Gain,['-' plotColor{whichStim}]);
 
+        % Add error bars
+        Y = [v1Gain-v1GainSEM, fliplr(v1Gain+v1GainSEM)];
+        p = patch(X,Y,plotColor{whichStim});
+        set(p,'edgecolor','none','facealpha',0.1);
 
         % Add the lgn
         semilogy(0,pMRI(5+whichStim),['*' plotColor{whichStim}]);
@@ -188,18 +194,18 @@ for whichSub = 1:length(subjects)
     % For one subject and one eccentricity, plot the lgn and V1 IRFs
     ee=4;
     if whichSub == 1
-            figHandleLGN = figure('Position',  [100, 100, 200, 400]);
-    figHandleV1 = figure('Position',  [100, 100, 200, 400]);
+        figHandleLGN = figure('Position',  [100, 100, 200, 400]);
+        figHandleV1 = figure('Position',  [100, 100, 200, 400]);
         for ss=1:length(stimulusDirections)
             plotRF(lgnRFMatrix(ss,ee),figHandleLGN,['-' plotColor{ss}]);
             plotRF(v1RFMatrix(ss,ee),figHandleV1,['-' plotColor{ss}]);
         end
 
-    % Save the plot
-    plotName = [subjects{whichSub} '_lgnIRFs.pdf' ];
-    saveas(figHandleLGN,fullfile(savePath,plotName));
-    plotName = [subjects{whichSub} '_v1IRFs.pdf' ];
-    saveas(figHandleV1,fullfile(savePath,plotName));
+        % Save the plot
+        plotName = [subjects{whichSub} '_lgnIRFs.pdf' ];
+        saveas(figHandleLGN,fullfile(savePath,plotName));
+        plotName = [subjects{whichSub} '_v1IRFs.pdf' ];
+        saveas(figHandleV1,fullfile(savePath,plotName));
     end
-    
+
 end

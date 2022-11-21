@@ -145,21 +145,29 @@ for whichSub = 1:length(subjects)
 
         startIdx = paramCounts.unique + paramCounts.lgn*nCells + (whichStim-1)*paramCounts.v1total + paramCounts.v1fixed;
         v1SurroundIndex = pMRI(startIdx+1:startIdx+nEccs);
+        v1SurroundIndexSEM = pMRISEM(startIdx+1:startIdx+nEccs);
         v1Gain = pMRI(startIdx+1+nEccs:startIdx+nEccs+nEccs);
+        v1GainSEM = pMRISEM(startIdx+1+nEccs:startIdx+nEccs+nEccs);
 
         % Plot the surround suppression index vs. eccentricity
         subplot(1,2,1)
         plot(log10(studiedEccentricites),v1SurroundIndex,['o' plotColor{whichStim}]);
         hold on
+        for ee=1:nEccs
+            semilogy([log10(studiedEccentricites(ee)) log10(studiedEccentricites(ee))],[v1SurroundIndex(ee)-v1SurroundIndexSEM(ee), v1SurroundIndex(ee)+v1SurroundIndexSEM(ee)],['-' plotColor{whichStim}])
+        end
         plot(log10(studiedEccentricites),v1SurroundIndex,['-' plotColor{whichStim}]);
         xlabel('Eccentricity [log deg]');
         ylabel('Suppression index');
         ylim([0 1]);
 
-        % Plot the gain index vs. eccentricity
+        % Plot the gain vs. eccentricity
         subplot(1,2,2)
         semilogy(log10(studiedEccentricites),v1Gain,['o' plotColor{whichStim}]);
         hold on
+        for ee=1:nEccs
+            semilogy([log10(studiedEccentricites(ee)) log10(studiedEccentricites(ee))],[v1Gain(ee)-v1GainSEM(ee), v1Gain(ee)+v1GainSEM(ee)],['-' plotColor{whichStim}])
+        end
         semilogy(log10(studiedEccentricites),v1Gain,['-' plotColor{whichStim}]);
 
 

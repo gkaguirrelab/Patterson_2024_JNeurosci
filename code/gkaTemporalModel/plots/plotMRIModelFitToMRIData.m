@@ -4,7 +4,9 @@
 clear
 %close all
 
-modelType = 'mix';
+modelType = 'stimulus';
+
+zeroSurroundEffect = false;
 
 % Load the empirical RGC data
 rcgData = loadRGCResponseData();
@@ -43,6 +45,10 @@ for whichSub = 1:length(subjects)
     lgnY = mriFullResultSet.(subjects{whichSub}).lgnYMean;
     lgnYlow = mriFullResultSet.(subjects{whichSub}).lgnY_lowCI;
     lgnYhigh = mriFullResultSet.(subjects{whichSub}).lgnY_highCI;
+
+if zeroSurroundEffect
+    pMRI([10:15, 23:28, 36:41])=0; 
+end
 
     [~,v1YFitMatrix,v1RFMatrix] = assembleV1Response(pMRI,cellClasses,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel,paramCounts,modelType);
     [~,lgnYFitMatrix,lgnRFMatrix] = assembleLGNResponse(pMRI,cellClasses,stimulusDirections,freqsForPlotting,rgcTemporalModel,paramCounts,modelType);
@@ -162,9 +168,10 @@ for whichSub = 1:length(subjects)
         set(p,'edgecolor','none','facealpha',0.1);
 
         % Clean up
+        refline(0,0);
         xlabel('Eccentricity [log deg]');
         ylabel('Suppression index');
-        ylim([0 1]);
+        ylim([-1 1]);
 
         % Plot the gain vs. eccentricity
         subplot(1,2,2)
@@ -181,7 +188,7 @@ for whichSub = 1:length(subjects)
         semilogy(0,pMRI(5+whichStim),['*' plotColor{whichStim}]);
 
         % Clean up
-        xlim([-0.1 2]);
+        xlim([-0.5 2]);
         xlabel('Eccentricity [log deg]');
         ylabel('Gain parameter');
 

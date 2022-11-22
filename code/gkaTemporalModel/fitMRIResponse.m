@@ -122,8 +122,8 @@ paramCounts.lgn = 1;
 % - surround index (varies with eccentricity)
 % - BOLD response gain (varies with eccentricity)
 for ss = 1:length(stimulusDirections)
-    lb =  [ lb 3 zeros(1,nEccs) zeros(1,nEccs)];
-    plb = [plb 5 repmat(0.2,1,nEccs) ones(1,nEccs)];
+    lb =  [ lb 3 repmat(-1,1,nEccs) zeros(1,nEccs)];
+    plb = [plb 5 zeros(1,nEccs) ones(1,nEccs)];
     pub = [pub 25 repmat(0.8,1,nEccs) repmat(10,1,nEccs)];
     ub =  [ ub 30 ones(1,nEccs) repmat(100,1,nEccs)];
 end
@@ -141,18 +141,22 @@ myLGNTTF = @(pMRI) assembleLGNResponse(pMRI,cellClasses,stimulusDirections,studi
 % Which parameters and objective(s) shall we use in the search? 
 switch paramSearch
     case 'redGreenOnly'
-        lockIdx = [1 2 3 6:8 22:47];
+        lockIdx = [1:5 6:8 22:47];
         v1W(37:end)=0;
         myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI)));
     case 'blueYellowOnly'
         lockIdx = [1:5 6:8 9:21 35:47];
         v1W(1:36,73:end)=0;
         myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI)));
+    case 'chromaticOnly'
+        lockIdx = [2:3 6:8 35:47];
+        v1W(73:end)=0;
+        myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI)));
     case 'achromaticOnly'
         lockIdx = [1:5 6:8 9:34];
         v1W(1:72)=0;
         myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI)));
-    case 'fullV1'
+    case 'eccenV1'
         lockIdx = [2:5 6:8];
         myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI)));
     case 'bootV1'
@@ -161,6 +165,9 @@ switch paramSearch
     case 'lgnGain'
         lockIdx = [1:5 9:47];
         myObj = @(pMRI) norm(lgnW.*(lgnY - myLGNTTF(pMRI)));
+    case 'fullV1'
+        lockIdx = [6:8];
+        myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI)));
     case 'full'
         lockIdx = [];
         myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI))) + ...

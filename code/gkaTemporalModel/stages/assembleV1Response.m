@@ -1,4 +1,4 @@
-function [response, responseMat, rfMatrix] = assembleV1Response(pMRI,cellClasses,stimulusDirections,studiedEccentricites,studiedFreqs,rgcTemporalModel,paramCounts)
+function [response, responseMat, rfMatrix] = assembleV1Response(pMRI,cellClasses,stimulusDirections,studiedEccentricites,studiedFreqs,rgcTemporalModel,paramCounts,modelType)
 
 % Identify the studied eccentricities and stimulus frequencies
 nCells = length(cellClasses);
@@ -21,14 +21,10 @@ parfor ee=1:nEccs
 
     % Clear some variables to keep parfor happy
     activeCells = {}; rfPostRetinal = sym([]);
+    v1Gain = []; v1SurroundDelay = []; v1SurroundIndex = [];
 
     % Loop through the stimulus directions and assemble the response
     for ss = 1:nStims
-
-        % Unpack the V1 params (organized by stimulus)
-        v1SurroundDelay = pMRI(paramCounts.unique + paramCounts.lgn*nCells + (ss-1)*paramCounts.v1total + 1);
-        v1SurroundIndex = pMRI(paramCounts.unique + paramCounts.lgn*nCells + (ss-1)*paramCounts.v1total + paramCounts.v1fixed + nEccs*0 + ee);
-        v1Gain = pMRI(paramCounts.unique + paramCounts.lgn*nCells + (ss-1)*paramCounts.v1total + paramCounts.v1fixed + nEccs*1 + ee);
 
         % Identify which cell classes are relevant for this stimulus
         % direction
@@ -51,8 +47,21 @@ parfor ee=1:nEccs
                 continue
             end
 
-            % Unpack the LGN params (organized by cell class)
-            cellBlockIdx = find(strcmp(activeCells{cc},cellClasses));
+            % Get the V1 gain, which can be modeled on a per-cell or
+            % per-stimulus basis. Also, if we are modeling on a cell level,
+            % get the surround delay and index for this cell population.
+            switch modelType
+                case 'stimulus'
+                    v1Gain = pMRI(paramCounts.unique + paramCounts.lgn*nCells + (ss-1)*paramCounts.v1total + paramCounts.v1fixed + nEccs*1 + ee);
+                case 'cell'
+                    cellIdx = find(strcmp(activeCells{cc},cellClasses));
+                    v1Gain = pMRI(paramCounts.unique + paramCounts.lgn*nCells + (cellIdx-1)*paramCounts.v1total + paramCounts.v1fixed + nEccs*1 + ee);
+                    v1SurroundDelay = pMRI(paramCounts.unique + paramCounts.lgn*nCells + (cellIdx-1)*paramCounts.v1total + 1);
+                    v1SurroundIndex = pMRI(paramCounts.unique + paramCounts.lgn*nCells + (cellIdx-1)*paramCounts.v1total + paramCounts.v1fixed + nEccs*0 + ee);
+                case 'mix'
+                    cellIdx = find(strcmp(activeCells{cc},cellClasses));
+                    v1Gain = pMRI(paramCounts.unique + paramCounts.lgn*nCells + (cellIdx-1)*paramCounts.v1total + paramCounts.v1fixed + nEccs*1 + ee);
+            end
 
             % Get the gain effect of stimulus contrast
             stimulusContrastScale = returnStimulusContrastScale(activeCells{cc},stimulusDirections{ss});
@@ -64,22 +73,38 @@ parfor ee=1:nEccs
 
             % 2nd order low-pass fiter at the level of the retinto-
             % geniculate synapse
-            rfPostRetinal = rfPostRetinal.*stageSecondOrderLP(lgnSecondOrderFc,lgnSecondOrderQ);
+            rfPostRetinal(cc) = rfPostRetinal(cc).*stageSecondOrderLP(lgnSecondOrderFc,lgnSecondOrderQ);
+
+            % Second order low pass filter at the level of genciulo-
+            % cortical synapse
+            rfPostRetinal(cc) = rfPostRetinal(cc).*stageSecondOrderLP(v1SecondOrderFc,v1SecondOrderQ);
+
+            % Gain
+            rfPostRetinal(cc) = (v1Gain/1000)*rfPostRetinal(cc);
+
+            % If we are in the cell model, perform the delayed, surround
+            % subtraction for each cell class, prior to combination
+            switch modelType
+                case 'stimulus'
+                case 'cell'
+                    rfPostRetinal(cc) = rfPostRetinal(cc) - v1SurroundIndex * rfPostRetinal(cc).*stageDelay(v1SurroundDelay/1000);
+            end
 
         end
 
         % Add the postRetinal RFs together
         rfPostRetinal = sum(rfPostRetinal);
 
-        % Second order low pass filter at the level of genciulo-cortical
-        % synapse
-        rfPostRetinal = rfPostRetinal.*stageSecondOrderLP(v1SecondOrderFc,v1SecondOrderQ);
-
-        % Delayed surround subtraction at V1
-        rfPostRetinal = rfPostRetinal - v1SurroundIndex * rfPostRetinal.*stageDelay(v1SurroundDelay/1000);
-
-        % Gain
-        rfPostRetinal = (v1Gain/1000)*rfPostRetinal;
+        % If we are in the stimulus-refered model, perform delayed surround
+        % subtraction upon the response for this stimulus after combining
+        % cell classes
+        switch modelType
+            case {'stimulus','mix'}
+                v1SurroundDelay = pMRI(paramCounts.unique + paramCounts.lgn*nCells + (ss-1)*paramCounts.v1total + 1);
+                v1SurroundIndex = pMRI(paramCounts.unique + paramCounts.lgn*nCells + (ss-1)*paramCounts.v1total + paramCounts.v1fixed + nEccs*0 + ee);
+                rfPostRetinal = rfPostRetinal - v1SurroundIndex * rfPostRetinal.*stageDelay(v1SurroundDelay/1000);
+            case 'cell'
+        end
 
         % Store the RF
         rfMatrix(ss,ee) = rfPostRetinal;

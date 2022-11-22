@@ -1,4 +1,4 @@
-function results = fitMRIResponse(p0,stimulusDirections,studiedEccentricites,studiedFreqs,v1Y,v1W,lgnY,lgnW,useMonotonicConstraint,modelType,verbose)
+function results = fitMRIResponse(p0,stimulusDirections,studiedEccentricites,studiedFreqs,v1Y,v1W,lgnY,lgnW,modelType,useMonotonicConstraint,paramSearch,verbose)
 % Fit the RGC-referred temporal model to combined V1 and LGN data
 %
 % Syntax:
@@ -53,11 +53,17 @@ function results = fitMRIResponse(p0,stimulusDirections,studiedEccentricites,stu
 %                           the LGN.
 %   lgnW                  - 1x(s*n) vector of weights for the measurements
 %                           in lgnY.
+%   modelType             - Char vector. Options are "cell" or "stimulus".
+%                           Controls if the model parameters operate upon
+%                           the separate cell classes, or upon the separate
+%                           stimuli. This distinction matters for the gain
+%                           parameters at the lgn and v1 level, and for the
+%                           delayed surround subtraction at V1.
 %   useMonotonicConstraint - Logical. Controls if the model includes a
 %                           non-linear constraint that requires the
 %                           surround index to decrease in value across
 %                           eccentricity positions for a given cell class.
-%   modelType             - Char vector. Defines which parameters will be
+%   paramSearch           - Char vector. Defines which parameters will be
 %                           free to vary in the search, and if the v1 or
 %                           lgn objectives will be used. This is to allow
 %                           model fitting in stages in the initial
@@ -74,10 +80,6 @@ function results = fitMRIResponse(p0,stimulusDirections,studiedEccentricites,stu
 %                             the parameter vector.
 %
 
-if nargin<10
-    modelType = 'fullV1';
-    verbose = false;
-end
 
 % Load the RGC model parameters
 loadPath = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults','rgcTemporalModel.mat');
@@ -133,11 +135,11 @@ paramCounts.v1total = paramCounts.v1fixed+paramCounts.v1eccen;
 
 % The objectives, each of which returns TTFs, reshaped across stimulus
 % directions and eccentricities into a single vector
-myV1TTF = @(pMRI) assembleV1Response(pMRI,cellClasses,stimulusDirections,studiedEccentricites,studiedFreqs,rgcTemporalModel,paramCounts);
-myLGNTTF = @(pMRI) assembleLGNResponse(pMRI,cellClasses,stimulusDirections,studiedFreqs,rgcTemporalModel,paramCounts);
+myV1TTF = @(pMRI) assembleV1Response(pMRI,cellClasses,stimulusDirections,studiedEccentricites,studiedFreqs,rgcTemporalModel,paramCounts,modelType);
+myLGNTTF = @(pMRI) assembleLGNResponse(pMRI,cellClasses,stimulusDirections,studiedFreqs,rgcTemporalModel,paramCounts,modelType);
 
 % Which parameters and objective(s) shall we use in the search? 
-switch modelType
+switch paramSearch
     case 'redGreenOnly'
         lockIdx = [1 2 3 6:8 22:47];
         v1W(37:end)=0;
@@ -189,9 +191,16 @@ end
 % assemble the results structure
 results.pMRI = pMRI;
 results.fVal = fVal;
-results.cellClasses = cellClasses;
-results.stimulusDirections = stimulusDirections;
 results.paramCounts = paramCounts;
+results.cellClasses = cellClasses;
+results.modelType = modelType;
+results.stimulusDirections = stimulusDirections;
+results.studiedEccentricites = studiedEccentricites;
+results.studiedFreqs = studiedFreqs;
+results.v1Y = v1Y;
+results.v1W = v1W;
+results.lgnY = lgnY;
+results.lgnW = lgnW;
 
 end % main function
 

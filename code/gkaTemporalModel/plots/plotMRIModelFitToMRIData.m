@@ -4,6 +4,8 @@
 clear
 %close all
 
+modelType = 'mix';
+
 % Load the empirical RGC data
 rcgData = loadRGCResponseData();
 
@@ -12,10 +14,10 @@ loadPath = fullfile(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath'
 load(loadPath,'rgcTemporalModel');
 
 % Load the MRI temporal model
-loadPath = fullfile(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath'))))),'data','temporalModelResults');
+loadPath = fullfile(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath'))))),'data','temporalModelResults',modelType);
 load(fullfile(loadPath,'mriFullResultSet.mat'),'mriFullResultSet');
 
-savePath = fullfile('~','Desktop','mtSinaiTemporalModelPlots','MRIData_FullModel');
+savePath = fullfile('~','Desktop','mtSinaiTemporalModelPlots','MRIData_FullModel',modelType);
 
 % Extract some meta info from the mriTemporalModel
 studiedFreqs = mriFullResultSet.meta.studiedFreqs;
@@ -24,16 +26,14 @@ subjects = mriFullResultSet.meta.subjects;
 stimulusDirections = mriFullResultSet.meta.stimulusDirections;
 plotColor = mriFullResultSet.meta.plotColor;
 paramCounts = mriFullResultSet.meta.paramCounts;
-postReceptoralPaths = mriFullResultSet.meta.postReceptoralPaths;
+cellClasses = {'midget','bistratified','parasol'};
 nEccs = length(studiedEccentricites);
 nFreqs = length(studiedFreqs);
 freqsForPlotting = logspace(0,2,50);
 nFreqsForPlotting = length(freqsForPlotting);
-cellClasses = {'midget','bistratified','parasol'};
 nCells = length(cellClasses);
 
 for whichSub = 1:length(subjects)
-
 
     pMRI = mean(mriFullResultSet.(subjects{whichSub}).pMRI,1);
     pMRISEM = std(mriFullResultSet.(subjects{whichSub}).pMRI,0,1);
@@ -44,8 +44,8 @@ for whichSub = 1:length(subjects)
     lgnYlow = mriFullResultSet.(subjects{whichSub}).lgnY_lowCI;
     lgnYhigh = mriFullResultSet.(subjects{whichSub}).lgnY_highCI;
 
-    [~,v1YFitMatrix,v1RFMatrix] = assembleV1Response(pMRI,cellClasses,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel,paramCounts);
-    [~,lgnYFitMatrix,lgnRFMatrix] = assembleLGNResponse(pMRI,cellClasses,stimulusDirections,freqsForPlotting,rgcTemporalModel,paramCounts);
+    [~,v1YFitMatrix,v1RFMatrix] = assembleV1Response(pMRI,cellClasses,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel,paramCounts,modelType);
+    [~,lgnYFitMatrix,lgnRFMatrix] = assembleLGNResponse(pMRI,cellClasses,stimulusDirections,freqsForPlotting,rgcTemporalModel,paramCounts,modelType);
 
     for whichStim = 1:length(stimulusDirections)
         figure

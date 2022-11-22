@@ -1,4 +1,4 @@
-function [response, responseMat, rfMatrix] = assembleLGNResponse(pMRI,cellClasses,stimulusDirections,studiedFreqs,rgcTemporalModel,paramCounts)
+function [response, responseMat, rfMatrix] = assembleLGNResponse(pMRI,cellClasses,stimulusDirections,studiedFreqs,rgcTemporalModel,paramCounts,modelType)
 
 % Identify the stimuli and stimulus frequencies
 nStims = length(stimulusDirections);
@@ -26,9 +26,6 @@ parfor ee=1:nEccs
     % Loop through the stimulus directions and assemble the response
     for ss = 1:nStims
 
-        % Get the gain for this stimulus direction
-        lgnGain = pMRI(paramCounts.unique + (ss-1)*paramCounts.lgn + 1);
-
         % Identify which cell classes are relevant for this stimulus
         % direction.
         switch stimulusDirections{ss}
@@ -51,6 +48,18 @@ parfor ee=1:nEccs
                 continue
             end
 
+            % Get the LGN gain, which can be modeled on a per-cell or
+            % per-stimulus basis
+            switch modelType
+                case 'stimulus'
+                    lgnGain = pMRI(paramCounts.unique + (ss-1)*paramCounts.lgn + 1);
+                case {'cell','mix'}
+                    cellIdx = find(strcmp(activeCells{cc},cellClasses));
+                    lgnGain = pMRI(paramCounts.unique + (cellIdx-1)*paramCounts.lgn + 1);
+                otherwise
+                    error('not a specified model type')
+            end
+
             % Get the gain effect of stimulus contrast
             stimulusContrastScale = returnStimulusContrastScale(activeCells{cc},stimulusDirections{ss});
 
@@ -61,15 +70,15 @@ parfor ee=1:nEccs
 
             % 2nd order low-pass fiter at the level of the retinto-
             % geniculate synapse
-            rfPostRetinal = rfPostRetinal.*stageSecondOrderLP(lgnSecondOrderFc,lgnSecondOrderQ);
+            rfPostRetinal(cc) = rfPostRetinal(cc).*stageSecondOrderLP(lgnSecondOrderFc,lgnSecondOrderQ);
+
+            % Gain
+            rfPostRetinal(cc) = (lgnGain/1e3)*rfPostRetinal(cc);
 
         end
 
         % Add the postRetinal RFs together
         rfPostRetinal = sum(rfPostRetinal);
-
-        % Gain
-        rfPostRetinal = (lgnGain/1e3)*rfPostRetinal;
 
         % Store the RF
         rfMatrix(ss,ee) = rfPostRetinal;

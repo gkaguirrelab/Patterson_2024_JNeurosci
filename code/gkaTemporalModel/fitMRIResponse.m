@@ -85,7 +85,7 @@ function results = fitMRIResponse(p0,stimulusDirections,studiedEccentricites,stu
 loadPath = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults','rgcTemporalModel.mat');
 load(loadPath,'rgcTemporalModel');
 
-% Define a variable with the numner of eccentricities
+% Define a variable with the number of eccentricities
 nEccs = length(studiedEccentricites);
 
 % The three types of cell classes in the model
@@ -194,6 +194,7 @@ results.fVal = fVal;
 results.paramCounts = paramCounts;
 results.cellClasses = cellClasses;
 results.modelType = modelType;
+results.paramSearch = paramSearch;
 results.stimulusDirections = stimulusDirections;
 results.studiedEccentricites = studiedEccentricites;
 results.studiedFreqs = studiedFreqs;

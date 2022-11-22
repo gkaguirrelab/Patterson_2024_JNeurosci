@@ -62,6 +62,8 @@ mriTemporalModel.meta.subjects = subjects;
 mriTemporalModel.meta.stimulusDirections = stimulusDirections;
 mriTemporalModel.meta.plotColor = plotColor;
 mriTemporalModel.meta.nBoots = nBoots;
+mriTemporalModel.meta.paramSearch = paramSearch;
+mriTemporalModel.meta.useMonotonicConstraint = useMonotonicConstraint;
 
 % Store a source version of the output variable.
 mriTemporalModelSource = mriTemporalModel;

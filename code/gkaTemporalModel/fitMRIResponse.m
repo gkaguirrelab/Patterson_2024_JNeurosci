@@ -166,7 +166,7 @@ switch paramSearch
         lockIdx = [1:5 9:47];
         myObj = @(pMRI) norm(lgnW.*(lgnY - myLGNTTF(pMRI)));
     case 'fullV1'
-        lockIdx = [6:8];
+        lockIdx = [2:5, 6:8];
         myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI)));
     case 'full'
         lockIdx = [];

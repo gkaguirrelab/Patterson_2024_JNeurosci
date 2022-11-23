@@ -45,17 +45,20 @@ for ee = 1:nEccBands
     [chromaticCenterWeight,chromaticSurroundWeight] = returnRGCChromaticWeights('midget','LminusM',eccDegs(ee),LMRatio);
     rfRGC = returnRGCRF(pBlock,cfCone,coneDelay,chromaticCenterWeight,chromaticSurroundWeight);
     plotRF(rfRGC,figHandle,'-r');
+    subplot(3,1,1);
+    ylim([0 10]);
 
     [rfRGC, rfBipolar, rfCone] = returnRGCRF(pBlock,cfCone,coneDelay,1,1);
     plotRF(rfRGC,figHandle,'-k');
-%    plotRF(rfBipolar,figHandle,'-m',3);
-%    plotRF(rfCone,figHandle,'-g',3);
+    subplot(3,1,1);
+    ylim([0 10]);
     box off
 
     subplot(3,1,1);
     loglog(rcgData.midget.(eccField).LminusM.f,rcgData.midget.(eccField).LminusM.g,'or');
     loglog(rcgData.midget.(eccField).LMS.f,rcgData.midget.(eccField).LMS.g,'ok');
     title(sprintf('Eccentricity = %2.1f',eccDegs(ee)));
+    ylim([0 10]);
     box off
 
     subplot(3,1,2);
@@ -78,13 +81,13 @@ for ee = 1:nEccBands
     figuresize(200, 400,'pt');
 
     plotRF(rfRGC,figHandle,'-k');
-%    plotRF(rfCone,figHandle,'-g',3);
     box off
 
     subplot(3,1,1);
     hold on
     loglog(rcgData.parasol.(eccField).LMS.f,rcgData.parasol.(eccField).LMS.g,'ok');
     title(sprintf('Eccentricity = %2.1f',eccDegs(ee)));
+    ylim([0 10]);
     box off
     subplot(3,1,2);
     box off
@@ -103,13 +106,13 @@ for ee = 1:nEccBands
     figuresize(200, 400,'pt');
 
     plotRF(rfRGC,figHandle,'-b');
-%    plotRF(rfCone,figHandle,'-g',3);
     box off
 
     subplot(3,1,1);
     hold on
     loglog(rcgData.bistratified.(eccField).S.f,rcgData.bistratified.(eccField).S.g,'ob');
     title(sprintf('Eccentricity = %2.1f',eccDegs(ee)));
+    ylim([0 10]);
     box off
 
     subplot(3,1,2);

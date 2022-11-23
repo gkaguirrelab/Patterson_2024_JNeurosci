@@ -46,9 +46,9 @@ for whichSub = 1:length(subjects)
     lgnYlow = mriFullResultSet.(subjects{whichSub}).lgnY_lowCI;
     lgnYhigh = mriFullResultSet.(subjects{whichSub}).lgnY_highCI;
 
-if zeroSurroundEffect
-    pMRI([10:15, 23:28, 36:41])=0; 
-end
+    if zeroSurroundEffect
+        pMRI([10:15, 23:28, 36:41])=0;
+    end
 
     [~,v1YFitMatrix,v1RFMatrix] = assembleV1Response(pMRI,cellClasses,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel,paramCounts,modelType);
     [~,lgnYFitMatrix,lgnRFMatrix] = assembleLGNResponse(pMRI,cellClasses,stimulusDirections,freqsForPlotting,rgcTemporalModel,paramCounts,modelType);

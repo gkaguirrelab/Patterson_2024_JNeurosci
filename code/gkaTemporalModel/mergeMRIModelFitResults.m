@@ -18,6 +18,9 @@ nEcc = 6;
 % The number of boot strap resamples of the data to get 95% CIs
 nBoots = 10000;
 
+% Index name
+indexName = ['mriTemporalModel_' regexprep(num2str(1:12),' +', '-') '.mat'];
+
 
 % Loop over the model types
 for cc = 1:length(modelTypes)
@@ -74,6 +77,11 @@ for cc = 1:length(modelTypes)
 
             if rr==1 && ss==1
                 mriFullResultSet.meta = mriTemporalModel.meta;
+            end
+
+            if strcmp(resultList(rr).name,indexName)
+                mriFullResultSet.(subjects{ss}).lgnGain = mriTemporalModel.(subjects{ss}).pMRI(6:8);
+                mriFullResultSet.(subjects{ss}).lgnFilt = mriTemporalModel.(subjects{ss}).pMRI(2:3);
             end
 
             if isfield(mriTemporalModel.(subjects{ss}),'paramCounts')

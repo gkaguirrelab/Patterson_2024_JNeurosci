@@ -21,7 +21,8 @@ lgnSecondOrderQ = pMRI(3);
 parfor ee=1:nEccs
 
     % Clear some variables to keep parfor happy
-    activeCells = {}; lgnGain = []; rfPostRetinal = sym([]);
+    activeCells = {}; rfPostRetinal = sym([]);
+    lgnGain = []; lgnSurroundDelay = []; lgnSurroundIndex = [];
 
     % Loop through the stimulus directions and assemble the response
     for ss = 1:nStims
@@ -52,9 +53,11 @@ parfor ee=1:nEccs
             % per-stimulus basis
             switch modelType
                 case 'stimulus'
-                    lgnGain = pMRI(paramCounts.unique + (ss-1)*paramCounts.lgn + 1);
+                    lgnGain = pMRI(paramCounts.unique + (ss-1)*paramCounts.lgn + 3);
                 case {'cell','mix'}
                     cellIdx = find(strcmp(activeCells{cc},cellClasses));
+                    lgnSurroundDelay = pMRI(paramCounts.unique + (cellIdx-1)*paramCounts.lgn + 1);
+                    lgnSurroundIndex = pMRI(paramCounts.unique + (cellIdx-1)*paramCounts.lgn + 2);
                     lgnGain = pMRI(paramCounts.unique + (cellIdx-1)*paramCounts.lgn + 1);
                 otherwise
                     error('not a specified model type')
@@ -72,6 +75,14 @@ parfor ee=1:nEccs
             % geniculate synapse
             rfPostRetinal(cc) = rfPostRetinal(cc).*stageSecondOrderLP(lgnSecondOrderFc,lgnSecondOrderQ);
 
+            % If we are in the cell model, perform the delayed, surround
+            % subtraction for each cell class, prior to combination
+            switch modelType
+                case 'stimulus'
+                case 'cell'
+                    rfPostRetinal(cc) = rfPostRetinal(cc) - lgnSurroundIndex * rfPostRetinal(cc).*stageDelay(lgnSurroundDelay/1000);
+            end
+
             % Gain
             rfPostRetinal(cc) = (lgnGain/1e3)*rfPostRetinal(cc);
 
@@ -79,6 +90,17 @@ parfor ee=1:nEccs
 
         % Add the postRetinal RFs together
         rfPostRetinal = sum(rfPostRetinal);
+
+        % If we are in the stimulus-refered model, perform delayed surround
+        % subtraction upon the response for this stimulus after combining
+        % cell classes
+        switch modelType
+            case {'stimulus','mix'}
+                lgnSurroundDelay = pMRI(paramCounts.unique + (ss-1)*paramCounts.lgn + 1);
+                lgnSurroundIndex = pMRI(paramCounts.unique + (ss-1)*paramCounts.lgn + 2);
+                rfPostRetinal = rfPostRetinal - lgnSurroundIndex * rfPostRetinal.*stageDelay(lgnSurroundDelay/1000);
+            case 'cell'
+        end
 
         % Store the RF
         rfMatrix(ss,ee) = rfPostRetinal;

@@ -167,6 +167,9 @@ for whichSub = 1:length(subjects)
         p = patch(X,Y,plotColor{whichStim});
         set(p,'edgecolor','none','facealpha',0.1);
 
+        % Add the lgn
+        semilogy(0,pMRI(paramCounts.unique+(whichStim-1)*paramCounts.lgn+2),['*' plotColor{whichStim}]);
+
         % Clean up
         refline(0,0);
         xlabel('Eccentricity [log deg]');
@@ -185,7 +188,7 @@ for whichSub = 1:length(subjects)
         set(p,'edgecolor','none','facealpha',0.1);
 
         % Add the lgn
-        semilogy(0,pMRI(5+whichStim),['*' plotColor{whichStim}]);
+        semilogy(0,pMRI(paramCounts.unique+(whichStim-1)*paramCounts.lgn+3),['*' plotColor{whichStim}]);
 
         % Clean up
         xlim([-0.5 2]);

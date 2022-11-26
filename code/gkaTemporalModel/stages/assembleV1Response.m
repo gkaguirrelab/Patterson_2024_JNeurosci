@@ -11,8 +11,6 @@ responseMat = zeros(nStims,nEccs,nFreqs);
 
 % Unpack the "unique" params
 n = pMRI(1);
-lgnSecondOrderFc = pMRI(2);
-lgnSecondOrderQ = pMRI(3);
 v1SecondOrderFc = pMRI(4);
 v1SecondOrderQ = pMRI(5);
 
@@ -71,16 +69,9 @@ parfor ee=1:nEccs
                 activeCells{cc},stimulusDirections{ss},rgcTemporalModel,...
                 studiedEccentricites(ee),stimulusContrastScale);
 
-            % 2nd order low-pass fiter at the level of the retinto-
-            % geniculate synapse
-            rfPostRetinal(cc) = rfPostRetinal(cc).*stageSecondOrderLP(lgnSecondOrderFc,lgnSecondOrderQ);
-
             % Second order low pass filter at the level of genciulo-
             % cortical synapse
             rfPostRetinal(cc) = rfPostRetinal(cc).*stageSecondOrderLP(v1SecondOrderFc,v1SecondOrderQ);
-
-            % Gain
-            rfPostRetinal(cc) = (v1Gain/1000)*rfPostRetinal(cc);
 
             % If we are in the cell model, perform the delayed, surround
             % subtraction for each cell class, prior to combination
@@ -89,6 +80,9 @@ parfor ee=1:nEccs
                 case 'cell'
                     rfPostRetinal(cc) = rfPostRetinal(cc) - v1SurroundIndex * rfPostRetinal(cc).*stageDelay(v1SurroundDelay/1000);
             end
+
+            % Gain
+            rfPostRetinal(cc) = (v1Gain/1000)*rfPostRetinal(cc);
 
         end
 

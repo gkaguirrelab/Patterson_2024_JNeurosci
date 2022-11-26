@@ -101,21 +101,23 @@ lb = []; plb = []; pub = []; ub = [];
 % - lgn second order flter "quality"
 % - V1 second order filter corner freq
 % - V1 second order flter "quality"
-lb =  [ lb 0.5 70 0.1 10 0.1];
-plb = [plb 0.8 75 0.4 15 0.4];
-pub = [pub 1.0 85 0.5 20 0.5];
-ub =  [ ub 2.0 90 0.7 30 0.7];
+lb =  [ lb 0.5 10 0.1 10 0.1];
+plb = [plb 0.8 15 0.4 15 0.4];
+pub = [pub 0.9 40 0.5 40 0.5];
+ub =  [ ub 1.0 90 0.7 90 0.7];
 paramCounts.unique = 5;
 
 % LGN BOLD fMRI gain, organized by stimulus
+% - surround delay
+% - surround index
 % - BOLD response gain
 for cc = 1:length(stimulusDirections)
-    lb =  [ lb 0];
-    plb = [plb 1];
-    pub = [pub 10];
-    ub =  [ ub 100];
+    lb =  [ lb 3 0 0];
+    plb = [plb 5 0.5 1];
+    pub = [pub 25 0.8 10];
+    ub =  [ ub 30 1 100];
 end
-paramCounts.lgn = 1;
+paramCounts.lgn = 3;
 
 % V1 params. These vary by stimulus direction
 % - surround delay
@@ -140,36 +142,14 @@ myLGNTTF = @(pMRI) assembleLGNResponse(pMRI,cellClasses,stimulusDirections,studi
 
 % Which parameters and objective(s) shall we use in the search? 
 switch paramSearch
-    case 'redGreenOnly'
-        lockIdx = [1:5 6:8 22:47];
-        v1W(37:end)=0;
-        myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI)));
-    case 'blueYellowOnly'
-        lockIdx = [1:5 6:8 9:21 35:47];
-        v1W(1:36,73:end)=0;
-        myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI)));
-    case 'chromaticOnly'
-        lockIdx = [2:3 6:8 35:47];
-        v1W(73:end)=0;
-        myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI)));
-    case 'achromaticOnly'
-        lockIdx = [1:5 6:8 9:34];
-        v1W(1:72)=0;
-        myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI)));
-    case 'eccenV1'
-        lockIdx = [2:5 6:8];
-        myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI)));
-    case 'bootV1'
-        lockIdx = [1:5 6:8 9 22 35];
-        myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI)));
-    case 'lgnGain'
-        lockIdx = [1:5 9:47];
+    case 'fullLGN'
+        lockIdx = [4:5 14:52];
         myObj = @(pMRI) norm(lgnW.*(lgnY - myLGNTTF(pMRI)));
     case 'fullV1'
-        lockIdx = [2:5, 6:8];
+        lockIdx = [2:3, 6:13];
         myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI)));
     case 'full'
-        lockIdx = [];
+        lockIdx = [3 5];
         myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI))) + ...
             norm(lgnW.*(lgnY - myLGNTTF(pMRI)));
 end

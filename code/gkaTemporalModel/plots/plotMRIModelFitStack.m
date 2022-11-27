@@ -34,12 +34,13 @@ nFreqs = length(studiedFreqs);
 fitFrequencies = logspace(0,2,50);
 nFreqsForPlotting = length(fitFrequencies);
 nCells = length(cellClasses);
-plotColor = {[1 0 0],[0 0 1],[1 1 1]};
 
 %fitEccentricities = logspace(log10(0.7031),log10(90),15);
 fitEccentricities = studiedEccentricites;
 
-spacing = 3;
+spacing = 3.5;
+
+stimOrder = [2 3 1];
 
 for whichSub = 1:length(subjects)
 
@@ -55,39 +56,49 @@ for whichSub = 1:length(subjects)
     [~,v1YFitMatrix,v1RFMatrix] = assembleV1Response(pMRI,cellClasses,stimulusDirections,fitEccentricities,fitFrequencies,rgcTemporalModel,paramCounts,modelType);
 
     figure
-    figuresize(600,300,'pt');
+    figuresize(500,500,'pt');
 
     for whichStim = 1:length(stimulusDirections)
 
-        subplot(1,3,whichStim);
+        subplot(1,3,stimOrder(whichStim));
 
         % Loop over eccentricities
-        for ee=nEccs:-1:1
+        for ee=1:nEccs
+
+            offset = 1+(nEccs*spacing) - (ee)*spacing;
 
             % The indices of the data to be plotted in the big vector
             v1DataIndices = 1+(whichStim-1)*(nEccs*nFreqs)+(ee-1)*(nFreqs): ...
                 (whichStim-1)*(nEccs*nFreqs)+(ee-1)*(nEccs)+nFreqs;
 
-            % Create a patch plot of the fit
-            X = [fitFrequencies fliplr(fitFrequencies)];
-            Y = [squeeze(v1YFitMatrix(whichStim,ee,:))'+ee*spacing, repmat(ee*spacing,1,length(fitFrequencies))];
-            p = patch(X,Y,plotColor{whichStim}.*0.5);
-            hold on
-            set(p,'edgecolor','w','facealpha',1,'LineWidth',3);
-
-
-            plot(studiedFreqs,v1Y(v1DataIndices)+ee*spacing,...
+            % Show the data itself
+            semilogx(studiedFreqs,v1Y(v1DataIndices)+offset,...
                 '.','Color',plotColor{whichStim},'MarkerSize',10);
+            hold on
+
+            % Add error bars
+            X = [studiedFreqs fliplr(studiedFreqs)];
+            Y = [v1Ylow(v1DataIndices), fliplr(v1Yhigh(v1DataIndices))]+offset;
+            p = patch(X,Y,plotColor{whichStim});
+            set(p,'edgecolor','none','facealpha',0.1);
+
+            % Add the model fit
+            semilogx(fitFrequencies,squeeze(v1YFitMatrix(whichStim,ee,:))+offset,['-' plotColor{whichStim}]);
+
+            % Add a refline
+            semilogx([1 1],[offset offset+2],'-k');
+            semilogx([1 100],[offset offset],':','Color',[0.5 0.5 0.5]);
+
         end
 
-
         % Clean up
-        set(gca,'XScale','log');
         title([stimulusDirections{whichStim} ', ' subjects{whichSub} ]);
+        xlim([0.5 100])
+        ylim([0 25])
         a=gca; a.XTick = studiedFreqs;
         a.XTickLabel = arrayfun(@num2str, studiedFreqs, 'UniformOutput', 0);
         a.XTickLabelRotation = 0;
-
+        box off
     end
 
     % Save the plot

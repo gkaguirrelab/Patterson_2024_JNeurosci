@@ -114,8 +114,8 @@ paramCounts.unique = 5;
 for cc = 1:length(stimulusDirections)
     lb =  [ lb 3 0 0];
     plb = [plb 5 0.5 1];
-    pub = [pub 25 0.8 10];
-    ub =  [ ub 30 1 100];
+    pub = [pub 30 0.8 10];
+    ub =  [ ub 40 1 100];
 end
 paramCounts.lgn = 3;
 

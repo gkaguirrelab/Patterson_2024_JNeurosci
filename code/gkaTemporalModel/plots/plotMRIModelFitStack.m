@@ -35,11 +35,9 @@ fitFrequencies = logspace(0,2,50);
 nFreqsForPlotting = length(fitFrequencies);
 nCells = length(cellClasses);
 
-%fitEccentricities = logspace(log10(0.7031),log10(90),15);
-fitEccentricities = studiedEccentricites;
 
+% Params that control the plot appearance
 spacing = 3.5;
-
 stimOrder = [2 3 1];
 
 for whichSub = 1:length(subjects)
@@ -53,7 +51,7 @@ for whichSub = 1:length(subjects)
     lgnYlow = mriFullResultSet.(subjects{whichSub}).lgnY_lowCI;
     lgnYhigh = mriFullResultSet.(subjects{whichSub}).lgnY_highCI;
 
-    [~,v1YFitMatrix,v1RFMatrix] = assembleV1Response(pMRI,cellClasses,stimulusDirections,fitEccentricities,fitFrequencies,rgcTemporalModel,paramCounts,modelType);
+    [~,v1YFitMatrix,v1RFMatrix] = assembleV1Response(pMRI,cellClasses,stimulusDirections,studiedEccentricites,fitFrequencies,rgcTemporalModel,paramCounts,modelType);
 
     figure
     figuresize(500,500,'pt');
@@ -98,13 +96,12 @@ for whichSub = 1:length(subjects)
         a=gca; a.XTick = studiedFreqs;
         a.XTickLabel = arrayfun(@num2str, studiedFreqs, 'UniformOutput', 0);
         a.XTickLabelRotation = 0;
+        a.YAxis.Visible = 'off';
         box off
     end
 
     % Save the plot
-    %     plotName = [subjects{whichSub} '_MRIModelParams.pdf' ];
-    %     saveas(gcf,fullfile(savePath,plotName));
+        plotName = [subjects{whichSub} '_StackedModelFits.pdf' ];
+        saveas(gcf,fullfile(savePath,plotName));
 
 end
-
-%

@@ -10,28 +10,27 @@ mriSearchFlag = true;
 
 % Do we wish to use the monotonic constraint upon surround index in the
 % search?
-useMonotonicConstraint = false;
+useMonotonicConstraint = true;
 
 % What model type do we want? By cell or by stimulus?
 %{
     modelTypes = {'stimulus','cell','mix'};
 %}
-
-modelTypes = {'stimulus','cell'};
+modelTypes = {'cell'};
 
 % Which set of parameters will we investigate in the bootstrap analysis?
 %{
-paramSearch = 'bootV1';
+paramSearch = 'full';
 paramSearch = 'fullV1';
-paramSearch = 'lgnGain';
+paramSearch = 'fullLGN';
 %}
 paramSearch = 'full';
 
 % How many bootstrap resamplings of the data to conduct
-nBoots = 3;
+nBoots = 1;
 
 % Verbose?
-verbose = false;
+verbose = true;
 
 % Where we will save the temporal model results
 saveDir = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults');
@@ -118,18 +117,18 @@ for bb = 1:nBoots
 
             % BADS it. We encounter occasional errors (parpool related?) so
             % place this in a try-catch.
-            try
+%             try
                 results = fitMRIResponse(...
                     pMRI0,...
                     stimulusDirections,studiedEccentricites,studiedFreqs,...
                     v1Y,v1W,lgnY,lgnW,...
                     modelTypes{mm},useMonotonicConstraint,paramSearch,verbose);
                 results.pMRI0 = pMRI0;
-            catch
-                searchTimeSecs = toc();
-                fprintf('error encountered. Skipping.\n');
-                continue % skip this boot loop
-            end
+%             catch
+%                 searchTimeSecs = toc();
+%                 fprintf('error encountered. Skipping.\n');
+%                 continue % skip this boot loop
+%             end
 
             % Report our search time and outcome
             searchTimeSecs = toc();

@@ -9,10 +9,12 @@ nFreqs = length(studiedFreqs);
 % Initialize the response matrix
 responseMat = zeros(nStims,nEccs,nFreqs);
 
-% Unpack the "unique" params
+% The compressive non-linearity for neural-->BOLD response
 n = pMRI(1);
-v1SecondOrderFc = pMRI(4);
-v1SecondOrderQ = pMRI(5);
+
+% The corner frequency of the geniculo-striate synaptic filter
+v1SecondOrderFc = pMRI(5);
+v1SecondOrderQ = 0.5; % Fixed at 0.5
 
 % Loop over eccentricities
 parfor ee=1:nEccs
@@ -41,9 +43,17 @@ parfor ee=1:nEccs
         % Need to have an explicit loop length to keep parfor happy
         for cc=1:2
 
+            % Part of the machinery to keep parfor happy
             if cc>nCellsActive
                 continue
             end
+
+            % Which cell class is relevant here?
+            cellIdx = find(strcmp(activeCells{cc},cellClasses));
+
+            % The low-pass filter varies by cell class
+            lgnSecondOrderFc = pMRI(1+cellIdx);
+            lgnSecondOrderQ = 0.5; % Fixed at 0.5
 
             % Get the V1 gain, which can be modeled on a per-cell or
             % per-stimulus basis. Also, if we are modeling on a cell level,
@@ -52,22 +62,22 @@ parfor ee=1:nEccs
                 case 'stimulus'
                     v1Gain = pMRI(paramCounts.unique + paramCounts.lgn*nCells + (ss-1)*paramCounts.v1total + paramCounts.v1fixed + nEccs*1 + ee);
                 case 'cell'
-                    cellIdx = find(strcmp(activeCells{cc},cellClasses));
-                    v1Gain = pMRI(paramCounts.unique + paramCounts.lgn*nCells + (cellIdx-1)*paramCounts.v1total + paramCounts.v1fixed + nEccs*1 + ee);
                     v1SurroundDelay = pMRI(paramCounts.unique + paramCounts.lgn*nCells + (cellIdx-1)*paramCounts.v1total + 1);
                     v1SurroundIndex = pMRI(paramCounts.unique + paramCounts.lgn*nCells + (cellIdx-1)*paramCounts.v1total + paramCounts.v1fixed + nEccs*0 + ee);
-                case 'mix'
-                    cellIdx = find(strcmp(activeCells{cc},cellClasses));
                     v1Gain = pMRI(paramCounts.unique + paramCounts.lgn*nCells + (cellIdx-1)*paramCounts.v1total + paramCounts.v1fixed + nEccs*1 + ee);
             end
 
-            % Get the gain effect of stimulus contrast
+            % Get the scaling effect of stimulus contrast
             stimulusContrastScale = returnStimulusContrastScale(activeCells{cc},stimulusDirections{ss});
 
             % Get the post-retinal temporal RF
             rfPostRetinal(cc) = returnPostRetinalRF(...
                 activeCells{cc},stimulusDirections{ss},rgcTemporalModel,...
                 studiedEccentricites(ee),stimulusContrastScale);
+
+            % Second order low pass filter at the level of retino-
+            % geniculate synapse
+            rfPostRetinal(cc) = rfPostRetinal(cc).*stageSecondOrderLP(lgnSecondOrderFc,lgnSecondOrderQ);
 
             % Second order low pass filter at the level of genciulo-
             % cortical synapse
@@ -93,7 +103,7 @@ parfor ee=1:nEccs
         % subtraction upon the response for this stimulus after combining
         % cell classes
         switch modelType
-            case {'stimulus','mix'}
+            case 'stimulus'
                 v1SurroundDelay = pMRI(paramCounts.unique + paramCounts.lgn*nCells + (ss-1)*paramCounts.v1total + 1);
                 v1SurroundIndex = pMRI(paramCounts.unique + paramCounts.lgn*nCells + (ss-1)*paramCounts.v1total + paramCounts.v1fixed + nEccs*0 + ee);
                 rfPostRetinal = rfPostRetinal - v1SurroundIndex * rfPostRetinal.*stageDelay(v1SurroundDelay/1000);

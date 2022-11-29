@@ -51,10 +51,14 @@ for whichSub = 1:length(subjects)
     lgnYlow = mriFullResultSet.(subjects{whichSub}).lgnY_lowCI;
     lgnYhigh = mriFullResultSet.(subjects{whichSub}).lgnY_highCI;
 
+    if zeroSurroundEffect
+%        pMRI([16:21, 29:34, 42:47]) = 0;
+    end
+
     [~,v1YFitMatrix,v1RFMatrix] = assembleV1Response(pMRI,cellClasses,stimulusDirections,studiedEccentricites,fitFrequencies,rgcTemporalModel,paramCounts,modelType);
 
     figure
-    figuresize(500,500,'pt');
+    figuresize(500,300,'pt');
 
     for whichStim = 1:length(stimulusDirections)
 
@@ -92,10 +96,11 @@ for whichSub = 1:length(subjects)
         % Clean up
         title([stimulusDirections{whichStim} ', ' subjects{whichSub} ]);
         xlim([0.5 100])
-        ylim([0 25])
+        ylim([0 23])
         a=gca; a.XTick = studiedFreqs;
         a.XTickLabel = arrayfun(@num2str, studiedFreqs, 'UniformOutput', 0);
         a.XTickLabelRotation = 0;
+        a.XMinorTick = 'off';
         a.YAxis.Visible = 'off';
         box off
     end

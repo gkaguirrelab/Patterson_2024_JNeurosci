@@ -12,10 +12,8 @@ nEccs = length(modeledEccentricities);
 % Initialize the response matrix
 responseMat = zeros(nStims,nEccs,nFreqs);
 
-% Unpack the "unique" params
+% The compressive non-linearity for neural-->BOLD response
 n = pMRI(1);
-lgnSecondOrderFc = pMRI(2);
-lgnSecondOrderQ = pMRI(3);
 
 % Loop over eccentricities
 parfor ee=1:nEccs
@@ -45,20 +43,27 @@ parfor ee=1:nEccs
         % Need to have an explicit loop length to keep parfor happy
         for cc=1:2
 
+            % Part of the machinery to keep parfor happy
             if cc>nCellsActive
                 continue
             end
+
+            % Which cell class is relevant here?
+            cellIdx = find(strcmp(activeCells{cc},cellClasses));
+
+            % The low-pass filter varies by cell class
+            lgnSecondOrderFc = pMRI(1+cellIdx);
+            lgnSecondOrderQ = 0.5; % Fixed at 0.5
 
             % Get the LGN gain, which can be modeled on a per-cell or
             % per-stimulus basis
             switch modelType
                 case 'stimulus'
                     lgnGain = pMRI(paramCounts.unique + (ss-1)*paramCounts.lgn + 3);
-                case {'cell','mix'}
-                    cellIdx = find(strcmp(activeCells{cc},cellClasses));
+                case 'cell'
                     lgnSurroundDelay = pMRI(paramCounts.unique + (cellIdx-1)*paramCounts.lgn + 1);
                     lgnSurroundIndex = pMRI(paramCounts.unique + (cellIdx-1)*paramCounts.lgn + 2);
-                    lgnGain = pMRI(paramCounts.unique + (cellIdx-1)*paramCounts.lgn + 1);
+                    lgnGain = pMRI(paramCounts.unique + (cellIdx-1)*paramCounts.lgn + 3);
                 otherwise
                     error('not a specified model type')
             end

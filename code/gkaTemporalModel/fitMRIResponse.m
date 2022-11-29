@@ -94,17 +94,17 @@ cellClasses = {'midget','bistratified','parasol'};
 % Define the bounds
 lb = []; plb = []; pub = []; ub = [];
 
-% "Unique" params. These do not vary by cell class, channel, or
-% eccentricity:
+% "Unique" params. These implement filters on the different cell classes,
+% and a neural->BOLD non-linearity
 % - Non-linearity of neural --> BOLD activity
-% - lgn second order filter corner freq
-% - lgn second order flter "quality"
-% - V1 second order filter corner freq
-% - V1 second order flter "quality"
-lb =  [ lb 0.5 10 0.1 10 0.1];
-plb = [plb 0.8 15 0.4 15 0.4];
-pub = [pub 0.9 40 0.5 40 0.5];
-ub =  [ ub 1.0 90 0.7 90 0.7];
+% - retino-geniculate, midget second order filter corner freq
+% - retino-geniculate, bistratified second order filter corner freq
+% - retino-geniculate, parasol second order filter corner freq
+% - geniculo-striate, second order filter corner freq
+lb =  [ lb 0.5 repmat(10,1,4)];
+plb = [plb 0.8 repmat(20,1,4)];
+pub = [pub 0.9 repmat(50,1,4)];
+ub =  [ ub 1.0 repmat(80,1,4)];
 paramCounts.unique = 5;
 
 % LGN BOLD fMRI gain, organized by stimulus
@@ -143,13 +143,13 @@ myLGNTTF = @(pMRI) assembleLGNResponse(pMRI,cellClasses,stimulusDirections,studi
 % Which parameters and objective(s) shall we use in the search? 
 switch paramSearch
     case 'fullLGN'
-        lockIdx = [4:5 14:52];
+        lockIdx = [1 5:7 17:54];
         myObj = @(pMRI) norm(lgnW.*(lgnY - myLGNTTF(pMRI)));
     case 'fullV1'
-        lockIdx = [2:3, 6:13];
+        lockIdx = [2:4, 8:16];
         myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI)));
     case 'full'
-        lockIdx = [3 5];
+        lockIdx = [];
         myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI))) + ...
             norm(lgnW.*(lgnY - myLGNTTF(pMRI)));
 end

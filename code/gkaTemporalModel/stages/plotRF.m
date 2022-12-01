@@ -110,7 +110,7 @@ if any(whichPanel==3) && ~any(isnan(ttfComplex))
         hold on
     end
     plot(myTime*1000,irf,lineStyle,'LineWidth',LineWidth);
-    ylim([-1.1 1.1]);
+    ylim([-1.25 1.1]);
     xlabel('time [msec]'); ylabel('relative response');
 end
 

@@ -9,11 +9,18 @@ nFreqs = length(studiedFreqs);
 modeledEccentricities = 1:5:81;
 nEccs = length(modeledEccentricities);
 
+% We will need this value
+nCells = length(cellClasses);
+
 % Initialize the response matrix
 responseMat = zeros(nStims,nEccs,nFreqs);
 
 % The compressive non-linearity for neural-->BOLD response
 n = pMRI(1);
+
+% The corner frequency of the retino-geniculo synaptic filter
+lgnSecondOrderFc = pMRI(2);
+lgnSecondOrderQ = 0.5; % Fixed at 0.5
 
 % Loop over eccentricities
 parfor ee=1:nEccs
@@ -51,19 +58,15 @@ parfor ee=1:nEccs
             % Which cell class is relevant here?
             cellIdx = find(strcmp(activeCells{cc},cellClasses));
 
-            % The low-pass filter varies by cell class
-            lgnSecondOrderFc = pMRI(1+cellIdx);
-            lgnSecondOrderQ = 0.5; % Fixed at 0.5
-
             % Get the LGN gain, which can be modeled on a per-cell or
             % per-stimulus basis
             switch modelType
                 case 'stimulus'
-                    lgnGain = pMRI(paramCounts.unique + (ss-1)*paramCounts.lgn + 3);
+                    lgnGain = pMRI(paramCounts.unique + (ss-1)*paramCounts.lgn + 2);
                 case 'cell'
-                    lgnSurroundDelay = pMRI(paramCounts.unique + (cellIdx-1)*paramCounts.lgn + 1);
-                    lgnSurroundIndex = pMRI(paramCounts.unique + (cellIdx-1)*paramCounts.lgn + 2);
-                    lgnGain = pMRI(paramCounts.unique + (cellIdx-1)*paramCounts.lgn + 3);
+                    lgnSurroundDelay = pMRI(paramCounts.unique + paramCounts.lgn*nCells + (cellIdx-1)*paramCounts.v1total + 1);
+                    lgnSurroundIndex = pMRI(paramCounts.unique + (cellIdx-1)*paramCounts.lgn + 1);
+                    lgnGain = pMRI(paramCounts.unique + (cellIdx-1)*paramCounts.lgn + 2);
                 otherwise
                     error('not a specified model type')
             end
@@ -101,8 +104,8 @@ parfor ee=1:nEccs
         % cell classes
         switch modelType
             case {'stimulus','mix'}
-                lgnSurroundDelay = pMRI(paramCounts.unique + (ss-1)*paramCounts.lgn + 1);
-                lgnSurroundIndex = pMRI(paramCounts.unique + (ss-1)*paramCounts.lgn + 2);
+                lgnSurroundDelay = pMRI(paramCounts.unique + paramCounts.lgn*nCells + (ss-1)*paramCounts.v1total + 1);
+                lgnSurroundIndex = pMRI(paramCounts.unique + (ss-1)*paramCounts.lgn + 1);
                 rfPostRetinal = rfPostRetinal - lgnSurroundIndex * rfPostRetinal.*stageDelay(lgnSurroundDelay/1000);
             case 'cell'
         end

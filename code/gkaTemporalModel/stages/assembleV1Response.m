@@ -12,8 +12,12 @@ responseMat = zeros(nStims,nEccs,nFreqs);
 % The compressive non-linearity for neural-->BOLD response
 n = pMRI(1);
 
+% The corner frequency of the retino-geniculo synaptic filter
+lgnSecondOrderFc = pMRI(2);
+lgnSecondOrderQ = 0.5; % Fixed at 0.5
+
 % The corner frequency of the geniculo-striate synaptic filter
-v1SecondOrderFc = pMRI(5);
+v1SecondOrderFc = pMRI(3);
 v1SecondOrderQ = 0.5; % Fixed at 0.5
 
 % Loop over eccentricities
@@ -50,10 +54,6 @@ parfor ee=1:nEccs
 
             % Which cell class is relevant here?
             cellIdx = find(strcmp(activeCells{cc},cellClasses));
-
-            % The low-pass filter varies by cell class
-            lgnSecondOrderFc = pMRI(1+cellIdx);
-            lgnSecondOrderQ = 0.5; % Fixed at 0.5
 
             % Get the V1 gain, which can be modeled on a per-cell or
             % per-stimulus basis. Also, if we are modeling on a cell level,

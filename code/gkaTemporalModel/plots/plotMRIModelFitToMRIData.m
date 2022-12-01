@@ -35,6 +35,8 @@ freqsForPlotting = logspace(0,2,50);
 nFreqsForPlotting = length(freqsForPlotting);
 nCells = length(cellClasses);
 
+
+
 for whichSub = 1:length(subjects)
 
     pMRI = mean(mriFullResultSet.(subjects{whichSub}).pMRI,1);
@@ -119,9 +121,9 @@ for whichSub = 1:length(subjects)
         % Show the two filters
         subplot(2,4,4)
         lgnSecondOrderFc = pMRI(2);
-        lgnSecondOrderQ = pMRI(3);
-        v1SecondOrderFc = pMRI(4);
-        v1SecondOrderQ = pMRI(5);
+        lgnSecondOrderQ = 0.5;
+        v1SecondOrderFc = pMRI(3);
+        v1SecondOrderQ = 0.5;
 
         rf = stageSecondOrderLP(lgnSecondOrderFc,lgnSecondOrderQ);
         myFreqs = logspace(log10(0.5),log10(100),101);
@@ -168,7 +170,7 @@ for whichSub = 1:length(subjects)
         set(p,'edgecolor','none','facealpha',0.1);
 
         % Add the lgn
-        semilogy(0,pMRI(paramCounts.unique+(whichStim-1)*paramCounts.lgn+2),['*' plotColor{whichStim}]);
+        semilogy(0,pMRI(paramCounts.unique+(whichStim-1)*paramCounts.lgn+1),['*' plotColor{whichStim}]);
 
         % Clean up
         refline(0,0);
@@ -188,10 +190,11 @@ for whichSub = 1:length(subjects)
         set(p,'edgecolor','none','facealpha',0.1);
 
         % Add the lgn
-        semilogy(0,pMRI(paramCounts.unique+(whichStim-1)*paramCounts.lgn+3),['*' plotColor{whichStim}]);
+        semilogy(0,pMRI(paramCounts.unique+(whichStim-1)*paramCounts.lgn+2),['*' plotColor{whichStim}]);
 
         % Clean up
         xlim([-0.5 2]);
+        ylim([10^-1.5 10^1.5]);
         xlabel('Eccentricity [log deg]');
         ylabel('Gain parameter');
 

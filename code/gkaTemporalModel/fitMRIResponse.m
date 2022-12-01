@@ -97,27 +97,24 @@ lb = []; plb = []; pub = []; ub = [];
 % "Unique" params. These implement filters on the different cell classes,
 % and a neural->BOLD non-linearity
 % - Non-linearity of neural --> BOLD activity
-% - retino-geniculate, midget second order filter corner freq
-% - retino-geniculate, bistratified second order filter corner freq
-% - retino-geniculate, parasol second order filter corner freq
+% - retino-geniculate, second order filter corner freq
 % - geniculo-striate, second order filter corner freq
-lb =  [ lb 0.5 repmat(10,1,4)];
-plb = [plb 0.8 repmat(20,1,4)];
-pub = [pub 0.9 repmat(50,1,4)];
-ub =  [ ub 1.0 repmat(80,1,4)];
-paramCounts.unique = 5;
+lb =  [ lb 0.5 repmat(20,1,2)];
+plb = [plb 0.8 repmat(21,1,2)];
+pub = [pub 0.9 repmat(40,1,2)];
+ub =  [ ub 1.0 repmat(50,1,2)];
+paramCounts.unique = 3;
 
 % LGN BOLD fMRI gain, organized by stimulus
-% - surround delay
 % - surround index
 % - BOLD response gain
 for cc = 1:length(stimulusDirections)
-    lb =  [ lb 3 0 0];
-    plb = [plb 5 0.5 1];
-    pub = [pub 30 0.8 10];
-    ub =  [ ub 40 1 100];
+    lb =  [ lb 0 0];
+    plb = [plb 0.5 1];
+    pub = [pub 0.8 10];
+    ub =  [ ub 1 100];
 end
-paramCounts.lgn = 3;
+paramCounts.lgn = 2;
 
 % V1 params. These vary by stimulus direction
 % - surround delay
@@ -205,4 +202,3 @@ for ss=1:3
 end
 c = sum(c,2);
 end
-

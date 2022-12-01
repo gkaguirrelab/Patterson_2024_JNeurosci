@@ -108,6 +108,7 @@ paramCounts.unique = 3;
 % LGN BOLD fMRI gain, organized by stimulus
 % - surround index
 % - BOLD response gain
+% The surround delay is the same as that used at the V1 level.
 for cc = 1:length(stimulusDirections)
     lb =  [ lb 0 0];
     plb = [plb 0.5 1];

@@ -10,7 +10,7 @@ mriSearchFlag = true;
 
 % Do we wish to use the monotonic constraint upon surround index in the
 % search?
-useMonotonicConstraint = true;
+useMonotonicConstraint = false;
 
 % What model type do we want? By cell or by stimulus?
 %{
@@ -27,7 +27,7 @@ paramSearch = 'fullLGN';
 paramSearch = 'full';
 
 % How many bootstrap resamplings of the data to conduct
-nBoots = 1;
+nBoots = 4;
 
 % Verbose?
 verbose = true;

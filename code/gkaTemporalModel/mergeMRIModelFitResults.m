@@ -9,7 +9,7 @@ mriData = loadMRIResponseData();
 % Some parameters
 subjects = {'gka','asb'};
 stimulusDirections = {'LminusM','S','LMS'};
-modelTypes = {'cell','stimulus'};
+modelTypes = {'stimulus'};
 
 % The number of acquisitions obtained for each measurement
 nAcqs = 12;

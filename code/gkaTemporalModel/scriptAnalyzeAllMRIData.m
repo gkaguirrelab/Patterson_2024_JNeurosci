@@ -14,9 +14,9 @@ useMonotonicConstraint = false;
 
 % What model type do we want? By cell or by stimulus?
 %{
-    modelTypes = {'stimulus','cell','mix'};
+    modelTypes = {'stimulus','cell'};
 %}
-modelTypes = {'stimulus'};
+modelTypes = {'cell'};
 
 % Which set of parameters will we investigate in the bootstrap analysis?
 %{
@@ -27,7 +27,7 @@ paramSearch = 'fullLGN';
 paramSearch = 'full';
 
 % How many bootstrap resamplings of the data to conduct
-nBoots = 5;
+nBoots = 1;
 
 % Verbose?
 verbose = true;
@@ -115,20 +115,13 @@ for bb = 1:nBoots
             % Let's see how long this takes
             tic
 
-            % BADS it. We encounter occasional errors (parpool related?) so
-            % place this in a try-catch.
-%             try
+            % BADS it.
                 results = fitMRIResponse(...
                     pMRI0,...
                     stimulusDirections,studiedEccentricites,studiedFreqs,...
                     v1Y,v1W,lgnY,lgnW,...
                     modelTypes{mm},useMonotonicConstraint,paramSearch,verbose);
                 results.pMRI0 = pMRI0;
-%             catch
-%                 searchTimeSecs = toc();
-%                 fprintf('error encountered. Skipping.\n');
-%                 continue % skip this boot loop
-%             end
 
             % Report our search time and outcome
             searchTimeSecs = toc();

@@ -27,7 +27,7 @@ paramSearch = 'fullLGN';
 paramSearch = 'full';
 
 % How many bootstrap resamplings of the data to conduct
-nBoots = 5;
+nBoots = 3;
 
 % Verbose?
 verbose = false;

@@ -5,8 +5,8 @@ clear
 %close all
 
 modelType = 'stimulus';
+paramSearch = 'full';
 
-zeroSurroundEffect = false;
 
 % Load the empirical RGC data
 rcgData = loadRGCResponseData();
@@ -17,7 +17,7 @@ load(loadPath,'rgcTemporalModel');
 
 % Load the MRI temporal model
 loadPath = fullfile(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath'))))),'data','temporalModelResults',modelType);
-load(fullfile(loadPath,'mriFullResultSet.mat'),'mriFullResultSet');
+load(fullfile(loadPath,['mriFullResultSet_' paramSearch '.mat']),'mriFullResultSet');
 
 savePath = fullfile('~','Desktop','mtSinaiTemporalModelPlots','MRIData_FullModel',modelType);
 
@@ -47,10 +47,6 @@ for whichSub = 1:length(subjects)
     lgnY = mriFullResultSet.(subjects{whichSub}).lgnYMean;
     lgnYlow = mriFullResultSet.(subjects{whichSub}).lgnY_lowCI;
     lgnYhigh = mriFullResultSet.(subjects{whichSub}).lgnY_highCI;
-
-    if zeroSurroundEffect
-        pMRI([10:15, 23:28, 36:41])=0;
-    end
 
     [~,v1YFitMatrix,v1RFMatrix] = assembleV1Response(pMRI,cellClasses,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel,paramCounts,modelType);
     [~,lgnYFitMatrix,lgnRFMatrix] = assembleLGNResponse(pMRI,cellClasses,stimulusDirections,freqsForPlotting,rgcTemporalModel,paramCounts,modelType);
@@ -196,7 +192,6 @@ for whichSub = 1:length(subjects)
         idx = paramCounts.unique+(whichStim-1)*paramCounts.lgn+2;
         semilogy(0,pMRI(idx),['*' plotColor{whichStim}]);
         semilogy([0 0],[pMRI(idx)-pMRISEM(idx), pMRI(idx)+pMRISEM(idx)],['-' plotColor{whichStim}]);
-
 
         % Clean up
         xlim([-0.5 2]);

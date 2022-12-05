@@ -21,16 +21,15 @@ modelTypes = {'stimulus'};
 % Which set of parameters will we investigate in the bootstrap analysis?
 %{
 paramSearch = 'full';
-paramSearch = 'fullV1';
-paramSearch = 'fullLGN';
+paramSearch = 'zeroIndexV1Gain';
 %}
-paramSearch = 'full';
+paramSearch = 'zeroIndexV1Gain';
 
 % How many bootstrap resamplings of the data to conduct
-nBoots = 4;
+nBoots = 1;
 
 % Verbose?
-verbose = false;
+verbose = true;
 
 % Where we will save the temporal model results
 saveDir = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults');
@@ -151,7 +150,7 @@ for bb = 1:nBoots
             % Save after each iteration, with a suffix that identifies the
             % particular resampling indicies
             bootLabel = regexprep(num2str(bootIdx),' +', '-');
-            saveSpot = fullfile(saveDir,modelTypes{mm},subjects{whichSub},['mriTemporalModel_' bootLabel '.mat']);
+            saveSpot = fullfile(saveDir,modelTypes{mm},subjects{whichSub},['mriTemporalModel_' bootLabel '_' paramSearch '.mat']);
             save(saveSpot,'mriTemporalModel');
 
         end % model types

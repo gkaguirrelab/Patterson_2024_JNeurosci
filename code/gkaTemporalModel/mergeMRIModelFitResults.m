@@ -10,6 +10,7 @@ mriData = loadMRIResponseData();
 subjects = {'gka','asb'};
 stimulusDirections = {'LminusM','S','LMS'};
 modelTypes = {'stimulus'};
+paramSearch = 'full';
 
 % The number of acquisitions obtained for each measurement
 nAcqs = 12;
@@ -19,7 +20,7 @@ nEcc = 6;
 nBoots = 10000;
 
 % Index name
-indexName = ['mriTemporalModel_' regexprep(num2str(1:12),' +', '-') '.mat'];
+indexName = ['mriTemporalModel_' regexprep(num2str(1:12),' +', '-') '_' paramSearch '.mat'];
 
 
 % Loop over the model types
@@ -93,7 +94,7 @@ for cc = 1:length(modelTypes)
 
     end
 
-    savePath = fullfile(dataPath,'temporalModelResults',modelTypes{cc},'mriFullResultSet.mat');
+    savePath = fullfile(dataPath,'temporalModelResults',modelTypes{cc},['mriFullResultSet_' paramSearch '.mat']);
     save(savePath,'mriFullResultSet');
 
 end

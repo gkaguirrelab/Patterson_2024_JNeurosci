@@ -21,9 +21,9 @@ modelTypes = {'stimulus'};
 % Which set of parameters will we investigate in the bootstrap analysis?
 %{
 paramSearch = 'full';
-paramSearch = 'zeroIndexV1Gain';
+paramSearch = 'zeroSurroundIndex';
 %}
-paramSearch = 'zeroIndexV1Gain';
+paramSearch = 'full';
 
 % How many bootstrap resamplings of the data to conduct
 nBoots = 1;

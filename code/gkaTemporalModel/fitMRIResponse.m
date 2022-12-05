@@ -146,10 +146,11 @@ switch paramSearch
     case 'fullV1'
         lockIdx = [2:4, 8:16];
         myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI)));
-    case 'zeroIndexV1Gain'
-        lockIdx = [1:3, 4:9, 10, 11:16, 23, 24:29, 36, 37:42];
-        zeroIdx = [11:16, 24:29, 37:42]; p0(zeroIdx)=0;
-        myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI)));
+    case 'zeroSurroundIndex'
+        lockIdx = [2:3 4, 6, 8, 10, 11:16, 23, 24:29, 36, 37:42];
+        zeroIdx = [4, 6, 8, 11:16, 24:29, 37:42]; p0(zeroIdx)=0;
+        myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI))) + ...
+            norm(lgnW.*(lgnY - myLGNTTF(pMRI)));
     case 'full'
         lockIdx = [];
         myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI))) + ...

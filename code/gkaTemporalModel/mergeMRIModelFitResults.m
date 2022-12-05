@@ -22,7 +22,6 @@ nBoots = 10000;
 % Index name
 indexName = ['mriTemporalModel_' regexprep(num2str(1:12),' +', '-') '_' paramSearch '.mat'];
 
-
 % Loop over the model types
 for cc = 1:length(modelTypes)
 
@@ -68,7 +67,7 @@ for cc = 1:length(modelTypes)
         mriFullResultSet.(subjects{ss}).lgnY_highCI = lgnY(round((0.5+0.68/2)*nBoots),:);
 
         % Get the list of result files for this subject
-        resultList = dir(fullfile(dataPath,'temporalModelResults',modelTypes{cc},subjects{ss},'mriTemporalModel_*.mat'));
+        resultList = dir(fullfile(dataPath,'temporalModelResults',modelTypes{cc},subjects{ss},['mriTemporalModel_*_' paramSearch  '.mat']));
 
         % Load each result, and merge it into the full set
         for rr=1:length(resultList)
@@ -78,11 +77,6 @@ for cc = 1:length(modelTypes)
 
             if rr==1 && ss==1
                 mriFullResultSet.meta = mriTemporalModel.meta;
-            end
-
-            if strcmp(resultList(rr).name,indexName)
-                mriFullResultSet.(subjects{ss}).lgnGain = mriTemporalModel.(subjects{ss}).pMRI(6:8);
-                mriFullResultSet.(subjects{ss}).lgnFilt = mriTemporalModel.(subjects{ss}).pMRI(2:3);
             end
 
             if isfield(mriTemporalModel.(subjects{ss}),'paramCounts')

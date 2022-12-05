@@ -5,6 +5,7 @@ clear
 %close all
 
 modelType = 'stimulus';
+paramSearch = 'zeroSurroundIndex';
 paramSearch = 'full';
 
 
@@ -19,6 +20,7 @@ load(loadPath,'rgcTemporalModel');
 loadPath = fullfile(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath'))))),'data','temporalModelResults',modelType);
 load(fullfile(loadPath,['mriFullResultSet_' paramSearch '.mat']),'mriFullResultSet');
 
+% Where will we save the plots
 savePath = fullfile('~','Desktop','mtSinaiTemporalModelPlots','MRIData_FullModel',modelType);
 
 % Extract some meta info from the mriTemporalModel
@@ -35,8 +37,7 @@ freqsForPlotting = logspace(0,2,50);
 nFreqsForPlotting = length(freqsForPlotting);
 nCells = length(cellClasses);
 
-
-
+% Loop over subjects and make plots
 for whichSub = 1:length(subjects)
 
     pMRI = mean(mriFullResultSet.(subjects{whichSub}).pMRI,1);
@@ -138,7 +139,7 @@ for whichSub = 1:length(subjects)
         a.XTickLabelRotation = 0;
 
         % Save the plot
-        plotName = [stimulusDirections{whichStim} '_' subjects{whichSub} '_MRIModelFit.pdf' ];
+        plotName = [stimulusDirections{whichStim} '_' subjects{whichSub} '_' paramSearch '_MRIModelFit.pdf' ];
         saveas(gcf,fullfile(savePath,plotName));
 
     end
@@ -202,7 +203,7 @@ for whichSub = 1:length(subjects)
     end
 
     % Save the plot
-    plotName = [subjects{whichSub} '_MRIModelParams.pdf' ];
+    plotName = [subjects{whichSub} '_' paramSearch '_MRIModelParams.pdf' ];
     saveas(gcf,fullfile(savePath,plotName));
 
     % For one subject and one eccentricity, plot the lgn and V1 IRFs
@@ -216,9 +217,9 @@ for whichSub = 1:length(subjects)
         end
 
         % Save the plot
-        plotName = [subjects{whichSub} '_lgnIRFs.pdf' ];
+        plotName = [subjects{whichSub} '_' paramSearch '_lgnIRFs.pdf' ];
         saveas(figHandleLGN,fullfile(savePath,plotName));
-        plotName = [subjects{whichSub} '_v1IRFs.pdf' ];
+        plotName = [subjects{whichSub} '_' paramSearch '_v1IRFs.pdf' ];
         saveas(figHandleV1,fullfile(savePath,plotName));
     end
 

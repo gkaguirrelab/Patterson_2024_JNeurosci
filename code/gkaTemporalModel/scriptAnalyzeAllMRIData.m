@@ -23,10 +23,10 @@ modelTypes = {'stimulus'};
 paramSearch = 'full';
 paramSearch = 'zeroSurroundIndex';
 %}
-paramSearch = 'zeroSurroundIndexFreeFilt';
+paramSearch = 'full';
 
 % How many bootstrap resamplings of the data to conduct
-nBoots = 1;
+nBoots = 5;
 
 % Verbose?
 verbose = true;

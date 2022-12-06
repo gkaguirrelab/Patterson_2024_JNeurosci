@@ -5,8 +5,7 @@ clear
 %close all
 
 modelType = 'stimulus';
-
-zeroSurroundEffect = false;
+paramSearch = 'full';
 
 % Load the empirical RGC data
 rcgData = loadRGCResponseData();
@@ -17,7 +16,7 @@ load(loadPath,'rgcTemporalModel');
 
 % Load the MRI temporal model
 loadPath = fullfile(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath'))))),'data','temporalModelResults',modelType);
-load(fullfile(loadPath,'mriFullResultSet.mat'),'mriFullResultSet');
+load(fullfile(loadPath,['mriFullResultSet_' paramSearch '.mat']),'mriFullResultSet');
 
 savePath = fullfile('~','Desktop','mtSinaiTemporalModelPlots','MRIData_FullModel',modelType);
 
@@ -50,10 +49,6 @@ for whichSub = 1:length(subjects)
     lgnY = mriFullResultSet.(subjects{whichSub}).lgnYMean;
     lgnYlow = mriFullResultSet.(subjects{whichSub}).lgnY_lowCI;
     lgnYhigh = mriFullResultSet.(subjects{whichSub}).lgnY_highCI;
-
-    if zeroSurroundEffect
-%        pMRI([16:21, 29:34, 42:47]) = 0;
-    end
 
     [~,v1YFitMatrix,v1RFMatrix] = assembleV1Response(pMRI,cellClasses,stimulusDirections,studiedEccentricites,fitFrequencies,rgcTemporalModel,paramCounts,modelType);
 

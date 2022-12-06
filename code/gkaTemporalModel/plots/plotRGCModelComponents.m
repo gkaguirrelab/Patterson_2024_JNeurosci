@@ -78,6 +78,8 @@ stimList = {{'LMS'},{'LMS','LminusM'},{'S'}};
 
 [X,Y] = meshgrid(log10(myFreqs),myEccs);
 map = [ linspace(0,1,255);[linspace(0,0.5,127) linspace(0.5,0,128)];[linspace(0,0.5,127) linspace(0.5,0,128)]]';
+map = plasmaColorMap();
+
 
 for xx = 1:length(stageList)
     f(xx) = figure('Renderer','painters','Position',[100 100 600 300]);

@@ -1,4 +1,8 @@
-function [response, responseMat, rfMatrix] = assembleLGNResponse(pMRI,cellClasses,stimulusDirections,studiedFreqs,rgcTemporalModel,paramCounts,modelType)
+function [response, responseMat, rfMatrix] = assembleLGNResponse(pMRI,cellClasses,stimulusDirections,studiedFreqs,rgcTemporalModel,paramCounts,modelType,activeCellsLMS)
+
+if nargin<8
+    activeCellsLMS = {'midget','parasol'};
+end
 
 % Identify the stimuli and stimulus frequencies
 nStims = length(stimulusDirections);
@@ -40,7 +44,7 @@ parfor ee=1:nEccs
             case 'S'
                 activeCells = {'bistratified'};
             case 'LMS'
-                activeCells = {'midget','parasol'};
+                activeCells = activeCellsLMS;
         end
 
         % The number of cell classes that are relevant for this stimulus

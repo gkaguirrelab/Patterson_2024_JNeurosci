@@ -1,4 +1,8 @@
-function [response, responseMat, rfMatrix] = assembleV1Response(pMRI,cellClasses,stimulusDirections,studiedEccentricites,studiedFreqs,rgcTemporalModel,paramCounts,modelType)
+function [response, responseMat, rfMatrix] = assembleV1Response(pMRI,cellClasses,stimulusDirections,studiedEccentricites,studiedFreqs,rgcTemporalModel,paramCounts,modelType,activeCellsLMS)
+
+if nargin<9
+    activeCellsLMS = {'midget','parasol'};
+end
 
 % Identify the studied eccentricities and stimulus frequencies
 nCells = length(cellClasses);
@@ -38,7 +42,7 @@ parfor ee=1:nEccs
             case 'S'
                 activeCells = {'bistratified'};
             case 'LMS'
-                activeCells = {'midget','parasol'};
+                activeCells = activeCellsLMS;
         end
 
         % The number of cell classes

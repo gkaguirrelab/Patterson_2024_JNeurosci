@@ -10,7 +10,7 @@ mriData = loadMRIResponseData();
 subjects = {'gka','asb'};
 stimulusDirections = {'LminusM','S','LMS'};
 modelTypes = {'stimulus'};
-paramSearch = 'full';
+paramSearch = 'zeroSurroundIndexFreeFilt';
 
 % The number of acquisitions obtained for each measurement
 nAcqs = 12;

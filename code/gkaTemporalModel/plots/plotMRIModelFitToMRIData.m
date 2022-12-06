@@ -5,8 +5,8 @@ clear
 %close all
 
 modelType = 'stimulus';
-paramSearch = 'zeroSurroundIndex';
 paramSearch = 'full';
+paramSearch = 'zeroSurroundIndexFreeFilt';
 
 
 % Load the empirical RGC data

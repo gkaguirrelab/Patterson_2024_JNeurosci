@@ -16,20 +16,20 @@ useMonotonicConstraint = false;
 %{
     modelTypes = {'stimulus','cell'};
 %}
-modelTypes = {'stimulus'};
+modelTypes = {'stimulus','cell'};
 
 % Which set of parameters will we investigate in the bootstrap analysis?
 %{
 paramSearch = 'full';
 paramSearch = 'zeroSurroundIndex';
 %}
-paramSearch = 'gainOnly';
+paramSearch = 'full';
 
 % How many bootstrap resamplings of the data to conduct
-nBoots = 1;
+nBoots = 2;
 
 % Verbose?
-verbose = true;
+verbose = false;
 
 % Where we will save the temporal model results
 saveDir = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults');

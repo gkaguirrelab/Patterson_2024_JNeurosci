@@ -1,4 +1,4 @@
-function rgcTemporalModel = fitRGCFResponse(rgcSearchFlag,verboseFlag)
+function rgcTemporalModel = fitRGCFResponse(rgcSearchFlag,verboseFlag,paramSearch)
 
 % Loads RGC temporal sensitivity data from Solomon et al (2002, 2005) and
 % then fits these data in the complex fourier domain using a cascading
@@ -19,10 +19,16 @@ rng;
 if nargin==0
     rgcSearchFlag = false;
     verboseFlag = false;
+    paramSearch = 'full';
 end
 if nargin==1
     verboseFlag = false;
+    paramSearch = 'full';
 end
+if nargin==2
+    paramSearch = 'full';
+end
+
 
 %% Load the flicker response data
 rgcData = loadRGCResponseData();
@@ -101,9 +107,9 @@ pub = [repmat(pubBlock,1,nBlocks) 18 15 1.10];
 ub = [repmat(ubBlock,1,nBlocks) 20 18 2.00];
 
 % Here is a seed from a prior search with good performance
-% midget - fValGain: 1.56, fValPhase: 0.66, fValShrink: 0.00 
-% parasol - fValGain: 3.25, fValPhase: 0.00, fValShrink: 2.58 
-% bistratified - fValGain: 0.46, fValPhase: 0.62, fValShrink: 0.00 
+% midget - fValGain: 1.56, fValPhase: 0.66, fValShrink: 0.00
+% parasol - fValGain: 3.25, fValPhase: 0.00, fValShrink: 2.58
+% bistratified - fValGain: 0.46, fValPhase: 0.62, fValShrink: 0.00
 p0 = [ ...
     0.2469418824, 0.5922375411, 5.8056983257, 39.0848216414, 1.3149221987, 0.8983960792, 2.1111500710, 0.7764686763, ...
     0.6415928598, 0.6496570826, 17.3118880045, 42.4663314968, 1.3954235017, 0.8984520018, 2.1172960848, 0.0508179903, ...
@@ -115,6 +121,20 @@ p0 = [ ...
     0.8968017565, 0.4126953134, 9.1694768937, 20.9763595134, 0.4257805828, 0.9360351530, 3.1059570000, 0.0625000003, ...
     0.8968017565, 0.4126953134, 9.1694768937, 20.9763595134, 0.4257805828, 0.9360351530, 3.1059570000, 0.0625000003, ...
     14.2376403809, 13.7579040527, 0.9915176392 ];
+
+
+% The search is unable to operate across all the parameters at once. This
+% code allows us to lock parameters and search for a single RGC class at a
+% time
+totalBlockParams = nBlockParams*nEccBands*nCellClasses;
+switch paramSearch
+    case 'midget'
+        lockIdx = [nBlockParams*nEccBands+1:totalBlockParams, totalBlockParams+1:totalBlockParams+3];
+    otherwise
+        lockIdx = [];
+end
+lb(lockIdx) = p0(lockIdx); plb(lockIdx) = p0(lockIdx);
+ub(lockIdx) = p0(lockIdx); pub(lockIdx) = p0(lockIdx);
 
 
 %% Define the objective and non-linear bound

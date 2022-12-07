@@ -59,3 +59,7 @@ for cc=1:3
             sgtitle('Bistratified parameters')
     end
 end
+
+    plotName = ['rgcModelParamsWithEccentricity.pdf' ];
+    saveas(gcf,fullfile(savePath,plotName));
+

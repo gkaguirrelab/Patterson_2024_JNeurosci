@@ -56,9 +56,6 @@ for whichSub = 1:length(subjects)
         figure
         figuresize(600,300,'pt');
 
-        % Prepare to make an average V1 response
-        v1AvgData = 
-
         % Loop over eccentricities
         for ee=1:nEccs
 

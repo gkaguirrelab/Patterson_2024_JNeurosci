@@ -11,10 +11,6 @@ subjects = {'gka','asb'};
 stimulusDirections = {'LminusM','S','LMS'};
 modelTypes = {'stimulus','cell'};
 
-nBoots = 5;
-
-data = nan(length(subjects),length(modelTypes),nBoots);
-
 for ss = 1:length(subjects)
 
     % Loop over the model types
@@ -35,7 +31,6 @@ for ss = 1:length(subjects)
             data(ss,1,rr)=mriTemporalModel.(subjects{ss}).fVal;
         end
 
-    data(data==0)=nan;
 
     % Report the comparisons
     [~,p,~,stats] = ttest(squeeze(data(ss,1,:)),squeeze(data(ss,2,:)));

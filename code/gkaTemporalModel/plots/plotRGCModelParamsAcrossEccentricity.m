@@ -24,6 +24,8 @@ eccDegs = rgcTemporalModel.meta.eccDegs;
 lbBlock = rgcTemporalModel.meta.lbBlock;
 ubBlock = rgcTemporalModel.meta.ubBlock;
 
+cellClasses = rgcTemporalModel.meta.cellClassIndices;
+
 nEccBands = length(eccFields);
 nBlockParams = size(pRGC,1);
 
@@ -50,16 +52,10 @@ for cc=1:3
         ylim([lbBlock(ii) ubBlock(ii)]);
 
     end
-    switch cc
-        case 1
-            sgtitle('Midget parameters')
-        case 2
-            sgtitle('Parasol parameters')
-        case 3
-            sgtitle('Bistratified parameters')
-    end
-end
+    sgtitle(cellClasses{cc})
 
-    plotName = ['rgcModelParamsWithEccentricity.pdf' ];
+    plotName = ['rgcModelParamsWithEccentricity_' cellClasses{cc} '.pdf' ];
     saveas(gcf,fullfile(savePath,plotName));
+
+end
 

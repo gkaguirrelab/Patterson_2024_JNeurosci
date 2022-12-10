@@ -3,6 +3,11 @@
 clear
 close all
 
+
+%% Initialize the random seed so that we get different perms each run
+rng('shuffle');
+
+
 %% Are we searching or not?
 % Do we want to conduct a search for the fMRI data, or just use the p0
 % values and make plots?

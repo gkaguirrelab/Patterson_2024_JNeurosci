@@ -2,12 +2,11 @@
 
 % Housekeeping
 clear
-%close all
+close all
 
+% Model and search type
 modelType = 'stimulus';
-paramSearch = 'zeroSurroundIndexFreeFilt';
 paramSearch = 'full';
-
 
 % Load the empirical RGC data
 rcgData = loadRGCResponseData();

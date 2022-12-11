@@ -1,10 +1,14 @@
 function [response, responseMat, rfMatrix] = assembleLGNResponse(pMRI,cellClasses,stimulusDirections,studiedFreqs,rgcTemporalModel,paramCounts,modelType,activeCellsLMS)
 
+% This machinery is present in case we wish to examine the response to
+% luminance for just the midget or just the parasol contribution, in which
+% case we can pass this parameter with only the desired cell class.
 if nargin<8
     activeCellsLMS = {'midget','parasol'};
 end
 
-% Identify the stimuli and stimulus frequencies
+% Some basic facts about the simulation
+nCells = length(cellClasses);
 nStims = length(stimulusDirections);
 nFreqs = length(studiedFreqs);
 
@@ -12,9 +16,6 @@ nFreqs = length(studiedFreqs);
 % evenly spaced retinal eccentricities
 modeledEccentricities = 1:5:81;
 nEccs = length(modeledEccentricities);
-
-% We will need this value
-nCells = length(cellClasses);
 
 % Initialize the response matrix
 responseMat = zeros(nStims,nEccs,nFreqs);
@@ -24,7 +25,10 @@ n = pMRI(1);
 
 % The corner frequency of the retino-geniculo synaptic filter
 lgnSecondOrderFc = pMRI(2);
-lgnSecondOrderQ = 0.5; % Fixed at 0.5
+lgnSecondOrderQ = 0.45; % Fixed at 0.45
+
+% The LMRatio
+rgcTemporalModel.LMRatio = pMRI(3);
 
 % Loop over eccentricities
 parfor ee=1:nEccs
@@ -119,14 +123,14 @@ parfor ee=1:nEccs
 
         % Derive the amplitude and phase from the Fourier model
         ttfComplex = double(subs(rfPostRetinal,studiedFreqs));
-        v1Amplitude = abs(ttfComplex);
-        v1Phase = unwrap(angle(ttfComplex));
+        lgnAmplitude = abs(ttfComplex);
+        lgnPhase = unwrap(angle(ttfComplex));
 
         % Apply the non-linear transformation of neural to BOLD response
-        v1Amplitude = v1Amplitude.^n;
+        lgnAmplitude = lgnAmplitude.^n;
 
         % Store this response
-        responseMat(ss,ee,:) = v1Amplitude;
+        responseMat(ss,ee,:) = lgnAmplitude;
 
     end
 

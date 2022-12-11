@@ -15,7 +15,7 @@ mriSearchFlag = true;
 
 % Do we wish to use the monotonic constraint upon surround index in the
 % search?
-useMonotonicConstraint = false;
+useMonotonicConstraint = true;
 
 % What model type do we want? By cell or by stimulus?
 %{
@@ -27,14 +27,15 @@ modelTypes = {'stimulus','cell'};
 %{
 paramSearch = 'full';
 paramSearch = 'zeroSurroundIndex';
+paramSearch = 'v1SurroundAndGain';
 %}
 paramSearch = 'full';
 
 % How many bootstrap resamplings of the data to conduct
-nBoots = 2;
+nBoots = 1;
 
 % Verbose?
-verbose = false;
+verbose = true;
 
 % Where we will save the temporal model results
 saveDir = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults');
@@ -92,16 +93,24 @@ for bb = 1:nBoots
         lgnY = []; lgnW = []; v1Y = []; v1W = [];
         for whichStim = 1:length(stimulusDirections)
 
-            % Extract the relevant LGN data
+            % Extract the  LGN data
             thisMatrix = mriData.(subjects{whichSub}).(stimulusDirections{whichStim}).lgn(bootIdx,:);
             lgnY = [lgnY mean(thisMatrix)];
             lgnW = [lgnW 1./std(thisMatrix)];
 
-            % Extract the relevant V1 data acros eccentricities
-            for ee = 1:nEccs
-                thisMatrix = mriData.(subjects{whichSub}).(stimulusDirections{whichStim}).(['ecc' num2str(ee)])(bootIdx,:);
-                v1Y = [v1Y mean(thisMatrix)];
-                v1W = [v1W 1./std(thisMatrix)];
+            switch paramSearch
+                case 'avgROIs'
+                    % Extract the avg V1 response
+                    thisMatrix = mriData.(subjects{whichSub}).(stimulusDirections{whichStim}).v1_avg(bootIdx,:);
+                    v1Y = [v1Y mean(thisMatrix)];
+                    v1W = [v1W 1./std(thisMatrix)];
+                otherwise
+                    % Extract the V1 response across eccentricities
+                    for ee = 1:nEccs
+                        thisMatrix = mriData.(subjects{whichSub}).(stimulusDirections{whichStim}).(['v1_ecc' num2str(ee)])(bootIdx,:);
+                        v1Y = [v1Y mean(thisMatrix)];
+                        v1W = [v1W 1./std(thisMatrix)];
+                    end
             end
         end
 
@@ -120,12 +129,12 @@ for bb = 1:nBoots
             tic
 
             % BADS it.
-                results = fitMRIResponse(...
-                    pMRI0,...
-                    stimulusDirections,studiedEccentricites,studiedFreqs,...
-                    v1Y,v1W,lgnY,lgnW,...
-                    modelTypes{mm},useMonotonicConstraint,paramSearch,verbose);
-                results.pMRI0 = pMRI0;
+            results = fitMRIResponse(...
+                pMRI0,...
+                stimulusDirections,studiedEccentricites,studiedFreqs,...
+                v1Y,v1W,lgnY,lgnW,...
+                modelTypes{mm},useMonotonicConstraint,paramSearch,verbose);
+            results.pMRI0 = pMRI0;
 
             % Report our search time and outcome
             searchTimeSecs = toc();

@@ -18,11 +18,14 @@ n = pMRI(1);
 
 % The corner frequency of the retino-geniculo synaptic filter
 lgnSecondOrderFc = pMRI(2);
-lgnSecondOrderQ = 0.5; % Fixed at 0.5
+lgnSecondOrderQ = 0.45; % Fixed at 0.45
 
 % The corner frequency of the geniculo-striate synaptic filter
-v1SecondOrderFc = pMRI(3);
-v1SecondOrderQ = 0.5; % Fixed at 0.5
+v1SecondOrderFc = pMRI(2);
+v1SecondOrderQ = 0.45; % Fixed at 0.45
+
+% The LMRatio
+rgcTemporalModel.LMRatio = pMRI(3);
 
 % Loop over eccentricities
 parfor ee=1:nEccs

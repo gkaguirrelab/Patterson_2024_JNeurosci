@@ -54,23 +54,31 @@ for ss = 1:length(subjectNames)
     for dd = 1:length(stimulusDirections)
 
         % Loop over eccentricity bins in V1 (plus LGN)
-        for ee = 0:length(eccenDivs)-1
+        for ee = 0:length(eccenDivs)
 
             % When ee==0, load the LGN data
-            if ee==0
-                areaIdx = LGNROI;
+            switch ee
+                case 0 % The LGN
+                    areaIdx = LGNROI;
+                    eccFieldName = 'lgn';
+                case length(eccenDivs) % Avg V1
+                    % The eccentricity range for this bin
+                    eccenRange = [eccenDivs(1) eccenDivs(end)];
 
-                % The name we will use for this field in the data structure
-                eccFieldName = 'lgn';
-            else
-                % The eccentricity range for this bin
-                eccenRange = [eccenDivs(ee) eccenDivs(ee+1)];
+                    % Find the vertices that we wish to analyze within V1
+                    areaIdx = (vArea==1) .* (eccenMap > eccenRange(1)) .* (eccenMap < eccenRange(2));
 
-                % Find the vertices that we wish to analyze within V1
-                areaIdx = (vArea==1) .* (eccenMap > eccenRange(1)) .* (eccenMap < eccenRange(2));
+                    % The name we will use for this field in the data structure
+                    eccFieldName = 'v1_avg';
+                otherwise
+                    % The eccentricity range for this bin
+                    eccenRange = [eccenDivs(ee) eccenDivs(ee+1)];
 
-                % The name we will use for this field in the data structure
-                eccFieldName = ['ecc' num2str(ee)];
+                    % Find the vertices that we wish to analyze within V1
+                    areaIdx = (vArea==1) .* (eccenMap > eccenRange(1)) .* (eccenMap < eccenRange(2));
+
+                    % The name we will use for this field in the data structure
+                    eccFieldName = ['v1_ecc' num2str(ee)];
             end
 
             % Get the indices that contain the desired results

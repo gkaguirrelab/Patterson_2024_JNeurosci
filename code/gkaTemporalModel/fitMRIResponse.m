@@ -97,12 +97,12 @@ lb = []; plb = []; pub = []; ub = [];
 % "Unique" params. These implement filters on the different cell classes,
 % and a neural->BOLD non-linearity
 % - Non-linearity of neural --> BOLD activity
-% - retino-geniculate, second order filter corner freq
-% - geniculo-striate, second order filter corner freq
-lb =  [ lb 0.5 repmat(20,1,2)];
-plb = [plb 0.8 repmat(21,1,2)];
-pub = [pub 0.9 repmat(40,1,2)];
-ub =  [ ub 1.0 repmat(50,1,2)];
+% - second order filter corner freq of the synapse LP filters
+% - LM ratio
+lb =  [ lb 0.5 30 0.5];
+plb = [plb 0.8 35 0.75];
+pub = [pub 0.9 40 1.5];
+ub =  [ ub 1.0 45 2];
 paramCounts.unique = 3;
 
 % LGN BOLD fMRI gain, organized by stimulus
@@ -138,21 +138,16 @@ paramCounts.v1total = paramCounts.v1fixed+paramCounts.v1eccen;
 myV1TTF = @(pMRI) assembleV1Response(pMRI,cellClasses,stimulusDirections,studiedEccentricites,studiedFreqs,rgcTemporalModel,paramCounts,modelType);
 myLGNTTF = @(pMRI) assembleLGNResponse(pMRI,cellClasses,stimulusDirections,studiedFreqs,rgcTemporalModel,paramCounts,modelType);
 
-% Which parameters and objective(s) shall we use in the search? 
+% Which parameters and objective(s) shall we use in the search?
 switch paramSearch
     case 'gainOnly'
-        lockIdx = [2:3 4, 6, 8, 10, 11:16, 23, 24:29, 36, 37:42];
-        pinIdx = [2:3]; p0(pinIdx)=120;
+        lockIdx = [2 4, 6, 8, 10, 11:16, 23, 24:29, 36, 37:42];
+        pinIdx = 2; p0(pinIdx)=120;
         zeroIdx = [4, 6, 8, 11:16, 24:29, 37:42]; p0(zeroIdx)=0;
         myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI))) + ...
             norm(lgnW.*(lgnY - myLGNTTF(pMRI)));
-    case 'zeroSurroundIndex'
+    case 'noSurrond'
         lockIdx = [1:3 4, 6, 8, 10, 11:16, 23, 24:29, 36, 37:42];
-        zeroIdx = [4, 6, 8, 11:16, 24:29, 37:42]; p0(zeroIdx)=0;
-        myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI))) + ...
-            norm(lgnW.*(lgnY - myLGNTTF(pMRI)));
-    case 'zeroSurroundIndexFreeFilt'
-        lockIdx = [4, 6, 8, 10, 11:16, 23, 24:29, 36, 37:42];
         zeroIdx = [4, 6, 8, 11:16, 24:29, 37:42]; p0(zeroIdx)=0;
         myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI))) + ...
             norm(lgnW.*(lgnY - myLGNTTF(pMRI)));

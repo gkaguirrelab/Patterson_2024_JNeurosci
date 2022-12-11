@@ -15,7 +15,7 @@ paramSearch = 'zeroSurroundIndex';
 paramSearch = 'gainOnly';
 paramSearch = 'zeroSurroundIndexFreeFilt';
 %}
-paramSearch = 'full';
+paramSearch = 'fullLMRatio';
 
 % The number of acquisitions obtained for each measurement
 nAcqs = 12;
@@ -51,7 +51,7 @@ for cc = 1:length(modelTypes)
 
                 % Extract the relevant V1 data acros eccentricities
                 for ee = 1:nEcc
-                    thisMatrix = mriData.(subjects{ss}).(stimulusDirections{whichStim}).(['ecc' num2str(ee)])(bootIdx,:);
+                    thisMatrix = mriData.(subjects{ss}).(stimulusDirections{whichStim}).(['v1_ecc' num2str(ee)])(bootIdx,:);
                     v1Ytemp = [v1Ytemp mean(thisMatrix)];
                     v1EccAccum(ee,:) = mean(thisMatrix);
                 end

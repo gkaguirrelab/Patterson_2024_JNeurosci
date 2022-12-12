@@ -11,11 +11,11 @@ subjects = {'gka','asb'};
 stimulusDirections = {'LminusM','S','LMS'};
 modelTypes = {'stimulus'};
 %{
-paramSearch = 'zeroSurroundIndex';
-paramSearch = 'gainOnly';
-paramSearch = 'zeroSurroundIndexFreeFilt';
-%}
 paramSearch = 'full';
+paramSearch = 'gainOnly';
+paramSearch = 'noSurround';
+%}
+paramSearch = 'noSurround';
 
 % The number of acquisitions obtained for each measurement
 nAcqs = 12;

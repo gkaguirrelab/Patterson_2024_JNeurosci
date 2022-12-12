@@ -21,10 +21,13 @@ useMonotonicConstraint = false;
 %{
     modelTypes = {'stimulus','cell'};
 %}
-modelTypes = {'stimulus','cell'};
+modelTypes = {'stimulus'};
 
 % Which set of parameters will we investigate in the bootstrap analysis?
 %{
+paramSearch = 'gainOnly';
+paramSearch = 'noSurround';
+paramSearch = 'full';
 %}
 paramSearch = 'full';
 

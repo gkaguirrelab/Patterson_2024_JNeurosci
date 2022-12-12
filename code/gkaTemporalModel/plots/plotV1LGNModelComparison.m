@@ -5,7 +5,7 @@ clear
 %close all
 
 modelType = 'stimulus';
-paramSearches = {'gainOnly','zeroSurroundIndex','full'};
+paramSearches = {'gainOnly','noSurround','full'};
 paramLineStyle = {':','-.','-'};
 
 % Load the empirical RGC data
@@ -23,7 +23,6 @@ figure
 figuresize(200,300,'pt');
 
 whichSub = 2;
-whichEcc = 4;
 whichStim = 3;
 
 % Loop over the param searches
@@ -57,7 +56,7 @@ for pp = 1:length(paramSearches)
 
     [~,v1YFitMatrix] = assembleV1Response(pMRI,cellClasses,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel,paramCounts,modelType);
 
-    % Get the lgn fit with the separate parasol and midget
+    % Get the v1 fit with the separate parasol and midget
     % contributions to LMS
     if pp==1
         [~,v1YFitMatrixMidgetOnly] = assembleV1Response(pMRI,cellClasses,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel,paramCounts,modelType,{'midget'});
@@ -66,28 +65,39 @@ for pp = 1:length(paramSearches)
 
 
     % The indices of the data to be plotted in the big vector
-    v1DataIndices = 1+(whichStim-1)*(nEccs*nFreqs)+(whichEcc-1)*(nFreqs): ...
-        (whichStim-1)*(nEccs*nFreqs)+(whichEcc-1)*(nEccs)+nFreqs;
+    v1AvgY = zeros(1,length(studiedFreqs)); 
+    v1YAvglow = zeros(1,length(studiedFreqs)); 
+    v1YAvghigh = zeros(1,length(studiedFreqs)); 
+    v1AvgFit = zeros(1,length(freqsForPlotting));
+    for ee=1:length(studiedEccentricites)
+    v1DataIndices = 1+(whichStim-1)*(nEccs*nFreqs)+(ee-1)*(nFreqs): ...
+        (whichStim-1)*(nEccs*nFreqs)+(ee-1)*(nEccs)+nFreqs;
+
+    v1AvgY = v1AvgY + v1Y(v1DataIndices)./length(studiedEccentricites);
+    v1YAvglow = v1YAvglow + v1Ylow(v1DataIndices)./length(studiedEccentricites);
+    v1YAvghigh = v1YAvghigh + v1Yhigh(v1DataIndices)./length(studiedEccentricites);
+    v1AvgFit = v1AvgFit + squeeze(v1YFitMatrix(whichStim,ee,:))/length(studiedEccentricites);
+    end
 
     % Show the data itself
     if pp==1
-        semilogx(studiedFreqs,v1Y(v1DataIndices),['o' plotColor{whichStim}]);
+        semilogx(studiedFreqs,v1AvgY,['o' plotColor{whichStim}]);
         hold on
 
         % Add error bars
         X = [studiedFreqs fliplr(studiedFreqs)];
-        Y = [v1Ylow(v1DataIndices), fliplr(v1Yhigh(v1DataIndices))];
+        Y = [v1YAvglow, fliplr(v1YAvghigh)];
         p = patch(X,Y,plotColor{whichStim});
         set(p,'edgecolor','none','facealpha',0.1);
 
-        if whichStim == 3
-            semilogx(freqsForPlotting,squeeze(v1YFitMatrixMidgetOnly(whichStim,whichEcc,:)),':r');
-            semilogx(freqsForPlotting,squeeze(v1YFitMatrixParasolOnly(whichStim,whichEcc,:)),':','Color',[0.5 0.5 0.5]);
-        end
+%        if whichStim == 3
+%            semilogx(freqsForPlotting,squeeze(v1YFitMatrixMidgetOnly(whichStim,whichEcc,:)),':r');
+%            semilogx(freqsForPlotting,squeeze(v1YFitMatrixParasolOnly(whichStim,whichEcc,:)),':','Color',[0.5 0.5 0.5]);
+%        end
     end
 
     % Add the model fit
-    semilogx(freqsForPlotting,squeeze(v1YFitMatrix(whichStim,whichEcc,:)),[paramLineStyle{pp} plotColor{whichStim}]);
+    semilogx(freqsForPlotting,v1AvgFit,[paramLineStyle{pp} plotColor{whichStim}]);
 
     % Clean up
     refline(0,0);

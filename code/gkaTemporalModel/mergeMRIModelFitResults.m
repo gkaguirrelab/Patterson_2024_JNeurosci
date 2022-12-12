@@ -15,7 +15,7 @@ paramSearch = 'zeroSurroundIndex';
 paramSearch = 'gainOnly';
 paramSearch = 'zeroSurroundIndexFreeFilt';
 %}
-paramSearch = 'fullLMRatio';
+paramSearch = 'full';
 
 % The number of acquisitions obtained for each measurement
 nAcqs = 12;

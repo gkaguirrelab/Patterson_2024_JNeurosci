@@ -114,24 +114,16 @@ for whichSub = 1:length(subjects)
         a.XTickLabel = arrayfun(@num2str, studiedFreqs, 'UniformOutput', 0);
         a.XTickLabelRotation = 0;
 
-        % Show the two filters
+        % Show the synapse LP filter
         subplot(2,4,4)
-        lgnSecondOrderFc = pMRI(2);
-        lgnSecondOrderQ = 0.5;
-        v1SecondOrderFc = pMRI(3);
-        v1SecondOrderQ = 0.5;
+        synapseSecondOrderFc = pMRI(2);
+        synapseSecondOrderQ = 0.45;
 
-        rf = stageSecondOrderLP(lgnSecondOrderFc,lgnSecondOrderQ);
+        rf = stageSecondOrderLP(synapseSecondOrderFc,synapseSecondOrderQ);
         myFreqs = logspace(log10(0.5),log10(100),101);
         ttfComplex = double(subs(rf,myFreqs));
         gainVals = abs(ttfComplex);
         semilogx(myFreqs,gainVals,'-k');
-        hold on
-        rf = stageSecondOrderLP(v1SecondOrderFc,v1SecondOrderQ);
-        myFreqs = logspace(log10(0.5),log10(100),101);
-        ttfComplex = double(subs(rf,myFreqs));
-        gainVals = abs(ttfComplex);
-        semilogx(myFreqs,gainVals,'-m');
 
         a=gca; a.XTick = studiedFreqs;
         a.XTickLabel = arrayfun(@num2str, studiedFreqs, 'UniformOutput', 0);

@@ -99,10 +99,10 @@ lb = []; plb = []; pub = []; ub = [];
 % - Non-linearity of neural --> BOLD activity
 % - second order filter corner freq of the synapse LP filters
 % - LM ratio
-lb =  [ lb 0.5 30 0.5];
-plb = [plb 0.8 35 0.75];
-pub = [pub 0.9 40 1.5];
-ub =  [ ub 1.0 45 2];
+lb =  [ lb 0.5 30 1];
+plb = [plb 0.8 35 1];
+pub = [pub 0.9 40 1];
+ub =  [ ub 1.0 45 1];
 paramCounts.unique = 3;
 
 % LGN BOLD fMRI gain, organized by stimulus

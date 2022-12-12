@@ -15,7 +15,7 @@ mriSearchFlag = true;
 
 % Do we wish to use the monotonic constraint upon surround index in the
 % search?
-useMonotonicConstraint = true;
+useMonotonicConstraint = false;
 
 % What model type do we want? By cell or by stimulus?
 %{
@@ -25,17 +25,14 @@ modelTypes = {'stimulus','cell'};
 
 % Which set of parameters will we investigate in the bootstrap analysis?
 %{
-paramSearch = 'full';
-paramSearch = 'zeroSurroundIndex';
-paramSearch = 'v1SurroundAndGain';
 %}
 paramSearch = 'full';
 
 % How many bootstrap resamplings of the data to conduct
-nBoots = 1;
+nBoots = 4;
 
 % Verbose?
-verbose = true;
+verbose = false;
 
 % Where we will save the temporal model results
 saveDir = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults');

@@ -175,6 +175,14 @@ else
     optionsBADS.Display = 'off';
 end
 
+% The optimization toolbox is currently not available for Matlab running
+% under Apple silicon. Detect this case and tell BADS so that it doesn't
+% issue a warning
+V = ver;
+if ~any(strcmp({V.Name}, 'Optimization Toolbox'))
+    optionsBADS.OptimToolbox = 0;
+end
+
 % search
 [pMRI,fVal] = bads(myObj,p0,lb,ub,plb,pub,myNonbcon,optionsBADS);
 

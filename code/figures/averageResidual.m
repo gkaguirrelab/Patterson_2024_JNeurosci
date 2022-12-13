@@ -35,8 +35,9 @@ for ss = 1:length(subjectNames)
 
     % Properties of the stimuli
     figure
-    resid = results.data.datats;% results.data.modelts;
+    resid = results.data.datats-results.data.modelts;
     stimMat = cell2mat(results.model.inputs{2});
+stimLabels = results.model.opts{4};
 
     freqSet = {'2Hz','4Hz','8Hz','16Hz','32Hz','64Hz'};
 

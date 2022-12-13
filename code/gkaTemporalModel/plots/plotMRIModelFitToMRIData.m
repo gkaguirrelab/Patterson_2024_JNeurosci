@@ -41,12 +41,10 @@ for whichSub = 1:length(subjects)
 
     pMRI = mean(mriFullResultSet.(subjects{whichSub}).pMRI,1);
     pMRISEM = std(mriFullResultSet.(subjects{whichSub}).pMRI,0,1);
-    v1Y = mriFullResultSet.(subjects{whichSub}).v1YMean;
-    v1Ylow = mriFullResultSet.(subjects{whichSub}).v1Y_lowCI;
-    v1Yhigh = mriFullResultSet.(subjects{whichSub}).v1Y_highCI;
-    lgnY = mriFullResultSet.(subjects{whichSub}).lgnYMean;
-    lgnYlow = mriFullResultSet.(subjects{whichSub}).lgnY_lowCI;
-    lgnYhigh = mriFullResultSet.(subjects{whichSub}).lgnY_highCI;
+        v1Y = mean(mriFullResultSet.(subjects{whichSub}).v1Y,1);
+        v1YSEM = std(mriFullResultSet.(subjects{whichSub}).v1Y,0,1);
+        lgnY = mean(mriFullResultSet.(subjects{whichSub}).lgnY,1);
+        lgnYSEM = std(mriFullResultSet.(subjects{whichSub}).lgnY,0,1);
 
     [~,v1YFitMatrix,v1RFMatrix] = assembleV1Response(pMRI,cellClasses,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel,paramCounts,modelType);
     [~,lgnYFitMatrix,lgnRFMatrix] = assembleLGNResponse(pMRI,cellClasses,stimulusDirections,freqsForPlotting,rgcTemporalModel,paramCounts,modelType);
@@ -71,7 +69,7 @@ for whichSub = 1:length(subjects)
 
             % Add error bars
             X = [studiedFreqs fliplr(studiedFreqs)];
-            Y = [v1Ylow(v1DataIndices), fliplr(v1Yhigh(v1DataIndices))];
+            Y = [v1Y(v1DataIndices)-v1YSEM(v1DataIndices), fliplr(v1Y(v1DataIndices)+v1YSEM(v1DataIndices))];
             p = patch(X,Y,plotColor{whichStim});
             set(p,'edgecolor','none','facealpha',0.1);
 
@@ -99,7 +97,7 @@ for whichSub = 1:length(subjects)
 
         % patch error bars
         X = [studiedFreqs fliplr(studiedFreqs)];
-        Y = [lgnYlow(lgnDataIndices), fliplr(lgnYhigh(lgnDataIndices))];
+            Y = [lgnY(lgnDataIndices)-lgnYSEM(lgnDataIndices), fliplr(lgnY(lgnDataIndices)+lgnYSEM(lgnDataIndices))];
         p = patch(X,Y,plotColor{whichStim});
         set(p,'edgecolor','none','facealpha',0.1);
 

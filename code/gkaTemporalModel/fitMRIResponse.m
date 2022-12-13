@@ -85,8 +85,10 @@ function results = fitMRIResponse(p0,stimulusDirections,studiedEccentricites,stu
 loadPath = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults','rgcTemporalModel.mat');
 load(loadPath,'rgcTemporalModel');
 
-% Define a variable with the number of eccentricities
+% Extract these numbers
 nEccs = length(studiedEccentricites);
+nFreqs = length(studiedFreqs);
+nDirs = length(stimulusDirections);
 
 % The three types of cell classes in the model
 cellClasses = {'midget','bistratified','parasol'};
@@ -125,7 +127,7 @@ for ss = 1:length(stimulusDirections)
     lb =  [ lb 3 repmat(-1,1,nEccs) zeros(1,nEccs)];
     plb = [plb 5 zeros(1,nEccs) ones(1,nEccs)];
     pub = [pub 25 repmat(0.8,1,nEccs) repmat(10,1,nEccs)];
-    ub =  [ ub 30 ones(1,nEccs) repmat(100,1,nEccs)];
+    ub =  [ ub 35 ones(1,nEccs) repmat(100,1,nEccs)];
 end
 
 % Some info about the params we will use later to unpack the vector
@@ -138,23 +140,26 @@ paramCounts.v1total = paramCounts.v1fixed+paramCounts.v1eccen;
 myV1TTF = @(pMRI) assembleV1Response(pMRI,cellClasses,stimulusDirections,studiedEccentricites,studiedFreqs,rgcTemporalModel,paramCounts,modelType);
 myLGNTTF = @(pMRI) assembleLGNResponse(pMRI,cellClasses,stimulusDirections,studiedFreqs,rgcTemporalModel,paramCounts,modelType);
 
+% Create objective functions for the LGN and V1 components. Note that a
+% local function is needed for the V1 component, as we calculate error on a
+% per-eccentricity and average v1 basis.
+myV1Obj = @(pMRI) calcIntegratedV1Error(myV1TTF(pMRI),v1Y,v1W,nDirs,nEccs,nFreqs);
+myLGNObj = @(pMRI) norm(lgnW.*(lgnY - myLGNTTF(pMRI)));
+
 % Which parameters and objective(s) shall we use in the search?
 switch paramSearch
     case 'gainOnly'
         lockIdx = [1:3, 4, 6, 8, 10, 11:16, 23, 24:29, 36, 37:42];
         pinIdx = 2; p0(pinIdx)=120;
         zeroIdx = [4, 6, 8, 11:16, 24:29, 37:42]; p0(zeroIdx)=0;
-        myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI))) + ...
-            norm(lgnW.*(lgnY - myLGNTTF(pMRI)));
+        myObj = @(pMRI) myV1Obj(pMRI) + myLGNObj(pMRI);
     case 'noSurround'
         lockIdx = [1:3 4, 6, 8, 10, 11:16, 23, 24:29, 36, 37:42];
         zeroIdx = [4, 6, 8, 11:16, 24:29, 37:42]; p0(zeroIdx)=0;
-        myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI))) + ...
-            norm(lgnW.*(lgnY - myLGNTTF(pMRI)));
+        myObj = @(pMRI) myV1Obj(pMRI) + myLGNObj(pMRI);
     case 'full'
         lockIdx = [];
-        myObj = @(pMRI) norm(v1W.*(v1Y - myV1TTF(pMRI))) + ...
-            norm(lgnW.*(lgnY - myLGNTTF(pMRI)));
+        myObj = @(pMRI) myV1Obj(pMRI) + myLGNObj(pMRI);
 end
 lb(lockIdx) = p0(lockIdx); plb(lockIdx) = p0(lockIdx);
 ub(lockIdx) = p0(lockIdx); pub(lockIdx) = p0(lockIdx);
@@ -205,6 +210,18 @@ end % main function
 
 
 %% LOCAL FUNCTIONS
+
+% Calculate an error metric for fitting the average V1 response
+function fVal = calcIntegratedV1Error(v1Fit,v1Y,v1W,nDirs,nEccs,nFreqs)
+% The error at each fit and eccentricity
+fVal = norm(v1W.*(v1Y - v1Fit));
+% Add a separate error for the fit to the average response across
+% eccentricities
+v1Fit = reshape(squeeze(mean(reshape(v1Fit,nFreqs,nEccs,nDirs),2)),1,nDirs*nFreqs);
+v1W = reshape(squeeze(mean(reshape(v1W,nFreqs,nEccs,nDirs),2)),1,nDirs*nFreqs);
+v1Y = reshape(squeeze(mean(reshape(v1Y,nFreqs,nEccs,nDirs),2)),1,nDirs*nFreqs);
+fVal = fVal + norm(v1W.*(v1Y - v1Fit));
+end
 
 % Enforce constraint of declining surround index with eccentricity
 function c = nonbcon(pMRI,cellClasses,paramCounts,nEccs)

@@ -21,7 +21,7 @@ useMonotonicConstraint = false;
 %{
     modelTypes = {'stimulus','cell'};
 %}
-modelTypes = {'stimulus'};
+modelTypes = {'stimulus','cell'};
 
 % Which set of parameters will we investigate in the bootstrap analysis?
 %{

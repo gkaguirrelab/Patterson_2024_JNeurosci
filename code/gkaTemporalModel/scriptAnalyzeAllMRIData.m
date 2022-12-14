@@ -15,7 +15,7 @@ mriSearchFlag = true;
 
 % Do we wish to use the monotonic constraint upon surround index in the
 % search?
-useMonotonicConstraint = true;
+useMonotonicConstraint = false;
 
 % What model type do we want? By cell or by stimulus?
 %{

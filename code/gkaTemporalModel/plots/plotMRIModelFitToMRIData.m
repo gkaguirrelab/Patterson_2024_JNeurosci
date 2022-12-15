@@ -35,17 +35,34 @@ nFreqs = length(studiedFreqs);
 freqsForPlotting = logspace(0,2,50);
 nFreqsForPlotting = length(freqsForPlotting);
 nCells = length(cellClasses);
+subjectLineSpec = {'-','--'};
+
+relGainFig = figure();
 
 % Loop over subjects and make plots
 for whichSub = 1:length(subjects)
 
     pMRI = mean(mriFullResultSet.(subjects{whichSub}).pMRI,1);
     pMRISEM = std(mriFullResultSet.(subjects{whichSub}).pMRI,0,1);
-        v1Y = mean(mriFullResultSet.(subjects{whichSub}).v1Y,1);
-        v1YSEM = std(mriFullResultSet.(subjects{whichSub}).v1Y,0,1);
-        lgnY = mean(mriFullResultSet.(subjects{whichSub}).lgnY,1);
-        lgnYSEM = std(mriFullResultSet.(subjects{whichSub}).lgnY,0,1);
+    v1Y = mean(mriFullResultSet.(subjects{whichSub}).v1Y,1);
+    v1YSEM = std(mriFullResultSet.(subjects{whichSub}).v1Y,0,1);
+    lgnY = mean(mriFullResultSet.(subjects{whichSub}).lgnY,1);
+    lgnYSEM = std(mriFullResultSet.(subjects{whichSub}).lgnY,0,1);
 
+    % Calculate the gain ratios
+    gainVals = {};
+    for whichStim = 1:length(stimulusDirections)
+        startIdx = paramCounts.unique + paramCounts.lgn*nCells + (whichStim-1)*paramCounts.v1total + paramCounts.v1fixed + nEccs + 1;
+        gainVals(whichStim) = {mriFullResultSet.(subjects{whichSub}).pMRI(:,startIdx:startIdx+nEccs-1)};
+    end
+
+    % Plot the gain ratios
+    figure(relGainFig)
+    semilogy(log10(studiedEccentricites),mean(gainVals{1}./gainVals{3}),[subjectLineSpec{whichSub} 'r']);
+    hold on
+    semilogy(log10(studiedEccentricites),mean(gainVals{2}./gainVals{3}),[subjectLineSpec{whichSub} 'b']);
+
+    % Get the temporal model fits
     [~,v1YFitMatrix,v1RFMatrix] = assembleV1Response(pMRI,cellClasses,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel,paramCounts,modelType);
     [~,lgnYFitMatrix,lgnRFMatrix] = assembleLGNResponse(pMRI,cellClasses,stimulusDirections,freqsForPlotting,rgcTemporalModel,paramCounts,modelType);
 
@@ -97,7 +114,7 @@ for whichSub = 1:length(subjects)
 
         % patch error bars
         X = [studiedFreqs fliplr(studiedFreqs)];
-            Y = [lgnY(lgnDataIndices)-lgnYSEM(lgnDataIndices), fliplr(lgnY(lgnDataIndices)+lgnYSEM(lgnDataIndices))];
+        Y = [lgnY(lgnDataIndices)-lgnYSEM(lgnDataIndices), fliplr(lgnY(lgnDataIndices)+lgnYSEM(lgnDataIndices))];
         p = patch(X,Y,plotColor{whichStim});
         set(p,'edgecolor','none','facealpha',0.1);
 

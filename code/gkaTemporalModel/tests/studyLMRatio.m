@@ -56,16 +56,17 @@ for whichSub = 1:length(subjects)
 
     for rr = 1:length(ratioVals)
 
-        pMRI(3) = ratioVals(rr);
+        pMRI0 = pMRI;
+        pMRI0(3) = ratioVals(rr);
 
         results = fitMRIResponse(...
-            pMRI,...
+            pMRI0,...
             stimulusDirections,studiedEccentricites,studiedFreqs,...
             v1Y,v1W,lgnY,lgnW,...
-            'stimulus',useMonotonicConstraint,'ratioStudy',verbose);
+            'stimulus',useMonotonicConstraint,'full',verbose);
 
         % Store the results
         fVals(whichSub,rr) = results.fVal;
-        gainVals(whichSub,rr,:) = results.pMRI(17:22);
+        pMRIResults(whichSub,rr,:) = results.pMRI;
     end
 end

@@ -103,8 +103,8 @@ lb = []; plb = []; pub = []; ub = [];
 % - LM ratio
 lb =  [ lb 0.5 30 1];
 plb = [plb 0.8 35 1];
-pub = [pub 0.9 40 1];
-ub =  [ ub 1.0 45 1];
+pub = [pub 0.9 40 2];
+ub =  [ ub 1.0 45 10];
 paramCounts.unique = 3;
 
 % LGN BOLD fMRI gain, organized by stimulus
@@ -112,10 +112,10 @@ paramCounts.unique = 3;
 % - BOLD response gain
 % The surround delay is the same as that used at the V1 level.
 for cc = 1:length(stimulusDirections)
-    lb =  [ lb 0 1];
+    lb =  [ lb 0 0];
     plb = [plb 0.5 1];
-    pub = [pub 0.8 2];
-    ub =  [ ub 1 10];
+    pub = [pub 0.8 10];
+    ub =  [ ub 1 100];
 end
 paramCounts.lgn = 2;
 
@@ -160,9 +160,6 @@ switch paramSearch
     case 'full' % but omits the LM ratio
         lockIdx = 3;
         myObj = @(pMRI) myV1Obj(pMRI) + myLGNObj(pMRI);
-    case 'ratioStudy' % Just let the cortical RG chromatic gain vary
-        lockIdx = [1:16 23:48];
-        myObj = @(pMRI) myV1Obj(pMRI);
 end
 lb(lockIdx) = p0(lockIdx); plb(lockIdx) = p0(lockIdx);
 ub(lockIdx) = p0(lockIdx); pub(lockIdx) = p0(lockIdx);

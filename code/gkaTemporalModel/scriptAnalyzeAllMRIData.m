@@ -32,7 +32,7 @@ paramSearch = 'full';
 paramSearch = 'full';
 
 % How many bootstrap resamplings of the data to conduct
-nBoots = 2;
+nBoots = 1;
 
 % Verbose?
 verbose = false;

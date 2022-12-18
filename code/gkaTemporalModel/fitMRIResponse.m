@@ -160,6 +160,10 @@ switch paramSearch
     case 'full'
         lockIdx = [];
         myObj = @(pMRI) myV1Obj(pMRI) + myLGNObj(pMRI);
+    case 'LMRatio'
+        lockIdx = [1:2 4:48];
+        lb(3)=0.2; plb(3)=0.5; pub(3)=2; ub(3)=5;
+        myObj = @(pMRI) myV1Obj(pMRI) + myLGNObj(pMRI);
 end
 lb(lockIdx) = p0(lockIdx); plb(lockIdx) = p0(lockIdx);
 ub(lockIdx) = p0(lockIdx); pub(lockIdx) = p0(lockIdx);

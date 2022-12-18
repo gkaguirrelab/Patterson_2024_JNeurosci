@@ -36,6 +36,11 @@ for ss = 1:length(subjects)
     [~,p,~,stats] = ttest(squeeze(data(ss,1,:)),squeeze(data(ss,2,:)));
     fprintf([subjects{ss} ': stimulus - cell, t(df) = %2.2f (%d), p = %2.2e \n'],stats.tstat,stats.df,p)
 
+    nStimBetter = sum(squeeze(data(ss,1,:)) < squeeze(data(ss,2,:)));
+    percentStimBetter = 100*mean((squeeze(data(ss,2,:)) - squeeze(data(ss,1,:)) ) ./ squeeze(data(ss,2,:)));
+    fprintf([subjects{ss} ': stimulus better then cell: %d / %d cases\n'],nStimBetter,length(resultList))
+    fprintf([subjects{ss} ': stimulus %2.0f%% better fit than cell\n'],percentStimBetter)
+
 
 end
 

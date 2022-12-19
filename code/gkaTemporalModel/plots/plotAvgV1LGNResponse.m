@@ -20,7 +20,7 @@ savePath = fullfile('~','Desktop','mtSinaiTemporalModelPlots');
 
 % Create a figure
 figure
-figuresize(800,800,'pt');
+figuresize(400,800,'pt');
 
 % The order of plotting the stimulus directions
 stimPlotOrder = [2 3 1];
@@ -65,8 +65,8 @@ for pp = 1:length(paramSearches)
         for whichStim=1:length(stimulusDirections)
 
             % Set a subplot
-            subIdx = (stimPlotOrder(whichStim)-1)*4+(whichSub-1)*2+2;
-            subplot(3,4,subIdx);
+            subIdx = (stimPlotOrder(whichStim))+(whichSub-1)*6+3;
+            subplot(4,3,subIdx);
 
             % Initialize variables to hold the average V1 response
             v1AvgY = zeros(1,length(studiedFreqs));
@@ -109,18 +109,21 @@ for pp = 1:length(paramSearches)
             a.XMinorTick = 'off';
             a.XTickLabel = arrayfun(@num2str, a.XTick, 'UniformOutput', 0);
             a.XTickLabelRotation = 0;
+            ylabel('BOLD %% change')
             xlabel('Freq [Hz]');
-            a.YAxis.Visible = 'off';
             a.Color = 'none';
+            if ~any([1 4 7 10]==subIdx)
+                a.YAxis.Visible = 'off';
+            end
 
-            if subIdx < 9
+            if subIdx < 10
                 a.XAxis.Visible = 'off';
             end
 
 
             % Now do the LGN
-            subIdx = (stimPlotOrder(whichStim)-1)*4+(whichSub-1)*2+1;
-            subplot(3,4,subIdx)
+            subIdx = (stimPlotOrder(whichStim))+(whichSub-1)*6;
+            subplot(4,3,subIdx)
 
             % Add the LGN response
             lgnDataIndices = 1+(whichStim-1)*(nFreqs): ...
@@ -153,13 +156,13 @@ for pp = 1:length(paramSearches)
             a.YTick = 0:5;
             a.Color = 'none';
             ylabel('BOLD %% change')
+                a.XAxis.Visible = 'off';
 
-            if ~any([1 5 9]==subIdx)
+            if ~any([1 4 7 10]==subIdx)
                 a.YAxis.Visible = 'off';
             end
 
             if subIdx < 9
-                a.XAxis.Visible = 'off';
             end
 
 

@@ -56,11 +56,19 @@ for whichSub = 1:length(subjects)
         gainVals(whichStim) = {mriFullResultSet.(subjects{whichSub}).pMRI(:,startIdx:startIdx+nEccs-1)};
     end
 
-    % Plot the gain ratios
+    % Plot the gain ratios    
     figure(relGainFig)
+    subplot(1,2,2)
     semilogy(log10(studiedEccentricites),mean(gainVals{1}./gainVals{3}),[subjectLineSpec{whichSub} 'r']);
     hold on
     semilogy(log10(studiedEccentricites),mean(gainVals{2}./gainVals{3}),[subjectLineSpec{whichSub} 'b']);
+    semilogy([-0.5 2],[1 1],':k');
+    xlim([-0.5 2]);
+    ylim([10^-1 10^2]);
+    xlabel('Eccentricity [log deg]');
+    ylabel('Relative gain parameter');
+    box off
+
 
     % Get the temporal model fits
     [~,v1YFitMatrix,v1RFMatrix] = assembleV1Response(pMRI,cellClasses,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel,paramCounts,modelType);
@@ -150,6 +158,11 @@ for whichSub = 1:length(subjects)
 
     end
 
+    % Get the gain for achromatic stimuli at the fovea
+    whichStim = 3;
+    referenceIdx = paramCounts.unique + paramCounts.lgn*nCells + (whichStim-1)*paramCounts.v1total + paramCounts.v1fixed + nEccs +1;
+    gainReference = pMRI(referenceIdx);
+
     % Plot the params across eccentricity
     figure
     for whichStim = 1:length(stimulusDirections)
@@ -164,7 +177,7 @@ for whichSub = 1:length(subjects)
         subplot(1,2,1)
         plot(log10(studiedEccentricites),v1SurroundIndex,['o' plotColor{whichStim}]);
         hold on
-        plot(log10(studiedEccentricites),v1SurroundIndex,['-' plotColor{whichStim}]);
+        plot(log10(studiedEccentricites),v1SurroundIndex,[subjectLineSpec{whichSub} plotColor{whichStim}]);
 
         % Add error bars
         X = [log10(studiedEccentricites) fliplr(log10(studiedEccentricites))];
@@ -178,7 +191,7 @@ for whichSub = 1:length(subjects)
         semilogy([0 0],[pMRI(idx)-pMRISEM(idx), pMRI(idx)+pMRISEM(idx)],['-' plotColor{whichStim}]);
 
         % Clean up
-        refline(0,0);
+        semilogy([-0.5 2],[0 0],':k');
         xlabel('Eccentricity [log deg]');
         ylabel('Suppression index');
         xlim([-0.5 2]);
@@ -186,47 +199,55 @@ for whichSub = 1:length(subjects)
 
         % Plot the gain vs. eccentricity
         subplot(1,2,2)
-        semilogy(log10(studiedEccentricites),v1Gain,['o' plotColor{whichStim}]);
+        semilogy(log10(studiedEccentricites),v1Gain/gainReference,['o' plotColor{whichStim}]);
         hold on
-        semilogy(log10(studiedEccentricites),v1Gain,['-' plotColor{whichStim}]);
+        semilogy(log10(studiedEccentricites),v1Gain/gainReference,[subjectLineSpec{whichSub} plotColor{whichStim}]);
 
         % Add error bars
-        Y = [v1Gain-v1GainSEM, fliplr(v1Gain+v1GainSEM)];
+        Y = [v1Gain/gainReference-v1GainSEM/gainReference, fliplr(v1Gain/gainReference+v1GainSEM/gainReference)];
         p = patch(X,Y,plotColor{whichStim});
         set(p,'edgecolor','none','facealpha',0.1);
 
         % Add the lgn and lgn error bars
         idx = paramCounts.unique+(whichStim-1)*paramCounts.lgn+2;
-        semilogy(0,pMRI(idx),['*' plotColor{whichStim}]);
-        semilogy([0 0],[pMRI(idx)-pMRISEM(idx), pMRI(idx)+pMRISEM(idx)],['-' plotColor{whichStim}]);
+        semilogy(0,pMRI(idx)/gainReference,['*' plotColor{whichStim}]);
+        semilogy([0 0],[pMRI(idx)/gainReference-pMRISEM(idx)/gainReference, pMRI(idx)/gainReference+pMRISEM(idx)/gainReference],['-' plotColor{whichStim}]);
 
         % Clean up
+        semilogy([-0.5 2],[1 1],':k');
         xlim([-0.5 2]);
-        ylim([10^-1.5 10^1.5]);
+        ylim([10^-1 10^2]);
         xlabel('Eccentricity [log deg]');
-        ylabel('Gain parameter');
+        ylabel('Relative gain parameter');
 
     end
 
-    % Save the plot
+    % Save the parameter plot
     plotName = [subjects{whichSub} '_' paramSearch '_MRIModelParams.pdf' ];
     saveas(gcf,fullfile(savePath,plotName));
 
-    % For one subject and one eccentricity, plot the lgn and V1 IRFs
-    ee=4;
-    if whichSub == 1
-        figHandleLGN = figure('Position',  [100, 100, 200, 400]);
-        figHandleV1 = figure('Position',  [100, 100, 200, 400]);
-        for ss=1:length(stimulusDirections)
-            plotRF(lgnRFMatrix(ss,ee),figHandleLGN,['-' plotColor{ss}]);
-            plotRF(v1RFMatrix(ss,ee),figHandleV1,['-' plotColor{ss}]);
-        end
 
-        % Save the plot
-        plotName = [subjects{whichSub} '_' paramSearch '_lgnIRFs.pdf' ];
-        saveas(figHandleLGN,fullfile(savePath,plotName));
-        plotName = [subjects{whichSub} '_' paramSearch '_v1IRFs.pdf' ];
-        saveas(figHandleV1,fullfile(savePath,plotName));
-    end
+    %
+    %     % For one subject and one eccentricity, plot the lgn and V1 IRFs
+    %     ee=4;
+    %     if whichSub == 1
+    %         figHandleLGN = figure('Position',  [100, 100, 200, 400]);
+    %         figHandleV1 = figure('Position',  [100, 100, 200, 400]);
+    %         for ss=1:length(stimulusDirections)
+    %             plotRF(lgnRFMatrix(ss,ee),figHandleLGN,['-' plotColor{ss}]);
+    %             plotRF(v1RFMatrix(ss,ee),figHandleV1,['-' plotColor{ss}]);
+    %         end
+    %
+    %         % Save the plot
+    %         plotName = [subjects{whichSub} '_' paramSearch '_lgnIRFs.pdf' ];
+    %         saveas(figHandleLGN,fullfile(savePath,plotName));
+    %         plotName = [subjects{whichSub} '_' paramSearch '_v1IRFs.pdf' ];
+    %         saveas(figHandleV1,fullfile(savePath,plotName));
+    %     end
 
 end
+
+    % Save across-subject parameter plot
+    plotName = [paramSearch '_RelativeGainAcrossSubjects.pdf' ];
+    saveas(relGainFig,fullfile(savePath,plotName));
+

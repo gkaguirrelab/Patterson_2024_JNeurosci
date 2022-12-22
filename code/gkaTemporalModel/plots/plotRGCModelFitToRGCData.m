@@ -115,11 +115,6 @@ for ee = 1:nEccBands
     ylim([0 10]);
     box off
 
-    subplot(3,1,2);
-    hold on
-    semilogx(rcgData.bistratified.(eccField).S.f,rcgData.bistratified.(eccField).S.p,'ob');
-    box off
-
     plotName = ['bistratifiedTemporalRF_' num2str(eccDegs(ee),2) '_ModelFit.pdf' ];
     saveas(gcf,fullfile(savePath,plotName));
 

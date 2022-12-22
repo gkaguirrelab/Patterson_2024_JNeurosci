@@ -68,26 +68,20 @@ rgcData.parasol.e20.LMS.g = [0.229534081	0.744221684	1.775076399	5.228815432	8.1
 rgcData.parasol.e30.LMS.f = [0.625, 1.25, 2.5, 5, 10, 15, 20, 30, 40, 50, 60, 80];
 rgcData.parasol.e30.LMS.g = [0.27808972	0.638310685	2.413000771	5.755355979	8.33404175	7.454962426	7.1900742	7.6431795	9.831543136	9.482210723	8.303539014	3.645080274];
 
-% Yeh T, Lee BB, Kremers J. Temporal response of ganglion cells of the macaque retina to cone-specific modulation. JOSA A. 1995 Mar 1;12(3):456-64.
+%   Solomon SG, Lee BB, White AJ, Rüttiger L, Martin PR. Chromatic
+%   organization of ganglion cell receptive fields in the peripheral
+%   retina. Journal of Neuroscience. 2005 May 4;25(18):4527-39.
 %
-% Figures 3E and 4C (just the S-cone modulation)
-%
-% Responses were to a spatially uniform, 4.7° diameter modulations at close
-% to 400 Trolands.
-%
-% Mean response from 3-10° ecentricity for "S responsive" RGCs.
+% Figure 13a. Responses from < 15° and >15°
 
-rgcData.bistratified.e0.S.f = [0.625, 1.25, 2.5, 5, 10, 20, 40];
-rgcData.bistratified.e0.S.g = [0.826341879	1.085182942	1.444652234	2.058777757	2.933969679	2.327361819	0.655492984];
-rgcData.bistratified.e0.S.p = [15.61201158	13.08774961	0.695086632	-32.56846705	-108.625578	-258.2246837	-513.1842894];
+rgcData.bistratified.e0.S.f = [0.625, 1.25, 2.5, 5, 10, 20, 40,50];
+rgcData.bistratified.e0.S.g = [    0.5793    0.8154    1.0768    1.5986    2.4502    2.3517    1.0276    0.2526];
 
 rgcData.bistratified.e20.S.f = [0.625, 1.25, 2.5, 5, 10, 20, 40];
 rgcData.bistratified.e20.S.g = [0.826341879	1.085182942	1.444652234	2.058777757	2.933969679	2.327361819	0.655492984];
-rgcData.bistratified.e20.S.p = [15.61201158	13.08774961	0.695086632	-32.56846705	-108.625578	-258.2246837	-513.1842894];
 
 rgcData.bistratified.e30.S.f = [0.625, 1.25, 2.5, 5, 10, 20, 40];
 rgcData.bistratified.e30.S.g = [0.826341879	1.085182942	1.444652234	2.058777757	2.933969679	2.327361819	0.655492984];
-rgcData.bistratified.e30.S.p = [15.61201158	13.08774961	0.695086632	-32.56846705	-108.625578	-258.2246837	-513.1842894];
 
 %{
     figure

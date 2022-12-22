@@ -8,6 +8,9 @@ close all
 modelType = 'stimulus';
 paramSearch = 'full';
 
+% Plot the LGN points on the gain graph?
+showLGNValsOnGainPlot = false;
+
 % Load the empirical RGC data
 rcgData = loadRGCResponseData();
 
@@ -36,6 +39,7 @@ freqsForPlotting = logspace(0,2,50);
 nFreqsForPlotting = length(freqsForPlotting);
 nCells = length(cellClasses);
 subjectLineSpec = {'-','--'};
+subjectSymbol = {'.','o'};
 
 relGainFig = figure();
 
@@ -50,21 +54,71 @@ for whichSub = 1:length(subjects)
     lgnYSEM = std(mriFullResultSet.(subjects{whichSub}).lgnY,0,1);
 
     % Calculate the gain ratios
-    gainVals = {};
+    v1GainVals = {}; lgnGainVals = {};
     for whichStim = 1:length(stimulusDirections)
         startIdx = paramCounts.unique + paramCounts.lgn*nCells + (whichStim-1)*paramCounts.v1total + paramCounts.v1fixed + nEccs + 1;
-        gainVals(whichStim) = {mriFullResultSet.(subjects{whichSub}).pMRI(:,startIdx:startIdx+nEccs-1)};
+        v1GainVals(whichStim) = {mriFullResultSet.(subjects{whichSub}).pMRI(:,startIdx:startIdx+nEccs-1)};
+        startIdx = paramCounts.unique + whichStim*paramCounts.lgn
+        lgnGainVals(whichStim) = {mriFullResultSet.(subjects{whichSub}).pMRI(:,startIdx)};
     end
 
-    % Plot the gain ratios    
+    % Plot the gain ratios
     figure(relGainFig)
     subplot(1,2,2)
-    semilogy(log10(studiedEccentricites),mean(gainVals{1}./gainVals{3}),[subjectLineSpec{whichSub} 'r']);
+
+    % achromatic vs. achromatic
+    meanV1Val = mean(v1GainVals{3}./v1GainVals{3});
+    semV1Val = std(v1GainVals{3}./mean(v1GainVals{3}));
+    meanLGNVal = mean(lgnGainVals{3}./lgnGainVals{3});
+    semLGNVal = std(lgnGainVals{3}./mean(lgnGainVals{3}));
+    semilogy(log10(studiedEccentricites),meanV1Val,[subjectLineSpec{whichSub} 'k'],'LineWidth',2);
     hold on
-    semilogy(log10(studiedEccentricites),mean(gainVals{2}./gainVals{3}),[subjectLineSpec{whichSub} 'b']);
+    % Omit the LGN point if the value does not differ from zero
+    if (meanLGNVal-semLGNVal)>0 && showLGNValsOnGainPlot
+        semilogy(0,meanLGNVal,[subjectSymbol{whichSub} 'k'])
+        semilogy([0 0],[meanLGNVal-semLGNVal,meanLGNVal+semLGNVal,'-k'])
+    end
+    X = [log10(studiedEccentricites) fliplr(log10(studiedEccentricites))];
+    Y = [meanV1Val+semV1Val, fliplr(meanV1Val-semV1Val)];
+    p = patch(X,Y,'k');
+    set(p,'edgecolor','none','facealpha',0.2);
+
+    % RG chrom vs. achromatic
+    meanV1Val = mean(v1GainVals{1}./v1GainVals{3});
+    semV1Val = std(v1GainVals{1}./v1GainVals{3});
+    meanLGNVal = mean(lgnGainVals{1}./lgnGainVals{3});
+    semLGNVal = std(lgnGainVals{1}./lgnGainVals{3});
+    semilogy(log10(studiedEccentricites),meanV1Val,[subjectLineSpec{whichSub} 'r'],'LineWidth',2);
+    % Omit the LGN point if the value does not differ from zero
+    if (meanLGNVal-semLGNVal)>0 && showLGNValsOnGainPlot
+        semilogy(-0.1,meanLGNVal,[subjectSymbol{whichSub} 'r'])
+        semilogy([-0.1 -0.1],[meanLGNVal-semLGNVal,meanLGNVal+semLGNVal,'-r'])
+    end
+    X = [log10(studiedEccentricites) fliplr(log10(studiedEccentricites))];
+    Y = [meanV1Val+semV1Val, fliplr(meanV1Val-semV1Val)];
+    p = patch(X,Y,'r');
+    set(p,'edgecolor','none','facealpha',0.2);
+
+    % BY chrom vs. achromatic
+    meanV1Val = mean(v1GainVals{2}./v1GainVals{3});
+    semV1Val = std(v1GainVals{2}./v1GainVals{3});
+    meanLGNVal = mean(lgnGainVals{2}./lgnGainVals{3});
+    semLGNVal = std(lgnGainVals{2}./lgnGainVals{3});
+    semilogy(log10(studiedEccentricites),meanV1Val,[subjectLineSpec{whichSub} 'b'],'LineWidth',2);
+    % Omit the LGN point if the value does not differ from zero
+    if (meanLGNVal-semLGNVal)>0 && showLGNValsOnGainPlot
+        semilogy(0.1,meanLGNVal,[subjectSymbol{whichSub} 'b'])
+        semilogy([0.1 0.1],[meanLGNVal-semLGNVal,meanLGNVal+semLGNVal],'-b')
+    end
+    X = [log10(studiedEccentricites) fliplr(log10(studiedEccentricites))];
+    Y = [meanV1Val+semV1Val, fliplr(meanV1Val-semV1Val)];
+    p = patch(X,Y,'b');
+    set(p,'edgecolor','none','facealpha',0.2);
+
+    % Clean up
     semilogy([-0.5 2],[1 1],':k');
     xlim([-0.5 2]);
-    ylim([10^-1 10^2]);
+    ylim([10^-2 10^2]);
     xlabel('Eccentricity [log deg]');
     ylabel('Relative gain parameter');
     box off
@@ -145,8 +199,8 @@ for whichSub = 1:length(subjects)
         rf = stageSecondOrderLP(synapseSecondOrderFc,synapseSecondOrderQ);
         myFreqs = logspace(log10(0.5),log10(100),101);
         ttfComplex = double(subs(rf,myFreqs));
-        gainVals = abs(ttfComplex);
-        semilogx(myFreqs,gainVals,'-k');
+        v1GainVals = abs(ttfComplex);
+        semilogx(myFreqs,v1GainVals,'-k');
 
         a=gca; a.XTick = studiedFreqs;
         a.XTickLabel = arrayfun(@num2str, studiedFreqs, 'UniformOutput', 0);
@@ -247,7 +301,7 @@ for whichSub = 1:length(subjects)
 
 end
 
-    % Save across-subject parameter plot
-    plotName = [paramSearch '_RelativeGainAcrossSubjects.pdf' ];
-    saveas(relGainFig,fullfile(savePath,plotName));
+% Save across-subject parameter plot
+plotName = [paramSearch '_RelativeGainAcrossSubjects.pdf' ];
+saveas(relGainFig,fullfile(savePath,plotName));
 

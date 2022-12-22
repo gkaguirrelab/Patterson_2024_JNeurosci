@@ -86,7 +86,7 @@ for whichSub = 1:length(subjects)
             semilogx([1 100],[offset offset],':','Color',[0.5 0.5 0.5]);
 
             % Add a text label for the eccentricitiy
-                text(80,offset+2,sprintf('%2.0f°',studiedEccentricites(ee)));
+                text(80,offset+spacing/2,sprintf('%2.0f°',studiedEccentricites(ee)));
 
         end
 

@@ -7,10 +7,11 @@ clear
 
 
 % Params that control the plot appearance
-spacing = 5;
+spacing = 200;
 stimOrder = [2 3 1];
 
-plotColor={'k','k','r','b'};
+plotColor={[0.75 0.75 0.75],[0.75 0.75 0.75],[0.75 0.5 0.5],[0.5 0.5 0.75]};
+lineColor={'k','k',[.5 0.25 0.25],[0.25 0.25 0.5]};
 figure
 figuresize(500,300,'pt');
 
@@ -41,6 +42,8 @@ nBlockParams = size(pRGC,1);
 % Plot parasol bipolar response across eccentricity
 myFreqs = logspace(log10(1),log10(100),101);
 myEccs = [1,2,4,8,16,32,64];
+
+xOffsets = (length(myEccs):-1:1)/4;
 
 for ee = 1:length(myEccs)
 
@@ -82,20 +85,25 @@ for ee = 1:length(myEccs)
             rfRGC = returnRGCRF(pRGCBlock,cfCone,coneDelay,chromaticCenterWeight,chromaticSurroundWeight);
             yVals = abs(double(subs(rfRGC,myFreqs)));
 
+            % Get the subplot and define the offset
             subplot(1,4,subIdx(ss));
-            offset = 1+(nEccBands*spacing) - (ee)*spacing;
+            set(gca, 'XScale', 'log')
+            yOffset = 1+(nEccBands*spacing) - (ee)*spacing;
 
-            % Show the data itself
-            semilogx(myFreqs,yVals+offset,...
-                lineSpec{ss},'Color',plotColor{subIdx(ss)});
+            % Create a patch for the response
+            X = [myFreqs fliplr(myFreqs)];
+            Y = repmat(ee*spacing,size(X));
+            Z = [yVals, zeros(size(yVals))];
+            p = fill3(X,Y,Z,plotColor{subIdx(ss)});
+            set(p,'edgecolor','none','facealpha',1);
             hold on
 
-            % Add a refline
-            semilogx([1 1],[offset offset+spacing/2],'-k');
-            semilogx([1 100],[offset offset],':','Color',[0.5 0.5 0.5]);
+            % Add a line at the edge of the color patch
+            plot3(myFreqs,repmat(ee*spacing,size(myFreqs)),yVals,...
+                lineSpec{ss},'Color',lineColor{subIdx(ss)},'LineWidth',1.5);
 
             % Add a text label for the eccentricitiy
-            text(80,offset+2,sprintf('%2.0f°',eccDeg));
+            text(150,ee*spacing,0,sprintf('%2.0f°',eccDeg),"HorizontalAlignment","left");
 
 
         end
@@ -104,10 +112,11 @@ end
 
 % Clean up
 for ss=1:4
+    view(0,70);
     subplot(1,4,ss)
-    semilogx([16 16],[-25 20],'--k')
+    plot3([16 16],[0 spacing*length(myEccs)],[10 10],'--k')
     xlim([0.5 150])
-    ylim([-25 20])
+    zlim([0 10])
     a=gca;
     a.XTick = [1,100];
     a.XTickLabel = {'1','100'};

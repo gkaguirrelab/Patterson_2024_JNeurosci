@@ -33,7 +33,7 @@ nFreqs = length(studiedFreqs);
 fitFrequencies = logspace(0,2,50);
 nFreqsForPlotting = length(fitFrequencies);
 nCells = length(cellClasses);
-subjectLineSpec = {'-','--'};
+subjectLineSpec = {'-','-'};
 
 
 % Params that control the plot appearance
@@ -76,10 +76,10 @@ for whichSub = 1:length(subjects)
             X = [studiedFreqs fliplr(studiedFreqs)];
             Y = [v1Y(v1DataIndices)-v1YSEM(v1DataIndices)+offset, fliplr(v1Y(v1DataIndices)+v1YSEM(v1DataIndices))+offset];
             p = patch(X,Y,plotColor{whichStim});
-            set(p,'edgecolor','none','facealpha',0.1);
+            set(p,'edgecolor','none','facealpha',0.2);
 
             % Add the model fit
-            semilogx(fitFrequencies,squeeze(v1YFitMatrix(whichStim,ee,:))+offset,[subjectLineSpec{whichSub} plotColor{whichStim}]);
+            semilogx(fitFrequencies,squeeze(v1YFitMatrix(whichStim,ee,:))+offset,[subjectLineSpec{whichSub} plotColor{whichStim}],'LineWidth',2);
 
             % Add a refline
             semilogx([1 1],[offset offset+2],'-k');

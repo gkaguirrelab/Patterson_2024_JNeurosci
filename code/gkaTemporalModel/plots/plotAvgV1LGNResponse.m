@@ -24,6 +24,7 @@ figuresize(400,800,'pt');
 
 % The order of plotting the stimulus directions
 stimPlotOrder = [2 3 1];
+subjectLineSpec = {'-','-'};
 
 % Loop over the param searches
 for pp = 1:length(paramSearches)
@@ -93,10 +94,10 @@ for pp = 1:length(paramSearches)
             X = [studiedFreqs fliplr(studiedFreqs)];
             Y = [v1YAvglow, fliplr(v1YAvghigh)];
             p = patch(X,Y,plotColor{whichStim});
-            set(p,'edgecolor','none','facealpha',0.1);
+            set(p,'edgecolor','none','facealpha',0.2);
 
             % Add the model fit
-            semilogx(freqsForPlotting,v1AvgFit,[paramLineStyle{pp} plotColor{whichStim}]);
+            semilogx(freqsForPlotting,v1AvgFit,[subjectLineSpec{whichSub} plotColor{whichStim}],'LineWidth',2);
 
             % Clean up
             plot([16 16],[0 5.5],'--k');
@@ -136,10 +137,10 @@ for pp = 1:length(paramSearches)
             X = [studiedFreqs fliplr(studiedFreqs)];
             Y = [lgnY(lgnDataIndices)-lgnYSEM(lgnDataIndices), fliplr(lgnY(lgnDataIndices)+lgnYSEM(lgnDataIndices))];
             p = patch(X,Y,plotColor{whichStim});
-            set(p,'edgecolor','none','facealpha',0.1);
+            set(p,'edgecolor','none','facealpha',0.2);
 
             % Model fit
-            semilogx(freqsForPlotting,lgnYFitMatrix(whichStim,:),['-' plotColor{whichStim}]);
+            semilogx(freqsForPlotting,lgnYFitMatrix(whichStim,:),[subjectLineSpec{whichSub} plotColor{whichStim}],'LineWidth',2);
 
             % Clean up
             plot([16 16],[0 5.5],'--k');

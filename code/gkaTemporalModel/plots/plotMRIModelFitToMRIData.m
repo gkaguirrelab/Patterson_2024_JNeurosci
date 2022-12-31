@@ -41,7 +41,9 @@ nCells = length(cellClasses);
 subjectLineSpec = {'-','--'};
 subjectSymbol = {'.','o'};
 
-relGainFig = figure();
+paramValsFig = figure();
+figuresize(800,600,'pt');
+
 
 % Loop over subjects and make plots
 for whichSub = 1:length(subjects)
@@ -53,18 +55,70 @@ for whichSub = 1:length(subjects)
     lgnY = mean(mriFullResultSet.(subjects{whichSub}).lgnY,1);
     lgnYSEM = std(mriFullResultSet.(subjects{whichSub}).lgnY,0,1);
 
+
+    % Make the paramVals figure active
+    figure(paramValsFig)
+
+    % Plot the surround suppression index
+    subOrder = [2,3,1];
+    for whichStim = 1:length(stimulusDirections)
+
+        subplot(2,4,subOrder(whichStim));
+
+        startIdx = paramCounts.unique + paramCounts.lgn*nCells + (whichStim-1)*paramCounts.v1total + paramCounts.v1fixed;
+        v1SurroundIndex = pMRI(startIdx+1:startIdx+nEccs);
+        v1SurroundIndexSEM = pMRISEM(startIdx+1:startIdx+nEccs);
+
+        % Plot the surround suppression index vs. eccentricity
+        plot(log10(studiedEccentricites),v1SurroundIndex,[subjectLineSpec{whichSub} plotColor{whichStim}],'LineWidth',2);
+        hold on
+
+        % Add error bars
+        X = [log10(studiedEccentricites) fliplr(log10(studiedEccentricites))];
+        Y = [v1SurroundIndex-v1SurroundIndexSEM, fliplr(v1SurroundIndex+v1SurroundIndexSEM)];
+        p = patch(X,Y,plotColor{whichStim});
+        set(p,'edgecolor','none','facealpha',0.2);
+
+        % Clean up
+        semilogy([-0.5 2],[0 0],':k');
+        xlabel('Eccentricity [log deg]');
+        ylabel('Suppression index');
+        xlim([0 2]);
+        ylim([-1 1]);
+box off
+    end
+
+
     % Calculate the gain ratios
     v1GainVals = {}; lgnGainVals = {};
     for whichStim = 1:length(stimulusDirections)
         startIdx = paramCounts.unique + paramCounts.lgn*nCells + (whichStim-1)*paramCounts.v1total + paramCounts.v1fixed + nEccs + 1;
         v1GainVals(whichStim) = {mriFullResultSet.(subjects{whichSub}).pMRI(:,startIdx:startIdx+nEccs-1)};
-        startIdx = paramCounts.unique + whichStim*paramCounts.lgn
+        startIdx = paramCounts.unique + whichStim*paramCounts.lgn;
         lgnGainVals(whichStim) = {mriFullResultSet.(subjects{whichSub}).pMRI(:,startIdx)};
     end
 
-    % Plot the gain ratios
-    figure(relGainFig)
-    subplot(1,2,2)
+    % Plot the luminance gain ratio relative to fovea
+    for whichStim = 1:length(stimulusDirections)
+            subplot(2,4,4+subOrder(whichStim))
+        meanV1Val = mean(v1GainVals{whichStim}./v1GainVals{3}(:,1));
+        semV1Val = std(v1GainVals{whichStim}./v1GainVals{3}(:,1));
+        semilogy(log10(studiedEccentricites),meanV1Val,[subjectLineSpec{whichSub} plotColor{whichStim}],'LineWidth',2);
+        hold on
+        X = [log10(studiedEccentricites) fliplr(log10(studiedEccentricites))];
+        Y = [meanV1Val+semV1Val, fliplr(meanV1Val-semV1Val)];
+        p = patch(X,Y,plotColor{whichStim});
+        set(p,'edgecolor','none','facealpha',0.2);
+    semilogy([-0.5 2],[1 1],':k');
+    xlim([0 2]);
+    ylim([10^-2 10^2]);
+    xlabel('Eccentricity [log deg]');
+    ylabel('Retinal gain relative to fovea');
+    box off
+    end
+
+    % Plot the relative gain ratios
+    subplot(2,4,8)
 
     % achromatic vs. achromatic
     meanV1Val = mean(v1GainVals{3}./v1GainVals{3});
@@ -72,6 +126,7 @@ for whichSub = 1:length(subjects)
     meanLGNVal = mean(lgnGainVals{3}./lgnGainVals{3});
     semLGNVal = std(lgnGainVals{3}./mean(lgnGainVals{3}));
     semilogy(log10(studiedEccentricites),meanV1Val,[subjectLineSpec{whichSub} 'k'],'LineWidth',2);
+
     hold on
     % Omit the LGN point if the value does not differ from zero
     if (meanLGNVal-semLGNVal)>0 && showLGNValsOnGainPlot
@@ -89,6 +144,7 @@ for whichSub = 1:length(subjects)
     meanLGNVal = mean(lgnGainVals{1}./lgnGainVals{3});
     semLGNVal = std(lgnGainVals{1}./lgnGainVals{3});
     semilogy(log10(studiedEccentricites),meanV1Val,[subjectLineSpec{whichSub} 'r'],'LineWidth',2);
+
     % Omit the LGN point if the value does not differ from zero
     if (meanLGNVal-semLGNVal)>0 && showLGNValsOnGainPlot
         semilogy(-0.1,meanLGNVal,[subjectSymbol{whichSub} 'r'])
@@ -105,6 +161,7 @@ for whichSub = 1:length(subjects)
     meanLGNVal = mean(lgnGainVals{2}./lgnGainVals{3});
     semLGNVal = std(lgnGainVals{2}./lgnGainVals{3});
     semilogy(log10(studiedEccentricites),meanV1Val,[subjectLineSpec{whichSub} 'b'],'LineWidth',2);
+
     % Omit the LGN point if the value does not differ from zero
     if (meanLGNVal-semLGNVal)>0 && showLGNValsOnGainPlot
         semilogy(0.1,meanLGNVal,[subjectSymbol{whichSub} 'b'])
@@ -117,10 +174,10 @@ for whichSub = 1:length(subjects)
 
     % Clean up
     semilogy([-0.5 2],[1 1],':k');
-    xlim([-0.5 2]);
+    xlim([0 2]);
     ylim([10^-2 10^2]);
     xlabel('Eccentricity [log deg]');
-    ylabel('Relative gain parameter');
+    ylabel('Retinal gain relative to luminance');
     box off
 
 
@@ -303,5 +360,5 @@ end
 
 % Save across-subject parameter plot
 plotName = [paramSearch '_RelativeGainAcrossSubjects.pdf' ];
-saveas(relGainFig,fullfile(savePath,plotName));
+saveas(paramValsFig,fullfile(savePath,plotName));
 

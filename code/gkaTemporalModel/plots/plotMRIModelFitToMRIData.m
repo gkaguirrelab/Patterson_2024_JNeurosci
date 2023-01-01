@@ -111,7 +111,7 @@ box off
         set(p,'edgecolor','none','facealpha',0.2);
     semilogy([-0.5 2],[1 1],':k');
     xlim([0 2]);
-    ylim([10^-2 10^2]);
+    ylim([10^-1 10^2]);
     xlabel('Eccentricity [log deg]');
     ylabel('Retinal gain relative to fovea');
     box off
@@ -175,7 +175,7 @@ box off
     % Clean up
     semilogy([-0.5 2],[1 1],':k');
     xlim([0 2]);
-    ylim([10^-2 10^2]);
+    ylim([10^-1 10^2]);
     xlabel('Eccentricity [log deg]');
     ylabel('Retinal gain relative to luminance');
     box off

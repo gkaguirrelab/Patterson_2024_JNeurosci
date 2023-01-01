@@ -14,7 +14,9 @@ plotColor={'k',[0.75 0.5 0.5],[0.5 0.5 0.75]};
 lineColor={'none',[.5 0.25 0.25],[0.25 0.25 0.5]};
 faceAlpha = [0,1,1];
     figure('Renderer','painters');
-figuresize(600,300,'pt');
+    figuresize(600,600,'pt');
+    set(gcf, 'Color', 'None');
+    tiledlayout(1,3,'TileSpacing','none','Padding','tight')
 
 
 % Where to save figures
@@ -42,7 +44,7 @@ nBlockParams = size(pRGC,1);
 myFreqs = logspace(log10(1),log10(100),101);
 myEccs = [1,2,4,8,16,32,64];
 
-xOffsets = (length(myEccs):-1:1)/4;
+    patchHandles = {};
 
 for ee = 1:length(myEccs)
 
@@ -100,15 +102,15 @@ for ee = 1:length(myEccs)
             end
 
             % Get the subplot and define the offset
-            subplot(1,3,subIdx(ss));
+            nexttile(subIdx(ss));
             set(gca, 'XScale', 'log')
 
             % Create a patch for the response
             X = [myFreqs fliplr(myFreqs)];
             Y = repmat(ee*spacing,size(X));
             Z = [yVals, zeros(size(yVals))];
-             p = fill3(X,Y,Z,plotColor{subIdx(ss)});
-             set(p,'edgecolor','none','facealpha',faceAlpha(subIdx(ss)));
+             patchHandles{end+1} = fill3(X,Y,Z,plotColor{subIdx(ss)});
+             set(patchHandles{end},'edgecolor','none','facealpha',faceAlpha(subIdx(ss)));
             hold on
 
             % Add a line at the edge of the color patch            
@@ -120,13 +122,13 @@ for ee = 1:length(myEccs)
 
             % Plot the total achrom case
             if achromCounter==2
-                subplot(1,3,1);
+                nexttile(1);
                 set(gca, 'XScale', 'log')
                 X = [myFreqs fliplr(myFreqs)];
                 Y = repmat(ee*spacing,size(X));
                 Z = [totalAchrom, zeros(size(totalAchrom))];
-                p = fill3(X,Y,Z,[0.75 0.75 0.75]);
-                set(p,'edgecolor','none','facealpha',1);
+                patchHandles{end+1} = fill3(X,Y,Z,[0.75 0.75 0.75]);
+                set(patchHandles{end},'edgecolor','none','facealpha',1);
                 hold on
 
                 % Add a line at the edge of the color patch
@@ -144,7 +146,7 @@ end
 
 % Clean up
 for ss=1:3
-    subplot(1,3,ss)
+    nexttile(ss)
     view(0,70);
     plot3([16 16],[0 spacing*length(myEccs)],[10 10],'--k')
     xlim([0.5 150])
@@ -156,11 +158,40 @@ for ss=1:3
     a.XMinorTick = 'off';
     a.YAxis.Visible = 'off';
     box off
+        if ss>1
+            a.XAxis.Visible = 'off';
+            a.ZAxis.Visible = 'off';
+        end
 end
+
+    % Save just the vector elements
+    for pp=1:length(patchHandles)
+        set(patchHandles{pp}, 'Visible','off','HandleVisibility','off')
+    end
+plotName = 'postRetinalStackedModelFits.pdf';
+    saveas(gcf,fullfile(savePath,plotName));
+
+    for ss=1:3
+        nexttile(ss);
+
+        child_handles = allchild(gca);
+        for cc=1:length(child_handles)
+            if ~isgraphics(child_handles(cc),'patch')
+                set(child_handles(cc), 'Visible','off')
+            else
+                set(child_handles(cc), 'Visible','on')
+            end
+            a=gca;
+            a.XAxis.Visible = 'off';
+            a.YAxis.Visible = 'off';
+            a.ZAxis.Visible = 'off';
+        end
+    end
+plotName = 'postRetinalStackedModelFits.png';
+    print(fullfile(savePath,plotName),'-dpng','-r600');
 
  
 
 % Save the plot
-plotName = 'postRetinalStackedModelFits.pdf';
 saveas(gcf,fullfile(savePath,plotName));
 

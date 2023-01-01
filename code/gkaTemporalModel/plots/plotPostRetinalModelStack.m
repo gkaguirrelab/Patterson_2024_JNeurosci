@@ -13,10 +13,11 @@ stimOrder = [2 3 1];
 plotColor={'k',[0.75 0.5 0.5],[0.5 0.5 0.75]};
 lineColor={'none',[.5 0.25 0.25],[0.25 0.25 0.5]};
 faceAlpha = [0,1,1];
-    figure('Renderer','painters');
-    figuresize(600,600,'pt');
-    set(gcf, 'Color', 'None');
-    tiledlayout(1,3,'TileSpacing','none','Padding','tight')
+
+figure('Renderer','painters');
+figuresize(600,600,'pt');
+set(gcf, 'Color', 'None');
+tiledlayout(1,3,'TileSpacing','none','Padding','tight')
 
 
 % Where to save figures
@@ -44,7 +45,7 @@ nBlockParams = size(pRGC,1);
 myFreqs = logspace(log10(1),log10(100),101);
 myEccs = [1,2,4,8,16,32,64];
 
-    patchHandles = {};
+patchHandles = {};
 
 for ee = 1:length(myEccs)
 
@@ -109,11 +110,11 @@ for ee = 1:length(myEccs)
             X = [myFreqs fliplr(myFreqs)];
             Y = repmat(ee*spacing,size(X));
             Z = [yVals, zeros(size(yVals))];
-             patchHandles{end+1} = fill3(X,Y,Z,plotColor{subIdx(ss)});
-             set(patchHandles{end},'edgecolor','none','facealpha',faceAlpha(subIdx(ss)));
+            patchHandles{end+1} = fill3(X,Y,Z,plotColor{subIdx(ss)});
+            set(patchHandles{end},'edgecolor','none','facealpha',faceAlpha(subIdx(ss)));
             hold on
 
-            % Add a line at the edge of the color patch            
+            % Add a line at the edge of the color patch
             plot3(myFreqs,repmat(ee*spacing,size(myFreqs)),yVals,...
                 lineSpec{ss},'Color',lineColor{subIdx(ss)},'LineWidth',1.5);
 
@@ -158,39 +159,39 @@ for ss=1:3
     a.XMinorTick = 'off';
     a.YAxis.Visible = 'off';
     box off
-        if ss>1
-            a.XAxis.Visible = 'off';
-            a.ZAxis.Visible = 'off';
-        end
+    if ss>1
+        a.XAxis.Visible = 'off';
+        a.ZAxis.Visible = 'off';
+    end
 end
 
-    % Save just the vector elements
-    for pp=1:length(patchHandles)
-        set(patchHandles{pp}, 'Visible','off','HandleVisibility','off')
-    end
+% Save just the vector elements
+for pp=1:length(patchHandles)
+    set(patchHandles{pp}, 'Visible','off','HandleVisibility','off')
+end
 plotName = 'postRetinalStackedModelFits.pdf';
-    saveas(gcf,fullfile(savePath,plotName));
+saveas(gcf,fullfile(savePath,plotName));
 
-    for ss=1:3
-        nexttile(ss);
+for ss=1:3
+    nexttile(ss);
 
-        child_handles = allchild(gca);
-        for cc=1:length(child_handles)
-            if ~isgraphics(child_handles(cc),'patch')
-                set(child_handles(cc), 'Visible','off')
-            else
-                set(child_handles(cc), 'Visible','on')
-            end
-            a=gca;
-            a.XAxis.Visible = 'off';
-            a.YAxis.Visible = 'off';
-            a.ZAxis.Visible = 'off';
+    child_handles = allchild(gca);
+    for cc=1:length(child_handles)
+        if ~isgraphics(child_handles(cc),'patch')
+            set(child_handles(cc), 'Visible','off')
+        else
+            set(child_handles(cc), 'Visible','on')
         end
+        a=gca;
+        a.XAxis.Visible = 'off';
+        a.YAxis.Visible = 'off';
+        a.ZAxis.Visible = 'off';
     end
+end
 plotName = 'postRetinalStackedModelFits.png';
-    print(fullfile(savePath,plotName),'-dpng','-r600');
+print(fullfile(savePath,plotName),'-dpng','-r600');
 
- 
+
 
 % Save the plot
 saveas(gcf,fullfile(savePath,plotName));

@@ -12,8 +12,11 @@ stimOrder = [2 3 1];
 
 plotColor={[0.75 0.75 0.75],[0.75 0.75 0.75],[0.75 0.5 0.5],[0.5 0.5 0.75]};
 lineColor={'k','k',[.5 0.25 0.25],[0.25 0.25 0.5]};
-figure
-figuresize(500,300,'pt');
+
+figure('Renderer','painters');
+figuresize(800,600,'pt');
+set(gcf, 'Color', 'None');
+tiledlayout(1,4,'TileSpacing','none','Padding','tight')
 
 
 % Where to save figures
@@ -86,7 +89,7 @@ for ee = 1:length(myEccs)
             yVals = abs(double(subs(rfRGC,myFreqs)));
 
             % Get the subplot and define the offset
-            subplot(1,4,subIdx(ss));
+            nexttile(subIdx(ss));
             set(gca, 'XScale', 'log')
             yOffset = 1+(nEccBands*spacing) - (ee)*spacing;
 
@@ -105,7 +108,6 @@ for ee = 1:length(myEccs)
             % Add a text label for the eccentricitiy
             text(150,ee*spacing,0,sprintf('%2.0f°',eccDeg),"HorizontalAlignment","left");
 
-
         end
     end
 end
@@ -113,8 +115,7 @@ end
 % Clean up
 for ss=1:4
     view(0,70);
-    subplot(1,4,ss)
-    plot3([16 16],[0 spacing*length(myEccs)],[10 10],'--k')
+    nexttile(ss)
     xlim([0.5 150])
     zlim([0 10])
     a=gca;
@@ -124,10 +125,45 @@ for ss=1:4
     a.XMinorTick = 'off';
     a.YAxis.Visible = 'off';
     box off
+    if ss>1
+        a.XAxis.Visible = 'off';
+        a.ZAxis.Visible = 'off';
+    end
+
 end
 
 
 % Save the plot
-plotName = 'rgcStackedModelFits.pdf';
-saveas(gcf,fullfile(savePath,plotName));
+% Save just the vector elements
+for ss=1:4
+    nexttile(ss);
+    child_handles = allchild(gca);
+    for cc=1:length(child_handles)
+        if isgraphics(child_handles(cc),'patch')
+            set(child_handles(cc), 'Visible','off')
+        else
+            set(child_handles(cc), 'Visible','on')
+        end
+    end
+end
+saveas(gcf,fullfile(savePath,'rgcStackedModelFits.pdf'));
+
+for ss=1:4
+    nexttile(ss);
+
+    child_handles = allchild(gca);
+    for cc=1:length(child_handles)
+        if ~isgraphics(child_handles(cc),'patch')
+            set(child_handles(cc), 'Visible','off')
+        else
+            set(child_handles(cc), 'Visible','on')
+        end
+        a=gca;
+        a.XAxis.Visible = 'off';
+        a.YAxis.Visible = 'off';
+        a.ZAxis.Visible = 'off';
+    end
+end
+print(gcf,fullfile(savePath,'rgcStackedModelFits.png'),'-dpng','-r600');
+
 

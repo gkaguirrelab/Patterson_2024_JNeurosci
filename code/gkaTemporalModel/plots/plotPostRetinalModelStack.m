@@ -16,7 +16,7 @@ faceAlpha = [0,1,1];
 
 figure('Renderer','painters');
 figuresize(600,600,'pt');
-set(gcf, 'Color', 'None');
+%set(gcf, 'Color', 'None');
 tiledlayout(1,3,'TileSpacing','none','Padding','tight')
 
 
@@ -119,7 +119,9 @@ for ee = 1:length(myEccs)
                 lineSpec{ss},'Color',lineColor{subIdx(ss)},'LineWidth',1.5);
 
             % Add a text label for the eccentricitiy
-            text(150,ee*spacing,0,sprintf('%2.0f°',eccDeg),"HorizontalAlignment","left");
+            if subIdx(ss) == 3
+                text(150,ee*spacing,0,sprintf('%2.0f°',eccDeg),"HorizontalAlignment","left");
+            end
 
             % Plot the total achrom case
             if achromCounter==2
@@ -136,8 +138,6 @@ for ee = 1:length(myEccs)
                 plot3(myFreqs,repmat(ee*spacing,size(myFreqs)),totalAchrom,...
                     '-','Color','k','LineWidth',1.5);
 
-                % Add a text label for the eccentricitiy
-                text(150,ee*spacing,0,sprintf('%2.0f°',eccDeg),"HorizontalAlignment","left");
             end
 
 
@@ -165,28 +165,44 @@ for ss=1:3
     end
 end
 
-% Save just the vector elements
-for pp=1:length(patchHandles)
-    set(patchHandles{pp}, 'Visible','off','HandleVisibility','off')
+% Hide the patches
+for ss=1:3
+    nexttile(ss);
+    child_handles = allchild(gca);
+    for cc=1:length(child_handles)
+        if isgraphics(child_handles(cc),'patch')
+            set(child_handles(cc), 'Visible','off')
+        end
+    end
 end
 plotName = 'postRetinalStackedModelFits.pdf';
 saveas(gcf,fullfile(savePath,plotName));
 
+% Show the patches
 for ss=1:3
     nexttile(ss);
-
     child_handles = allchild(gca);
     for cc=1:length(child_handles)
-        if ~isgraphics(child_handles(cc),'patch')
-            set(child_handles(cc), 'Visible','off')
-        else
+        if isgraphics(child_handles(cc),'patch')
             set(child_handles(cc), 'Visible','on')
         end
-        a=gca;
-        a.XAxis.Visible = 'off';
-        a.YAxis.Visible = 'off';
-        a.ZAxis.Visible = 'off';
     end
+end
+
+% Hide the non-patch items
+for ss=1:3
+    nexttile(ss);
+    child_handles = allchild(gca);
+    % We have to keep the first graphic object to hold the patch objects in
+    % position in the window.
+    for cc=2:length(child_handles)
+        if ~isgraphics(child_handles(cc),'patch')
+            set(child_handles(cc), 'Visible','off')
+        end
+    end
+    a=gca;
+            a.XAxis.Visible = 'off';
+        a.ZAxis.Visible = 'off';
 end
 plotName = 'postRetinalStackedModelFits.png';
 print(fullfile(savePath,plotName),'-dpng','-r600');

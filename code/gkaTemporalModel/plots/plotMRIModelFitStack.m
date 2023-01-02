@@ -126,7 +126,9 @@ for whichSub = 1:length(subjects)
                 'MarkerSize',5,'MarkerEdgeColor','w','LineWidth',0.5);
 
             % Add a text label for the eccentricitiy
-            text(150,ee*spacing,0,sprintf('%2.0f°',studiedEccentricites(ee)),"HorizontalAlignment","left");
+            if stimOrder(whichStim)==3   
+                text(150,ee*spacing,0,sprintf('%2.0f°',studiedEccentricites(ee)),"HorizontalAlignment","left");
+            end
 
         end
 
@@ -167,7 +169,9 @@ for whichSub = 1:length(subjects)
             'MarkerSize',5,'MarkerEdgeColor','w','LineWidth',0.5);
 
         % Add a text label for the eccentricitiy
+            if stimOrder(whichStim)==3   
         text(150,1,0,'LGN',"HorizontalAlignment","left");
+            end
 
         % V1
         % Create a patch for the response
@@ -195,8 +199,9 @@ for whichSub = 1:length(subjects)
             'MarkerSize',5,'MarkerEdgeColor','w','LineWidth',0.5);
 
         % Add a text label for the eccentricitiy
+                    if stimOrder(whichStim)==3   
         text(150,2,0,'V1',"HorizontalAlignment","left");
-
+                    end
 
     end
 
@@ -209,8 +214,8 @@ for whichSub = 1:length(subjects)
             xlim([0.5 150])
             zlim([-1 7])
             a=gca;
-            a.ZTick = [0,5];
-            a.ZTickLabel = {'0','5'};
+            a.ZTick = [0,2,4,6];
+            a.ZTickLabel = {'0','2','4','6'};
             a.XTick = [1,100];
             a.XTickLabel = {'1','100'};
             a.XTickLabelRotation = 0;

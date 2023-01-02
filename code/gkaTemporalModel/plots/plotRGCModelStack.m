@@ -106,8 +106,10 @@ for ee = 1:length(myEccs)
                 lineSpec{ss},'Color',lineColor{subIdx(ss)},'LineWidth',1.5);
 
             % Add a text label for the eccentricitiy
+            if subIdx(ss)==4
             text(150,ee*spacing,0,sprintf('%2.0f°',eccDeg),"HorizontalAlignment","left");
-
+            end
+            
         end
     end
 end

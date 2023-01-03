@@ -81,13 +81,15 @@ for whichSub = 1:length(subjects)
 
         % Clean up
         semilogy([-0.5 2],[0 0],':k');
-        xlabel('Eccentricity [log deg]');
+        a=gca;
+        a.XTick = log10([2,4,8,16,32,54]);
+        a.XTickLabel = {'2','4','8','16','32','64'};
+        xlabel('Eccentricity [deg]');
         ylabel('Suppression index');
         xlim([0 2]);
         ylim([-1 1]);
-box off
+        box off
     end
-
 
     % Calculate the gain ratios
     v1GainVals = {}; lgnGainVals = {};
@@ -100,21 +102,24 @@ box off
 
     % Plot the luminance gain ratio relative to fovea
     for whichStim = 1:length(stimulusDirections)
-            subplot(2,4,4+subOrder(whichStim))
-        meanV1Val = mean(v1GainVals{whichStim}./v1GainVals{3}(:,1));
-        semV1Val = std(v1GainVals{whichStim}./v1GainVals{3}(:,1));
+        subplot(2,4,4+subOrder(whichStim))
+        meanV1Val = mean(v1GainVals{whichStim});
+        semV1Val = std(v1GainVals{whichStim});
         semilogy(log10(studiedEccentricites),meanV1Val,[subjectLineSpec{whichSub} plotColor{whichStim}],'LineWidth',2);
         hold on
         X = [log10(studiedEccentricites) fliplr(log10(studiedEccentricites))];
         Y = [meanV1Val+semV1Val, fliplr(meanV1Val-semV1Val)];
         p = patch(X,Y,plotColor{whichStim});
         set(p,'edgecolor','none','facealpha',0.2);
-    semilogy([-0.5 2],[1 1],':k');
-    xlim([0 2]);
-    ylim([10^-1 10^2]);
-    xlabel('Eccentricity [log deg]');
-    ylabel('Retinal gain relative to fovea');
-    box off
+        semilogy([-0.5 2],[1 1],':k');
+        xlim([0 2]);
+        a=gca;
+        a.XTick = log10([2,4,8,16,32,54]);
+        a.XTickLabel = {'2','4','8','16','32','64'};
+        ylim([10^-2 10^2]);
+        xlabel('Eccentricity [deg]');
+        ylabel('Retinal gain');
+        box off
     end
 
     % Plot the relative gain ratios
@@ -126,8 +131,8 @@ box off
     meanLGNVal = mean(lgnGainVals{3}./lgnGainVals{3});
     semLGNVal = std(lgnGainVals{3}./mean(lgnGainVals{3}));
     semilogy(log10(studiedEccentricites),meanV1Val,[subjectLineSpec{whichSub} 'k'],'LineWidth',2);
-
     hold on
+
     % Omit the LGN point if the value does not differ from zero
     if (meanLGNVal-semLGNVal)>0 && showLGNValsOnGainPlot
         semilogy(0,meanLGNVal,[subjectSymbol{whichSub} 'k'])
@@ -175,8 +180,11 @@ box off
     % Clean up
     semilogy([-0.5 2],[1 1],':k');
     xlim([0 2]);
-    ylim([10^-1 10^2]);
-    xlabel('Eccentricity [log deg]');
+    ylim([10^-1 10^1.5]);
+        a=gca;
+        a.XTick = log10([2,4,8,16,32,54]);
+        a.XTickLabel = {'2','4','8','16','32','64'};
+    xlabel('Eccentricity [deg]');
     ylabel('Retinal gain relative to luminance');
     box off
 
@@ -310,19 +318,19 @@ box off
 
         % Plot the gain vs. eccentricity
         subplot(1,2,2)
-        semilogy(log10(studiedEccentricites),v1Gain/gainReference,['o' plotColor{whichStim}]);
+        semilogy(log10(studiedEccentricites),v1Gain,['o' plotColor{whichStim}]);
         hold on
-        semilogy(log10(studiedEccentricites),v1Gain/gainReference,[subjectLineSpec{whichSub} plotColor{whichStim}]);
+        semilogy(log10(studiedEccentricites),v1Gain,[subjectLineSpec{whichSub} plotColor{whichStim}]);
 
         % Add error bars
-        Y = [v1Gain/gainReference-v1GainSEM/gainReference, fliplr(v1Gain/gainReference+v1GainSEM/gainReference)];
+        Y = [v1Gain-v1GainSEM, fliplr(v1Gain+v1GainSEM)];
         p = patch(X,Y,plotColor{whichStim});
         set(p,'edgecolor','none','facealpha',0.1);
 
         % Add the lgn and lgn error bars
         idx = paramCounts.unique+(whichStim-1)*paramCounts.lgn+2;
-        semilogy(0,pMRI(idx)/gainReference,['*' plotColor{whichStim}]);
-        semilogy([0 0],[pMRI(idx)/gainReference-pMRISEM(idx)/gainReference, pMRI(idx)/gainReference+pMRISEM(idx)/gainReference],['-' plotColor{whichStim}]);
+        semilogy(0,pMRI(idx),['*' plotColor{whichStim}]);
+        semilogy([0 0],[pMRI(idx)-pMRISEM(idx), pMRI(idx)+pMRISEM(idx)],['-' plotColor{whichStim}]);
 
         % Clean up
         semilogy([-0.5 2],[1 1],':k');

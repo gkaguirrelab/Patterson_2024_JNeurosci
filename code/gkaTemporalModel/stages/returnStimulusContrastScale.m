@@ -16,7 +16,11 @@ function stimulusContrastScale = returnStimulusContrastScale(cellClass,stimulusD
 % function fit to the contrast response data. For the bistratified and
 % midget RGCs, we will assume that the stimuli we are presenting are within
 % the linear range of the response. Parasol cells, however, saturate at 25%
-% actual / relative contrast; we account for that property here.
+% actual / relative contrast; we account for that property here:
+%
+%   Lee, Barry B., et al. "Luminance and chromatic modulation sensitivity
+%   of macaque ganglion cells and human observers." JOSA A 7.12 (1990):
+%   2223-2236.
 
 
 % Obtain the chromatic weights.

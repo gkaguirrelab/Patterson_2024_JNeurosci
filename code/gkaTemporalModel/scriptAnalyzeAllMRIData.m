@@ -17,28 +17,32 @@ mriSearchFlag = true;
 % search?
 useMonotonicConstraint = false;
 
+% Which cortical region to fit
+corticalRegion = 'v2v3';
+
 % What model type do we want? By cell or by stimulus?
 %{
     modelTypes = {'stimulus','cell'};
 %}
-modelTypes = {'stimulus','cell'};
+modelTypes = {'stimulus'};
 
 % Which set of parameters will we investigate in the bootstrap analysis?
 %{
 paramSearch = 'gainOnly';
 paramSearch = 'noSurround';
 paramSearch = 'full';
+paramSearch = 'cortex';
 %}
-paramSearch = 'full';
+paramSearch = 'cortex';
 
 % How many bootstrap resamplings of the data to conduct
 nBoots = 1;
 
 % Verbose?
-verbose = false;
+verbose = true;
 
 % Where we will save the temporal model results
-saveDir = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults');
+saveDir = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults','v2v3');
 
 %% Create the RGC temporal sensitivity model
 rgcTemporalModel = fitRGCFResponse(false,false);
@@ -90,7 +94,7 @@ for bb = 1:nBoots
     for whichSub = [1 2]
 
         % Assemble the data
-        lgnY = []; lgnW = []; v1Y = []; v1W = [];
+        lgnY = []; lgnW = []; cortexY = []; cortexW = [];
         for whichStim = 1:length(stimulusDirections)
 
             % Extract the  LGN data
@@ -101,15 +105,15 @@ for bb = 1:nBoots
             switch paramSearch
                 case 'avgROIs'
                     % Extract the avg V1 response
-                    thisMatrix = mriData.(subjects{whichSub}).(stimulusDirections{whichStim}).v1_avg(bootIdx,:);
-                    v1Y = [v1Y mean(thisMatrix)];
-                    v1W = [v1W 1./std(thisMatrix)];
+                    thisMatrix = mriData.(subjects{whichSub}).(stimulusDirections{whichStim}).([corticalRegion '_avg'])(bootIdx,:);
+                    cortexY = [cortexY mean(thisMatrix)];
+                    cortexW = [cortexW 1./std(thisMatrix)];
                 otherwise
                     % Extract the V1 response across eccentricities
                     for ee = 1:nEccs
-                        thisMatrix = mriData.(subjects{whichSub}).(stimulusDirections{whichStim}).(['v1_ecc' num2str(ee)])(bootIdx,:);
-                        v1Y = [v1Y mean(thisMatrix)];
-                        v1W = [v1W 1./std(thisMatrix)];
+                        thisMatrix = mriData.(subjects{whichSub}).(stimulusDirections{whichStim}).([corticalRegion '_ecc' num2str(ee)])(bootIdx,:);
+                        cortexY = [cortexY mean(thisMatrix)];
+                        cortexW = [cortexW 1./std(thisMatrix)];
                     end
             end
         end
@@ -132,7 +136,7 @@ for bb = 1:nBoots
             results = fitMRIResponse(...
                 pMRI0,...
                 stimulusDirections,studiedEccentricites,studiedFreqs,...
-                v1Y,v1W,lgnY,lgnW,...
+                cortexY,cortexW,lgnY,lgnW,...
                 modelTypes{mm},useMonotonicConstraint,paramSearch,verbose);
             results.pMRI0 = pMRI0;
 

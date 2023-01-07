@@ -40,6 +40,13 @@ r2Thresh = 0.1;
 % The eccentricity bins that we will use to divide V1
 eccenDivs = [0 90./(2.^(5:-1:0))];
 
+for ii=1:length(eccenDivs)-1
+    eccenBins{ii}=[eccenDivs(ii),eccenDivs(ii+1)];
+end
+
+% The brain areas
+areaLabels = {'lgn','v1_avg','v1_ecc','v2v3_avg','v2v3_ecc'};
+
 % Loop through subjects
 for ss = 1:length(subjectNames)
 
@@ -53,53 +60,79 @@ for ss = 1:length(subjectNames)
     % Loop over stimulus directions
     for dd = 1:length(stimulusDirections)
 
-        % Loop over eccentricity bins in V1 (plus LGN)
-        for ee = 0:length(eccenDivs)
+        % Loop over areaLabels
+        for aa = 1:length(areaLabels)
 
-            % When ee==0, load the LGN data
-            switch ee
-                case 0 % The LGN
+            theseBins = {};
+
+            switch areaLabels{aa}
+                case {'lgn'}
+                    nEcc = 1;
+                    theseBins{1} = [];
                     areaIdx = LGNROI;
-                    eccFieldName = 'lgn';
-                case length(eccenDivs) % Avg V1
-                    % The eccentricity range for this bin
-                    eccenRange = [eccenDivs(1) eccenDivs(end)];
-
-                    % Find the vertices that we wish to analyze within V1
-                    areaIdx = (vArea==1) .* (eccenMap > eccenRange(1)) .* (eccenMap < eccenRange(2));
-
-                    % The name we will use for this field in the data structure
-                    eccFieldName = 'v1_avg';
-                otherwise
-                    % The eccentricity range for this bin
-                    eccenRange = [eccenDivs(ee) eccenDivs(ee+1)];
-
-                    % Find the vertices that we wish to analyze within V1
-                    areaIdx = (vArea==1) .* (eccenMap > eccenRange(1)) .* (eccenMap < eccenRange(2));
-
-                    % The name we will use for this field in the data structure
-                    eccFieldName = ['v1_ecc' num2str(ee)];
+                case 'v1_avg'
+                    nEcc = 1;
+                    theseBins{1} = [eccenDivs(1) eccenDivs(end)];
+                    areaIdx = (vArea==1);
+                case 'v2v3_avg'
+                    nEcc = 1;
+                    theseBins{1} = [eccenDivs(1) eccenDivs(end)];
+                    areaIdx = or(vArea==2,vArea==3);
+                case 'v1_ecc'
+                    theseBins = eccenBins;
+                    nEcc = length(theseBins);
+                    areaIdx = (vArea==1);
+                case 'v2v3_ecc'
+                    theseBins = eccenBins;
+                    nEcc = length(theseBins);
+                    areaIdx = or(vArea==2,vArea==3);
             end
 
-            % Get the indices that contain the desired results
-            goodIdx = logical( (results.R2 > r2Thresh) .* areaIdx );
+            % Enter a while loop until we are done with eccentricity bands
+            eccCounter = 1;
 
-            % Loop through the frequencies and obtain the set of values
-            rawVals = cell(1,nFreqs);
-            for ff = 1:nFreqs
-                subString = sprintf(['f%dHz_' stimulusDirections{dd}],allFreqs(ff));
-                idx = find(contains(stimLabels,subString));
-                rawVals{ff} = mean(results.params(goodIdx,idx),'omitnan');
+            while eccCounter <= nEcc
+
+                % Get this eccentricity bin, and if we have an eccenRange,
+                % filter the indices for this
+                eccenRange = theseBins{eccCounter};
+                if ~isempty(eccenRange)
+                    inRangeIdx = areaIdx .* (eccenMap > eccenRange(1)) .* (eccenMap < eccenRange(2));
+                else
+                    inRangeIdx = areaIdx;
+                end
+
+                % Filter the indices for goodness
+                goodIdx = logical( (results.R2 > r2Thresh) .* inRangeIdx );
+
+                % Loop through the frequencies and obtain the set of values
+                rawVals = cell(1,nFreqs);
+                for ff = 1:nFreqs
+                    subString = sprintf(['f%dHz_' stimulusDirections{dd}],allFreqs(ff));
+                    idx = find(contains(stimLabels,subString));
+                    rawVals{ff} = mean(results.params(goodIdx,idx),'omitnan');
+                end
+
+                % Adjust the values for the zero frequency
+                adjustedVals = [];
+                for ff = 2:nFreqs
+                    adjustedVals(:,ff-1) = rawVals{ff}-rawVals{1};
+                end
+
+                % Create a field name
+                fieldName = strrep(areaLabels{aa},'_ecc',['_ecc' num2str(eccCounter)]);
+
+                % Store these values in the data structure
+                mriData.(shortNames{ss}).(stimulusDirections{dd}).(fieldName) = adjustedVals;
+
+                % Store a record of how many vertices / voxels were present
+                % for this measure
+                mriData.(shortNames{ss}).meta.(stimulusDirections{dd}).(fieldName) = sum(goodIdx);
+
+                % Update the eccCounter
+                eccCounter = eccCounter+1;
+
             end
-
-            % Adjust the values for the zero frequency
-            adjustedVals = [];
-            for ff = 2:nFreqs
-                adjustedVals(:,ff-1) = rawVals{ff}-rawVals{1};
-            end
-
-            % Store these values in the data structure
-            mriData.(shortNames{ss}).(stimulusDirections{dd}).(eccFieldName) = adjustedVals;
 
         end
 

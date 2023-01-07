@@ -160,6 +160,9 @@ switch paramSearch
     case 'full' % but omits the LM ratio
         lockIdx = 3;
         myObj = @(pMRI) myV1Obj(pMRI) + myLGNObj(pMRI);
+    case 'cortex' % just gain and surround weight at the cortex
+        lockIdx = [1:9, 10, 23, 36];
+        myObj = @(pMRI) myV1Obj(pMRI);
 end
 lb(lockIdx) = p0(lockIdx); plb(lockIdx) = p0(lockIdx);
 ub(lockIdx) = p0(lockIdx); pub(lockIdx) = p0(lockIdx);

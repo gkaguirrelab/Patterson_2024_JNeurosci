@@ -7,7 +7,7 @@ function stimulusContrastScale = returnStimulusContrastScale(cellClass,stimulusD
 % particular stimulus direction. These were:
 %   LMS: 100%
 %   L-M: 12%
-%     S: 80%
+%     S: 86%
 %
 % So, an actual 50% S-directed modulation is characterized as a 50/86 =
 % 58% relative contrast in this direction.

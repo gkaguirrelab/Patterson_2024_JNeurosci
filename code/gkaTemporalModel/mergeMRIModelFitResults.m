@@ -10,7 +10,10 @@ mriData = loadMRIResponseData();
 subjects = {'gka','asb'};
 stimulusDirections = {'LminusM','S','LMS'};
 modelTypes = {'stimulus'};
+corticalRegions = {'v1'};
+
 %{
+paramSearch = 'cortex';
 paramSearch = 'full';
 paramSearch = 'gainOnly';
 paramSearch = 'noSurround';
@@ -24,6 +27,8 @@ nEcc = 6;
 % Index name
 indexName = ['mriTemporalModel_' regexprep(num2str(1:12),' +', '-') '_' paramSearch '.mat'];
 
+for aa=1:length(corticalRegions)
+
 % Loop over the model types
 for cc = 1:length(modelTypes)
 
@@ -33,7 +38,7 @@ for cc = 1:length(modelTypes)
     for ss = 1:length(subjects)
 
         % Get the list of result files for this subject
-        resultList = dir(fullfile(dataPath,'temporalModelResults',modelTypes{cc},subjects{ss},['mriTemporalModel_*_' paramSearch  '.mat']));
+        resultList = dir(fullfile(dataPath,'temporalModelResults',corticalRegions{aa},modelTypes{cc},subjects{ss},['mriTemporalModel_*_' paramSearch  '.mat']));
 
         % Load each result, and merge it into the full set
         for rr=1:length(resultList)
@@ -62,7 +67,9 @@ for cc = 1:length(modelTypes)
     mriFullResultSet.(subjects{ss}).v1YSEM = std(mriFullResultSet.(subjects{ss}).v1Y);
     mriFullResultSet.(subjects{ss}).lgnYSEM = std(mriFullResultSet.(subjects{ss}).lgnY);
 
-    savePath = fullfile(dataPath,'temporalModelResults',modelTypes{cc},['mriFullResultSet_' paramSearch '.mat']);
+    savePath = fullfile(dataPath,'temporalModelResults',corticalRegions{aa},modelTypes{cc},['mriFullResultSet_' paramSearch '.mat']);
     save(savePath,'mriFullResultSet');
+
+end
 
 end

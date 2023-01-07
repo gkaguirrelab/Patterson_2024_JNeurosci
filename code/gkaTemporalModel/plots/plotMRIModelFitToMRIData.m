@@ -19,7 +19,7 @@ loadPath = fullfile(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath'
 load(loadPath,'rgcTemporalModel');
 
 % Load the MRI temporal model
-loadPath = fullfile(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath'))))),'data','temporalModelResults',modelType);
+loadPath = fullfile(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath'))))),'data','temporalModelResults','v1',modelType);
 load(fullfile(loadPath,['mriFullResultSet_' paramSearch '.mat']),'mriFullResultSet');
 
 % Where will we save the plots

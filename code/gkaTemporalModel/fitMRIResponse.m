@@ -149,16 +149,19 @@ myLGNObj = @(pMRI) norm(lgnW.*(lgnY - myLGNTTF(pMRI)));
 % Which parameters and objective(s) shall we use in the search?
 switch paramSearch
     case 'gainOnly'
-        lockIdx = [1:3, 4, 6, 8, 10, 11:16, 23, 24:29, 36, 37:42];
+        lockIdx = [2:3, 4, 6, 8, 10, 11:16, 23, 24:29, 36, 37:42];
         pinIdx = 2; p0(pinIdx)=120;
         zeroIdx = [4, 6, 8, 11:16, 24:29, 37:42]; p0(zeroIdx)=0;
         myObj = @(pMRI) myV1Obj(pMRI) + myLGNObj(pMRI);
     case 'noSurround'
-        lockIdx = [1:3 4, 6, 8, 10, 11:16, 23, 24:29, 36, 37:42];
+        lockIdx = [3, 4, 6, 8, 10, 11:16, 23, 24:29, 36, 37:42];
         zeroIdx = [4, 6, 8, 11:16, 24:29, 37:42]; p0(zeroIdx)=0;
         myObj = @(pMRI) myV1Obj(pMRI) + myLGNObj(pMRI);
     case 'full' % but omits the LM ratio
         lockIdx = 3;
+        myObj = @(pMRI) myV1Obj(pMRI) + myLGNObj(pMRI);
+    case 'lockAll'
+        lockIdx = 1:48;
         myObj = @(pMRI) myV1Obj(pMRI) + myLGNObj(pMRI);
     case 'cortex' % just gain and surround weight at the cortex
         lockIdx = [1:9, 10, 23, 36];
@@ -191,8 +194,14 @@ if ~any(strcmp({V.Name}, 'Optimization Toolbox'))
     optionsBADS.OptimToolbox = 0;
 end
 
-% search
-[pMRI,fVal] = bads(myObj,p0,lb,ub,plb,pub,myNonbcon,optionsBADS);
+% search, and handle the case of locking all params and just evaluating the
+% objective at p0
+if ~all(ub==lb)
+    [pMRI,fVal] = bads(myObj,p0,lb,ub,plb,pub,myNonbcon,optionsBADS);
+else
+    pMRI = p0;
+    fVal = myObj(p0);
+end
 
 % assemble the results structure
 results.pMRI = pMRI;

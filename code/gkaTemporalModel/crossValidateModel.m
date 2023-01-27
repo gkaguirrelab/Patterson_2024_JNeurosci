@@ -11,10 +11,10 @@ rng('shuffle');
 % Some model settings
 useMonotonicConstraint = false;
 corticalRegion = 'v1';
-modelType = 'stimulus';
+modelType = {'cell','stimulus'};
 
 % The types of parameters to use
-paramSearch = {'gainOnly','noSurround','full'};
+paramSearch = {'gainOnly','full'};
 
 % How many bootstrap cross-validations of the data to conduct
 nSplits = 25;
@@ -48,7 +48,7 @@ nAcqs = 12;
 studiedFreqs = [2 4 8 16 32 64];
 
 % Define the structure that will hold the results
-crossValResults.meta.nSplits = nSplits;
+crossValResults_fVal.meta.nSplits = nSplits;
 
 % Loop over bootstraps
 for bb = 1:nSplits
@@ -57,6 +57,9 @@ for bb = 1:nSplits
 
     % Loop over subjects
     for whichSub = [1 2]
+
+        % Loop over model type
+        for mm = 1:length(modelType)
 
         % Loop over param searches
         for pp = 1:length(paramSearch)
@@ -100,7 +103,7 @@ for bb = 1:nSplits
                 % Load a search seed
                 switch tt
                     case 1
-                        pMRI0 = storedSearchSeeds(whichSub,modelType);
+                        pMRI0 = storedSearchSeeds(whichSub,modelType{mm});
                         thisParamSearch = paramSearch{pp};
                     case 2
                         pMRI0 = pMRI0; % The solution on the last loop
@@ -112,7 +115,7 @@ for bb = 1:nSplits
                     pMRI0,...
                     stimulusDirections,studiedEccentricites,studiedFreqs,...
                     cortexY,cortexW,lgnY,lgnW,...
-                    modelType,useMonotonicConstraint,thisParamSearch,verbose);
+                    modelType{mm},useMonotonicConstraint,thisParamSearch,verbose);
                 pMRI0 = results.pMRI;
 
             end
@@ -123,16 +126,19 @@ for bb = 1:nSplits
             fprintf(str);
 
             % Store the value
-            crossValResults.(subjects{whichSub}).(paramSearch{pp})(bb) = results.fVal;
+            crossValResults_fVal.(subjects{whichSub}).(modelType{mm}).(paramSearch{pp})(bb) = results.fVal;
+            crossValResults_v1R2.(subjects{whichSub}).(modelType{mm}).(paramSearch{pp})(bb) = results.v1R2;
+            crossValResults_lgnR2.(subjects{whichSub}).(modelType{mm}).(paramSearch{pp})(bb) = results.lgnR2;
 
             % Save after each iteration
             saveSpot = fullfile(saveDir,'crossValResults.mat');
-            save(saveSpot,'crossValResults');
+            save(saveSpot,'crossValResults_fVal','crossValResults_v1R2','crossValResults_lgnR2');
 
         end % paramSearch types
 
-    end % subjects
+        end % model types
 
+    end % subjects
 
 end % splits
 

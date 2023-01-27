@@ -203,9 +203,15 @@ else
     fVal = myObj(p0);
 end
 
+% Compute an R2 model fit
+v1R2 = corr(myV1TTF(pMRI)',v1Y').^2;
+lgnR2 = corr(myLGNTTF(pMRI)',lgnY').^2;
+
 % assemble the results structure
 results.pMRI = pMRI;
 results.fVal = fVal;
+results.v1R2 = v1R2;
+results.lgnR2 = lgnR2;
 results.paramCounts = paramCounts;
 results.cellClasses = cellClasses;
 results.modelType = modelType;

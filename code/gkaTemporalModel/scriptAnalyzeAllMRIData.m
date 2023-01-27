@@ -15,16 +15,16 @@ mriSearchFlag = true;
 
 % Do we wish to use the monotonic constraint upon surround index in the
 % search?
-useMonotonicConstraint = false;
+useMonotonicConstraint = true;
 
 % Which cortical region to fit
-corticalRegion = 'v2v3';
+corticalRegion = 'v1';
 
 % What model type do we want? By cell or by stimulus?
 %{
-    modelTypes = {'stimulus','cell'};
+    modelTypes = {'stimulus','cell','mixed'};
 %}
-modelTypes = {'stimulus'};
+modelTypes = {'mixed'};
 
 % Which set of parameters will we investigate in the bootstrap analysis?
 %{
@@ -33,7 +33,7 @@ paramSearch = 'noSurround';
 paramSearch = 'full';
 paramSearch = 'cortex';
 %}
-paramSearch = 'cortex';
+paramSearch = 'full';
 
 % How many bootstrap resamplings of the data to conduct
 nBoots = 1;
@@ -42,7 +42,7 @@ nBoots = 1;
 verbose = true;
 
 % Where we will save the temporal model results
-saveDir = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults','v2v3');
+saveDir = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults','v1');
 
 %% Create the RGC temporal sensitivity model
 rgcTemporalModel = fitRGCFResponse(false,false);

@@ -15,7 +15,7 @@ mriSearchFlag = true;
 
 % Do we wish to use the monotonic constraint upon surround index in the
 % search?
-useMonotonicConstraint = true;
+useMonotonicConstraint = false;
 
 % Which cortical region to fit
 corticalRegion = 'v1';
@@ -36,10 +36,10 @@ paramSearch = 'cortex';
 paramSearch = 'full';
 
 % How many bootstrap resamplings of the data to conduct
-nBoots = 1;
+nBoots = 25;
 
 % Verbose?
-verbose = true;
+verbose = false;
 
 % Where we will save the temporal model results
 saveDir = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults','v1');

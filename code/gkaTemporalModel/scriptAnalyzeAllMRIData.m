@@ -22,9 +22,9 @@ corticalRegion = 'v1';
 
 % What model type do we want? By cell or by stimulus?
 %{
-    modelTypes = {'stimulus','cell','mixed'};
+    modelTypes = {'stimulus','cell'};
 %}
-modelTypes = {'mixed'};
+modelTypes = {'cell','stimulus'};
 
 % Which set of parameters will we investigate in the bootstrap analysis?
 %{
@@ -33,13 +33,13 @@ paramSearch = 'noSurround';
 paramSearch = 'full';
 paramSearch = 'cortex';
 %}
-paramSearch = 'full';
+paramSearch = 'gainOnly';
 
 % How many bootstrap resamplings of the data to conduct
-nBoots = 25;
+nBoots = 1;
 
 % Verbose?
-verbose = false;
+verbose = true;
 
 % Where we will save the temporal model results
 saveDir = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults','v1');
@@ -122,7 +122,7 @@ for bb = 1:nBoots
         for mm=1:length(modelTypes)
 
             % Load a search seed
-            pMRI0 = storedSearchSeeds(whichSub,modelTypes{mm});
+            pMRI0 = storedSearchSeeds(whichSub,modelTypes{mm},paramSearch);
 
             % Report our progress
             curTime = char(datetime('now','TimeZone','local','Format','d-MMM-y HH:mm:ss'));

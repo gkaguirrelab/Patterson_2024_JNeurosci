@@ -103,7 +103,7 @@ for bb = 1:nSplits
                     % Load a search seed
                     switch tt
                         case 1
-                            pMRI0 = storedSearchSeeds(whichSub,modelType{mm});
+                            pMRI0 = storedSearchSeeds(whichSub,modelType{mm},paramSearch{pp});
                             thisParamSearch = paramSearch{pp};
                         case 2
                             pMRI0 = pMRI0; % The solution on the last loop

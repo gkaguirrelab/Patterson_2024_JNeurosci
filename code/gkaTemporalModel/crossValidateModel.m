@@ -11,6 +11,8 @@ rng('shuffle');
 % Some model settings
 useMonotonicConstraint = false;
 corticalRegion = 'v1';
+
+% Which model types to test
 modelType = {'cell','stimulus'};
 
 % The types of parameters to use
@@ -23,7 +25,7 @@ nSplits = 25;
 verbose = false;
 
 % Where we will save the cross validation results?
-saveDir = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults',corticalRegion);
+saveDir = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data','temporalModelResults',corticalRegion,'crossVal');
 
 % Create the RGC temporal sensitivity model
 rgcTemporalModel = fitRGCFResponse(false,false);
@@ -48,11 +50,18 @@ nAcqs = 12;
 studiedFreqs = [2 4 8 16 32 64];
 
 % Define the structure that will hold the results
-crossValResults_fVal.meta.nSplits = nSplits;
+crossValResults.meta.nSplits = nSplits;
+
+% Open the parpool
+gcp;
 
 % Loop over bootstraps
 for bb = 1:nSplits
 
+    % Clear the results structure
+    crossValResults = [];
+    
+    % Define the fit and test sets
     splitVec = randperm(12);
 
     % Loop over subjects
@@ -88,17 +97,15 @@ for bb = 1:nSplits
                         % Extract the  LGN data
                         thisMatrix = mriData.(subjects{whichSub}).(stimulusDirections{whichStim}).lgn(bootIdx,:);
                         lgnY = [lgnY mean(thisMatrix)];
+                        lgnW = [lgnW 1./std(thisMatrix)];
 
                         % Extract the V1 response across eccentricities
                         for ee = 1:nEccs
                             thisMatrix = mriData.(subjects{whichSub}).(stimulusDirections{whichStim}).([corticalRegion '_ecc' num2str(ee)])(bootIdx,:);
                             cortexY = [cortexY mean(thisMatrix)];
+                            cortexW = [cortexW 1./std(thisMatrix)];
                         end
                     end
-
-                    % Set the weights equal to unity
-                    lgnW = ones(size(lgnY));
-                    cortexW = ones(size(cortexY));
 
                     % Load a search seed
                     switch tt
@@ -122,23 +129,34 @@ for bb = 1:nSplits
 
                 % Report our search time and outcome
                 searchTimeSecs = toc();
-                str=[sprintf('Cross-val lgnR2 = %2.2f, v1R2 = %2.2f, search time (mins) = %2.1f',results.lgnR2,results.v1R2,searchTimeSecs/60)  '\n'];
+                str=[sprintf('Cross-val lgnR2 = %2.2f, v1R2 = %2.2f, v1EccR2 = %2.2f, search time (mins) = %2.1f',results.lgnR2,results.v1R2,results.v1EccR2,searchTimeSecs/60)  '\n'];
                 fprintf(str);
 
                 % Store the value
-                crossValResults_fVal.(subjects{whichSub}).(modelType{mm}).(paramSearch{pp})(bb) = results.fVal;
-                crossValResults_v1R2.(subjects{whichSub}).(modelType{mm}).(paramSearch{pp})(bb) = results.v1R2;
-                crossValResults_lgnR2.(subjects{whichSub}).(modelType{mm}).(paramSearch{pp})(bb) = results.lgnR2;
-
-                % Save after each iteration
-                saveSpot = fullfile(saveDir,'crossValResults.mat');
-                save(saveSpot,'crossValResults_fVal','crossValResults_v1R2','crossValResults_lgnR2');
+                crossValResults.(subjects{whichSub}).(modelType{mm}).(paramSearch{pp}).fVal = results.fVal;
+                crossValResults.(subjects{whichSub}).(modelType{mm}).(paramSearch{pp}).lgnR2 = results.lgnR2;
+                crossValResults.(subjects{whichSub}).(modelType{mm}).(paramSearch{pp}).v1R2 = results.v1R2;
+                crossValResults.(subjects{whichSub}).(modelType{mm}).(paramSearch{pp}).v1EccR2 = results.v1EccR2;
 
             end % paramSearch types
 
         end % model types
 
     end % subjects
+
+    % Save after each iteration
+    bootLabel = regexprep(num2str(splitVec),' +', '-');
+    saveSpot = fullfile(saveDir,['crossValResults_' bootLabel '.mat']);
+    save(saveSpot,'crossValResults');
+
+    % After every loop, close the parpool and re-open. This is a kludge to
+    % handle a quasi-memory link that occurs in the muPad symbolic toolbox,
+    % which retains a copy of every symbolic variable, causing a growing
+    % memory overhead. We also clear out old / bad jobs from the cluster.
+    delete(gcp('nocreate'));
+    myCluster = parcluster('Processes');
+    delete(myCluster.Jobs)
+    gcp;
 
 end % splits
 

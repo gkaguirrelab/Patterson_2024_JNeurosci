@@ -203,15 +203,21 @@ else
     fVal = myObj(p0);
 end
 
-% Compute an R2 model fit
-v1R2 = corr(myV1TTF(pMRI)',v1Y').^2;
+% Compute an R2 model fit for the vectors, including the average V1
+% response
 lgnR2 = corr(myLGNTTF(pMRI)',lgnY').^2;
+v1Fit = myV1TTF(pMRI);
+v1EccR2 = corr(v1Fit',v1Y').^2;
+v1Fit = reshape(squeeze(mean(reshape(v1Fit,nFreqs,nEccs,nDirs),2)),1,nDirs*nFreqs);
+v1Y = reshape(squeeze(mean(reshape(v1Y,nFreqs,nEccs,nDirs),2)),1,nDirs*nFreqs);
+v1R2 = corr(v1Fit',v1Y').^2;
 
 % assemble the results structure
 results.pMRI = pMRI;
 results.fVal = fVal;
-results.v1R2 = v1R2;
 results.lgnR2 = lgnR2;
+results.v1R2 = v1R2;
+results.v1EccR2 = v1EccR2;
 results.paramCounts = paramCounts;
 results.cellClasses = cellClasses;
 results.modelType = modelType;

@@ -19,7 +19,7 @@ modelType = {'cell','stimulus'};
 paramSearch = {'gainOnly','full'};
 
 % How many bootstrap cross-validations of the data to conduct
-nSplits = 10;
+nSplits = 6;
 
 % Verbose?
 verbose = false;

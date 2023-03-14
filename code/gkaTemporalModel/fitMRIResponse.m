@@ -160,6 +160,9 @@ switch paramSearch
     case 'full' % but omits the LM ratio
         lockIdx = 3;
         myObj = @(pMRI) myV1Obj(pMRI) + myLGNObj(pMRI);
+    case 'fullCortex' % skip the lgn
+        lockIdx = [4:9];
+        myObj = @(pMRI) myV1Obj(pMRI);
     case 'lockAll'
         lockIdx = 1:48;
         myObj = @(pMRI) myV1Obj(pMRI) + myLGNObj(pMRI);

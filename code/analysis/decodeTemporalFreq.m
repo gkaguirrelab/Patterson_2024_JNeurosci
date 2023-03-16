@@ -1,4 +1,4 @@
-function mriData = decodeTemporalFreq()
+function decodeTemporalFreq()
 
 %% Download Mt Sinai results
 % This script downloads the "results" files Flywheel and
@@ -45,10 +45,15 @@ for ii=1:length(eccenDivs)-1
 end
 
 % The brain areas
-areaLabels = {'v1','v2v3','lgn',};
+areaLabels = {'v1','v2v3'};
 
 % Loop through subjects
-for ss = 1:length(subjectNames)
+for ss = 1:2
+
+    figure('Name',shortNames{ss})
+    t = tiledlayout(2,3);
+    t.TileSpacing = 'compact';
+    t.Padding = 'compact';
 
     % Load the results file for this subject
     filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_mtSinai_results.mat']);
@@ -58,7 +63,7 @@ for ss = 1:length(subjectNames)
     stimLabels = results.model.opts{find(strcmp(results.model.opts,'stimLabels'))+1};
 
     % Loop over areaLabels
-    for aa = 1:length(areaLabels)
+    for aa = 1:2
 
         switch areaLabels{aa}
             case 'lgn'
@@ -81,24 +86,74 @@ for ss = 1:length(subjectNames)
             voxelByAcq = [];
 
             % Loop through the frequencies and obtain the set of values
+            temp = [];
             for ff = 1:nFreqs
                 subString = sprintf(['f%dHz_' stimulusDirections{dd}],allFreqs(ff));
                 idx = find(contains(stimLabels,subString));
                 % Transpose to put voxels last
-                voxelByAcq(ff,:,:) = results.params(goodIdx,idx)';
+                paramSet = results.params(goodIdx,idx)';
+                % Subtract the zero frequency condition
+                temp(ff,:,:) = paramSet;
             end
 
+            % Subtract off the zero hz condition
+            temp = temp - temp(1,:,:);
+
+            % Store the non-zero conditiomns
+            voxelByAcq(dd,:,:,:) = temp(2:end,:,:);
+
+            % Loop through the repetitions and standardize the across
+            % frequency values for each voxel
+            for rr = 1:size(voxelByAcq,3)
+                myMat = squeeze(voxelByAcq(dd,:,rr,:));
+                myMat = myMat - mean(myMat);
+                myMat = myMat ./ std(myMat);
+                % Mean-center the values across
+                % voxels at each frequency
+                myMat = myMat - mean(myMat,2);
+                voxelByAcq(dd,:,rr,:) = myMat;
+            end
+
+
             % Find all pairwise correlations between frequencies, getting
-            % the average and SD across possible combinations
-            pairSets = combinator(6,2,'c');
+            % the average and SD across possible combinations of
+            % acquisitions
+            pairSets = combinator(size(voxelByAcq,3),size(voxelByAcq,3)/2,'c');
+            idxVec = 1:size(voxelByAcq,3);
+            corrMat = [];
+            for pp = 1:size(pairSets,1)
+                for ii=1:6
+                    for jj=1:6
+                        setA = pairSets(pp,:);
+                        setB = idxVec(~ismember(idxVec,setA));
+                        vecA = mean(squeeze(voxelByAcq(dd,ii,setA,:)))';
+                        vecB = mean(squeeze(voxelByAcq(dd,jj,setB,:)))';
+                        corrMat(pp,ii,jj) = corr(vecA,vecB);
+                    end
+                end
+
+            end
+
+            % Plot the correlation matrix
+            nexttile;
+            im = squeeze(mean(corrMat));
+            im = round(im * 128 + 128);
+            image(im);
+            colormap(redblue);
+
+            axis square
+            axis off
+            title([areaLabels{aa} '-' stimulusDirections{dd}]);
+            drawnow
+
+        end % directions
+
+    end % Areas
 
 
-        end
+end % Subjects
 
 
-
-    end
-
-end
+end % function
 
 

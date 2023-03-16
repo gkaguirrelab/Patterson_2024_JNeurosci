@@ -139,17 +139,37 @@ for ss = 1:2
             im = squeeze(mean(corrMat));
             im = round(im * 128 + 128);
             image(im);
-            colormap(redblue);
+            map = [ linspace(0,1,255);[linspace(0,0.5,127) linspace(0.5,0,128)];[linspace(0,0.5,127) linspace(0.5,0,128)]]';
+            colormap(map)
 
             axis square
-            axis off
-            title([areaLabels{aa} '-' stimulusDirections{dd}]);
+            if dd == 1 && aa == 1
+            a = gca();
+            a.XTick = 1:length(allFreqs)-1;
+            a.YTick = 1:length(allFreqs)-1;
+            a.XTickLabels = arrayfun(@(x) {num2str(x)},allFreqs(2:end));
+            a.YTickLabels = arrayfun(@(x) {num2str(x)},allFreqs(2:end));
+            a.XAxis.TickLength = [0 0];
+            a.YAxis.TickLength = [0 0];
+            xlabel('freq [Hz]');
+            ylabel('freq [Hz]');
+            else
+                axis off
+            end
+            stdMap = squeeze(std(corrMat));
+            meanSEM = mean(stdMap(:));
+            title([areaLabels{aa} '-' stimulusDirections{dd} sprintf('mean sem=%2.2f',meanSEM)]);
             drawnow
 
         end % directions
 
     end % Areas
 
+    cb = colorbar;
+    cb.Ticks = linspace(1,256,5);
+    cb.TickLabels=arrayfun(@(x) {num2str(x)},[-1 -0.5 0 0.5 1]);
+    cb.TickLength = [0 0];
+    box off
 
 end % Subjects
 

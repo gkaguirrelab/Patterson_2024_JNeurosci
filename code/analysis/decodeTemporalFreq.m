@@ -50,6 +50,9 @@ areaLabels = {'v1','v2v3'};
 % Color map
 cmap = [ linspace(0,1,255);[linspace(0,0.5,127) linspace(0.5,0,128)];[linspace(0,0.5,127) linspace(0.5,0,128)]]';
 
+% Set the column order in the plot
+colOrder = [2 3 1];
+
 % Loop through subjects
 for ss = 1:2
 
@@ -148,14 +151,14 @@ for ss = 1:2
             confusionMatrix = confusionMatrix ./ sum(confusionMatrix,2);
 
             % Plot the correlation matrix
-            nexttile(dd);
+            nexttile(colOrder(dd));
             im = squeeze(mean(corrMat));
             im = round(im * 128 + 128);
             image(im);
             colormap(cmap)
 
             axis square
-            if dd == 1 && aa == 1
+            if colOrder(dd) == 1
                 plotCleanUp(allFreqs);
             else
                 axis off
@@ -166,7 +169,7 @@ for ss = 1:2
             drawnow
 
             % Plot the confusion matrix
-            nexttile(dd+3);
+            nexttile(colOrder(dd)+3);
             im = confusionMatrix;
             im = round(im * 128 + 128);
             image(im);
@@ -174,8 +177,6 @@ for ss = 1:2
 
             axis square
             axis off
-            stdMap = squeeze(std(corrMat));
-            meanSEM = mean(stdMap(:));
             title(['confusion - ' stimulusDirections{dd}]);
             drawnow
 

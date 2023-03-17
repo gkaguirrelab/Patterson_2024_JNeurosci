@@ -56,23 +56,25 @@ for ee = 1:length(myEccs)
                 returnRGCChromaticWeights(cellClassIndices{cc},stimulusDirections{ss},eccDeg,LMRatio);
 
             % Obtain this temporal RF
-            [rfRGC, rfBipolar, rfCone] = returnRGCRF(pRGCBlock,cfCone,coneDelay,chromaticCenterWeight,chromaticSurroundWeight);
+            rfRGC = returnRGCRF(pRGCBlock,cfCone,coneDelay,chromaticCenterWeight,chromaticSurroundWeight);
+
+            % Apply a low-pass temporal filter
+            rfPostRetinal1 = (((length(myEccs)- ee)./length(myEccs)+0.5)/1.5).^(0.75) *rfRGC.*stageSecondOrderLP(50,0.45);
+            rfPostRetinal2 = (((length(myEccs)- ee)./length(myEccs)+0.5)/1.5).^(1.5) * rfRGC.*stageSecondOrderLP(5,0.45);
 
             % Construct the response grid
-            plotData.(cellClassIndices{cc}).(stimulusDirections{ss}).cone(ee,:) = abs(double(subs(rfCone,myFreqs)));
-            plotData.(cellClassIndices{cc}).(stimulusDirections{ss}).bipolar(ee,:) = abs(double(subs(rfBipolar,myFreqs)));
-            plotData.(cellClassIndices{cc}).(stimulusDirections{ss}).rgc(ee,:) = abs(double(subs(rfRGC,myFreqs)));
+            plotData.(cellClassIndices{cc}).(stimulusDirections{ss}).rf1(ee,:) = abs(double(subs(rfPostRetinal1,myFreqs)));
+            plotData.(cellClassIndices{cc}).(stimulusDirections{ss}).rf2(ee,:) = abs(double(subs(rfPostRetinal2,myFreqs)));
 
         end
     end
 end
 
-stageList = {'cone','bipolar','rgc'};
-stageList = {'rgc'};
+stageList = {'rf1','rf2'};
 zLimMax = [50,50,10];
 zLimMax = [10];
-cellList = {'parasol','midget','bistratified'};
-stimList = {{'LMS'},{'LMS','LminusM'},{'S'}};
+cellList = {'parasol'};
+stimList = {{'LMS'}};
 
 
 [X,Y] = meshgrid(log10(myFreqs),myEccs);
@@ -80,16 +82,16 @@ map = [ linspace(0,1,255);[linspace(0,0.5,127) linspace(0.5,0,128)];[linspace(0,
 map = plasmaColorMap();
 
 
-for xx = 1:length(stageList)
     f(xx) = figure('Renderer','painters','Position',[100 100 600 300]);
     colormap(map)
     subPlotIndex = 1;
+for xx = 1:length(stageList)
     for cc=1:length(cellList)
         cellType = cellList{cc};
         stimulusDirections = stimList{cc};
         for ss=1:length(stimulusDirections)
             thisData = plotData.(cellList{cc}).(stimulusDirections{ss}).(stageList{xx});
-             subplot(2,4,subPlotIndex);
+             subplot(2,1,subPlotIndex);
 
             s = mesh(X,Y,thisData);
             s.FaceColor = 'interp';
@@ -98,7 +100,7 @@ for xx = 1:length(stageList)
             view([15 30]);
             ylim([-5 95]);
             xlim([-0.5 2.15]);
-            zlim([0 zLimMax(xx)]);
+%            zlim([0 zLimMax(xx)]);
             a = gca;
             a.Color = 'none';
             a.XTickLabel={'1','10','100'};
@@ -108,30 +110,9 @@ for xx = 1:length(stageList)
             a.ZTickLabel = [];
             box off
             grid off
+            axis off
             pbaspect([1 1 1e-6])
-            title([cellList{cc} ' - ' stimulusDirections{ss}])
 
-             subplot(2,4,subPlotIndex+4);
-            s = mesh(X,Y,thisData);
-            s.FaceColor = 'interp';
-            s.FaceAlpha = 0.5;
-            s.EdgeAlpha = 0.75;
-            view([15 30]);
-            ylim([-5 95]);
-            xlim([-0.5 2.15]);
-            zlim([0 zLimMax(xx)]);
-            a = gca;
-            a.Color = 'none';
-            a.YTick=[0 30 60 90];
-            a.YTick = [];
-            a.XTick = [];
-            box on
-            a.BoxStyle = 'full';
-            a.XColor = 'b';
-            a.YColor = 'b';
-            a.ZColor = 'b';
-            axis square
-            grid off
             subPlotIndex = subPlotIndex+1;
         end
     end

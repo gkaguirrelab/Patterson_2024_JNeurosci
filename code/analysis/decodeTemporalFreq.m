@@ -47,13 +47,11 @@ end
 % The brain areas
 areaLabels = {'v1','v2v3'};
 
+% Color map
+cmap = [ linspace(0,1,255);[linspace(0,0.5,127) linspace(0.5,0,128)];[linspace(0,0.5,127) linspace(0.5,0,128)]]';
+
 % Loop through subjects
 for ss = 1:2
-
-    figure('Name',shortNames{ss})
-    t = tiledlayout(2,3);
-    t.TileSpacing = 'compact';
-    t.Padding = 'compact';
 
     % Load the results file for this subject
     filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_mtSinai_results.mat']);
@@ -64,6 +62,11 @@ for ss = 1:2
 
     % Loop over areaLabels
     for aa = 1:2
+
+        figHandle = figure('Name',[shortNames{ss} ' - ' areaLabels{aa}]);
+        t = tiledlayout(2,3);
+        t.TileSpacing = 'compact';
+        t.Padding = 'compact';
 
         switch areaLabels{aa}
             case 'lgn'
@@ -121,59 +124,86 @@ for ss = 1:2
             pairSets = combinator(size(voxelByAcq,3),size(voxelByAcq,3)/2,'c');
             idxVec = 1:size(voxelByAcq,3);
             corrMat = [];
+            confusionMatrix = zeros(6,6);
+            trainingTargets = [];
             for pp = 1:size(pairSets,1)
+                setA = pairSets(pp,:);
+                setB = idxVec(~ismember(idxVec,setA));
+                % Loop through the training set and build the training
+                % matrix
+                for ii=1:6
+                    trainingTargets(ii,:) = mean(squeeze(voxelByAcq(dd,ii,setA,:)))';
+                end
                 for ii=1:6
                     for jj=1:6
-                        setA = pairSets(pp,:);
-                        setB = idxVec(~ismember(idxVec,setA));
                         vecA = mean(squeeze(voxelByAcq(dd,ii,setA,:)))';
                         vecB = mean(squeeze(voxelByAcq(dd,jj,setB,:)))';
                         corrMat(pp,ii,jj) = corr(vecA,vecB);
+                        % See which training target is most similar to vecB
+                        [~,matchIdx] = max(corr(trainingTargets',vecB));
+                        confusionMatrix(jj,matchIdx) = confusionMatrix(jj,matchIdx)+1;
                     end
                 end
-
             end
+            confusionMatrix = confusionMatrix ./ sum(confusionMatrix,2);
 
             % Plot the correlation matrix
-            nexttile;
+            nexttile(dd);
             im = squeeze(mean(corrMat));
             im = round(im * 128 + 128);
             image(im);
-            map = [ linspace(0,1,255);[linspace(0,0.5,127) linspace(0.5,0,128)];[linspace(0,0.5,127) linspace(0.5,0,128)]]';
-            colormap(map)
+            colormap(cmap)
 
             axis square
             if dd == 1 && aa == 1
-            a = gca();
-            a.XTick = 1:length(allFreqs)-1;
-            a.YTick = 1:length(allFreqs)-1;
-            a.XTickLabels = arrayfun(@(x) {num2str(x)},allFreqs(2:end));
-            a.YTickLabels = arrayfun(@(x) {num2str(x)},allFreqs(2:end));
-            a.XAxis.TickLength = [0 0];
-            a.YAxis.TickLength = [0 0];
-            xlabel('freq [Hz]');
-            ylabel('freq [Hz]');
+                plotCleanUp(allFreqs);
             else
                 axis off
             end
             stdMap = squeeze(std(corrMat));
             meanSEM = mean(stdMap(:));
-            title([areaLabels{aa} '-' stimulusDirections{dd} sprintf('mean sem=%2.2f',meanSEM)]);
+            title(['Pearson - ' stimulusDirections{dd} sprintf(' sem=%2.2f',meanSEM)]);
+            drawnow
+
+            % Plot the confusion matrix
+            nexttile(dd+3);
+            im = confusionMatrix;
+            im = round(im * 128 + 128);
+            image(im);
+            colormap(cmap)
+
+            axis square
+            axis off
+            stdMap = squeeze(std(corrMat));
+            meanSEM = mean(stdMap(:));
+            title(['confusion - ' stimulusDirections{dd}]);
             drawnow
 
         end % directions
 
+        nexttile(6)
+        cb = colorbar('southoutside');
+        cb.Ticks = linspace(1,256,5);
+        cb.TickLabels=arrayfun(@(x) {num2str(x)},[-1 -0.5 0 0.5 1]);
+        cb.TickLength = [0 0];
+        box off
+
     end % Areas
 
-    cb = colorbar;
-    cb.Ticks = linspace(1,256,5);
-    cb.TickLabels=arrayfun(@(x) {num2str(x)},[-1 -0.5 0 0.5 1]);
-    cb.TickLength = [0 0];
-    box off
-
 end % Subjects
-
 
 end % function
 
 
+%% LOCAL FUNCTION
+function plotCleanUp(allFreqs)
+a = gca();
+a.XTick = 1:length(allFreqs)-1;
+a.YTick = 1:length(allFreqs)-1;
+a.XTickLabels = arrayfun(@(x) {num2str(x)},allFreqs(2:end));
+a.YTickLabels = arrayfun(@(x) {num2str(x)},allFreqs(2:end));
+a.XAxis.TickLength = [0 0];
+a.YAxis.TickLength = [0 0];
+xlabel('freq [Hz]');
+ylabel('freq [Hz]');
+end

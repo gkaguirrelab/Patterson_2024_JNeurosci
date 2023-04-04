@@ -68,4 +68,33 @@ setpref(projectName,'projectBaseDir',projectBaseDir);
 %% Flywheel key preferences 
 setpref(projectName, 'flywheelAPIkey', 'Enter your key here');
 
+%% Check for required Matlab toolboxes
+% The set of Matlab add-on toolboxes being used can be determined by
+% running the routines in the projecy, followed by the license function.
+%{
+    license('inuse')
+%}
+% This provides a list of toolbox license names. In the following
+% assignment, the license name is given in the comment string after the
+% matching version name for each toolbox.
+requiredAddOns = {...
+    'Parallel Computing Toolbox',...              % distrib_computing_toolbox
+    'Statistics and Machine Learning Toolbox',...   % statistics_toolbox
+    'Symbolic Math Toolbox',...                 % symbolic_toolbox
+    };
+% Given this hard-coded list of add-on toolboxes, we then check for the
+% presence of each and issue a warning if absent.
+V = ver;
+VName = {V.Name};
+warnState = warning();
+warning off backtrace
+for ii=1:length(requiredAddOns)
+    if ~any(strcmp(VName, requiredAddOns{ii}))
+        warnString = ['The Matlab ' requiredAddOns{ii} ' is missing. ' toolboxName ' may not function properly.'];
+        warning('localHook:requiredMatlabToolboxCheck',warnString);
+    end
+end
+warning(warnState);
+
+
 end

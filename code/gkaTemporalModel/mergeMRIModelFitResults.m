@@ -18,7 +18,7 @@ paramSearch = 'full';
 paramSearch = 'gainOnly';
 paramSearch = 'noSurround';
 %}
-paramSearch = 'full';
+paramSearch = 'gainOnly';
 
 % The number of acquisitions obtained for each measurement
 nAcqs = 12;

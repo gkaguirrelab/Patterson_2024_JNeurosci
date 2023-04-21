@@ -6,17 +6,27 @@ clear
 
 % Properties of which model to plot
 modelType = 'stimulus';
-paramSearch = 'gainOnly';
+paramSearch = 'gainOnly'; % can be full, gainOnly,
 freqsForPlotting = logspace(0,2,50);
-nFreqsForPlotting = length(freqsForPlotting);
 
 % Load the RGC temporal model
 loadPath = fullfile(fileparts(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath')))))),'data','temporalModelResults','rgcTemporalModel.mat');
 load(loadPath,'rgcTemporalModel');
 
 % Load the MRI temporal model
+
+
+% To load V1 data (found in full model dataset only) and MRI temporal
+% model parameters
+
 loadPath = fullfile(fileparts(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath')))))),'data','temporalModelResults','v1',modelType);
-load(fullfile(loadPath,['mriFullResultSet_' paramSearch '.mat']),'mriFullResultSet');
+load(fullfile(loadPath,'mriFullResultSet_full.mat'),'mriFullResultSet');
+mriV1data = mriFullResultSet;
+
+if strcmp(paramSearch,'full')==0
+    loadPath = fullfile(fileparts(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath')))))),'data','temporalModelResults','v1',modelType);
+    load(fullfile(loadPath,['mriFullResultSet_' paramSearch '.mat']),'mriFullResultSet');
+end
 
 % Place to save figures
 savePath = '/Users/carlynpattersongentile/Aguirre-Brainard Lab Dropbox/Carlyn Patterson Gentile/Patterson_2021_EccentricityFlicker/VSS 2023/figures/';
@@ -45,7 +55,6 @@ lineColor={'k','r','b'};
 faceAlpha = 0.4; % Transparency of the shaded error region
 shift_ttf = [0 3 6 9 11 13]; % shifts each ttf down so they can be presented tightly on the same figure
 
-
 % Loop over subjects
 for whichSub = 1:length(subjects)
 
@@ -55,8 +64,8 @@ for whichSub = 1:length(subjects)
     tiledlayout(1,3,'TileSpacing','tight','Padding','tight')
 
     % Get the model params and data
-    v1Y = mean(mriFullResultSet.(subjects{whichSub}).v1Y,1);
-    v1YSEM = std(mriFullResultSet.(subjects{whichSub}).v1Y,0,1);
+    v1Y = mean(mriV1data.(subjects{whichSub}).v1Y,1);
+    v1YSEM = std(mriV1data.(subjects{whichSub}).v1Y,0,1);
 
     % Get the parameter fits for this subject
         pMRI = mean(mriFullResultSet.(subjects{whichSub}).pMRI,1);
@@ -129,7 +138,7 @@ for whichSub = 1:length(subjects)
     end
 
     % Save the plots
-    plotNamesPDF = [subjects{whichSub} '_v1ResponseAcrossEcc_withRGCFitMultiGain.pdf' ];
+    plotNamesPDF = [subjects{whichSub} '_v1ResponseAcrossEcc_' paramSearch '.pdf' ];
     saveas(figHandles,fullfile(savePath,plotNamesPDF));
 
 end

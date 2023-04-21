@@ -12,7 +12,7 @@ loadPath = fullfile(fileparts(fileparts(fileparts(fileparts(fileparts(mfilename(
 load(fullfile(loadPath,['mriFullResultSet_' paramSearch '.mat']),'mriFullResultSet');
 
 % Place to save figures
-savePath = fullfile('~','Desktop','mtSinaiTemporalModelPlots','MRIData_FullModel',modelType);
+savePath = '/Users/carlynpattersongentile/Aguirre-Brainard Lab Dropbox/Carlyn Patterson Gentile/Patterson_2021_EccentricityFlicker/VSS 2023/figures/';
 
 % Extract some meta info from the mriTemporalModel
 studiedFreqs = mriFullResultSet.meta.studiedFreqs;
@@ -32,7 +32,7 @@ subjectLineSpec = {'-','-'};
 stimOrder = [2 3 1];
 
 % The colors used for the plots
-plotColor={[0.85 0.85 0.85],[0.85 0.55 0.55],[0.75 0.75 1]};
+plotColor={[0.75 0.75 0.75],[0.85 0.55 0.55],[0.75 0.75 1]};
 lineColor={'k',[.5 0.25 0.25],[0.25 0.25 0.5]};
 faceAlpha = 0.4; % Transparency of the shaded error region
 
@@ -41,7 +41,7 @@ for whichSub = 1:length(subjects)
 
     % Prepare the figures
     figHandles = figure('Renderer','painters');
-    figuresize(400,200,'pt');
+    figuresize(600,200,'pt');
     tiledlayout(1,3,'TileSpacing','tight','Padding','tight')
 
     % Get the model params and data
@@ -73,10 +73,12 @@ for whichSub = 1:length(subjects)
         % Add the data symbols
         plot(log10(studiedFreqs),lgnAvgY,...
             'o','MarkerFaceColor',lineColor{stimOrder(whichStim)},...
-            'MarkerSize',5,'MarkerEdgeColor','w','LineWidth',1);
+            'MarkerSize',6,'MarkerEdgeColor','w','LineWidth',1);
 
         % Add reference lines
-        plot(log10([1 1]),[0 2],'-k');
+        if whichStim ==3 
+            plot(log10([1 1]),[0 2],'-k');
+        end
         plot(log10([1 64]),[0 0],':k');
 
     end
@@ -85,7 +87,7 @@ for whichSub = 1:length(subjects)
     for ss=1:3
         nexttile(ss);
         xlim(log10([0.5 150]))
-        ylim([-1 7])
+        ylim([-1 4])
         a=gca;
         a.YTick = [0,2,4,6];
         a.YTickLabel = {'0','2','4','6'};
@@ -97,7 +99,6 @@ for whichSub = 1:length(subjects)
         box off
         if ss>1
             a.XAxis.Visible = 'off';
-            a.YAxis.Visible = 'off';
         end
     end
 

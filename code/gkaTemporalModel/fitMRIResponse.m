@@ -103,8 +103,8 @@ lb = []; plb = []; pub = []; ub = [];
 % - LM ratio
 lb =  [ lb 0.5 30 1];
 plb = [plb 0.8 35 1];
-pub = [pub 0.9 40 2];
-ub =  [ ub 1.0 45 10];
+pub = [pub 0.9 45 2];
+ub =  [ ub 1.0 65 10];
 paramCounts.unique = 3;
 
 % LGN BOLD fMRI gain, organized by stimulus
@@ -211,15 +211,11 @@ end
 lgnR2 = corr(myLGNTTF(pMRI)',lgnY').^2;
 v1Fit = myV1TTF(pMRI);
 v1EccR2 = corr(v1Fit',v1Y').^2;
-v1Fit = reshape(squeeze(mean(reshape(v1Fit,nFreqs,nEccs,nDirs),2)),1,nDirs*nFreqs);
-v1Y = reshape(squeeze(mean(reshape(v1Y,nFreqs,nEccs,nDirs),2)),1,nDirs*nFreqs);
-v1R2 = corr(v1Fit',v1Y').^2;
 
 % assemble the results structure
 results.pMRI = pMRI;
 results.fVal = fVal;
 results.lgnR2 = lgnR2;
-results.v1R2 = v1R2;
 results.v1EccR2 = v1EccR2;
 results.paramCounts = paramCounts;
 results.cellClasses = cellClasses;

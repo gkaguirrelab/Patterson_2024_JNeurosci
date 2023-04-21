@@ -6,9 +6,8 @@ clear
 
 % Properties of which model to plot
 modelType = 'stimulus';
-paramSearch = 'gainOnly';
+paramSearch = 'noSurround';
 freqsForPlotting = logspace(0,2,50);
-nFreqsForPlotting = length(freqsForPlotting);
 
 % Load the RGC temporal model
 loadPath = fullfile(fileparts(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath')))))),'data','temporalModelResults','rgcTemporalModel.mat');
@@ -126,7 +125,7 @@ for whichSub = 1:length(subjects)
     end
 
     % Save the plots
-    plotNamesPDF = [subjects{whichSub} '_v1ResponseAcrossEcc_withRGCFitMultiGain.pdf' ];
+    plotNamesPDF = [subjects{whichSub} '_v1ResponseAcrossEcc_withNoSurroundFit.pdf' ];
     saveas(figHandles,fullfile(savePath,plotNamesPDF));
 
 end

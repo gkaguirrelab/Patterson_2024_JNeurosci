@@ -92,7 +92,7 @@ for whichSub = 1:length(subjects)
                 'MarkerSize',5,'MarkerEdgeColor','w','LineWidth',1);
 
             % Add the model fit
-            plot(log10(freqsForPlotting),squeeze(v1YFitMatrix(whichStim,ee,:)),['-' lineColor{stimOrder(whichStim)}]);
+            plot(log10(freqsForPlotting),squeeze(v1YFitMatrix(whichStim,ee,:)),'-','Color',lineColor{stimOrder(whichStim)});
 
             % Add reference lines
             plot(log10([1 1]),[0 2],'-k');

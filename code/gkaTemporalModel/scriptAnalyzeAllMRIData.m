@@ -24,7 +24,7 @@ corticalRegion = 'v1';
 %{
     modelTypes = {'stimulus','cell'};
 %}
-modelTypes = {'cell','stimulus'};
+modelTypes = {'stimulus'};
 
 % Which set of parameters will we investigate in the bootstrap analysis?
 %{
@@ -33,7 +33,7 @@ paramSearch = 'noSurround';
 paramSearch = 'full';
 paramSearch = 'cortex';
 %}
-paramSearch = 'gainOnly';
+paramSearch = 'noSurround';
 
 % How many bootstrap resamplings of the data to conduct
 nBoots = 1;

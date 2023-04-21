@@ -6,9 +6,8 @@ clear
 
 % Properties of which model to plot
 modelType = 'stimulus';
-paramSearch = 'gainOnly';
+paramSearch = 'full';
 freqsForPlotting = logspace(0,2,50);
-nFreqsForPlotting = length(freqsForPlotting);
 
 % Load the RGC temporal model
 loadPath = fullfile(fileparts(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath')))))),'data','temporalModelResults','rgcTemporalModel.mat');
@@ -56,8 +55,9 @@ for whichSub = 1:length(subjects)
     v1Y = mean(mriFullResultSet.(subjects{whichSub}).v1Y,1);
     v1YSEM = std(mriFullResultSet.(subjects{whichSub}).v1Y,0,1);
 
-    % Get the parameter fits for this subject
-        pMRI = mean(mriFullResultSet.(subjects{whichSub}).pMRI,1);
+    % Create a params vector that returns the unmodified RGC model output
+    a = 0.2; % The gain on the RGC output
+    pMRI = [1 120 1 0 a 0 a 0 a 1 0 0 0 0 0 0 a a a a a a 1 0 0 0 0 0 0 a a a a a a 1 0 0 0 0 0 0 a a a a a a];
 
     % Get the temporal model fits
     [~,v1YFitMatrix] = assembleV1Response(pMRI,cellClasses,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel,paramCounts,modelType);
@@ -126,7 +126,7 @@ for whichSub = 1:length(subjects)
     end
 
     % Save the plots
-    plotNamesPDF = [subjects{whichSub} '_v1ResponseAcrossEcc_withRGCFitMultiGain.pdf' ];
+    plotNamesPDF = [subjects{whichSub} '_v1ResponseAcrossEcc_withRawRGCModel.pdf' ];
     saveas(figHandles,fullfile(savePath,plotNamesPDF));
 
 end

@@ -43,7 +43,7 @@ for whichSub = 1:length(subjects)
 
     % Prepare the figures
     figHandles = figure('Renderer','painters');
-    figuresize(600,700,'pt');
+    figuresize(600,400,'pt');
     tiledlayout(1,3,'TileSpacing','tight','Padding','tight')
     
 
@@ -85,7 +85,7 @@ for whichSub = 1:length(subjects)
             if ee==1 && whichStim == 3
                 plot(log10([1 1]),[0 2],'-k');
             end
-                plot(log10([1 64]),[0 0]-shift_ttf(ee),':k');
+                plot(log10([1 2]),[0 0]-shift_ttf(ee),':k');
 
         end
 

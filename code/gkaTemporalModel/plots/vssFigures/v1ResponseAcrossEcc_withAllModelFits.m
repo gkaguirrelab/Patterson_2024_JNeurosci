@@ -6,7 +6,7 @@ clear
 
 % Properties of which model to plot
 modelType = 'stimulus';
-paramSearch = 'gainOnly'; % can be full, gainOnly,
+paramSearch = 'noSurround'; % can be full, gainOnly, noSurround
 freqsForPlotting = logspace(0,2,50);
 
 % Load the RGC temporal model
@@ -60,7 +60,7 @@ for whichSub = 1:length(subjects)
 
     % Prepare the figures
     figHandles = figure('Renderer','painters');
-    figuresize(600,700,'pt');
+    figuresize(600,400,'pt');
     tiledlayout(1,3,'TileSpacing','tight','Padding','tight')
 
     % Get the model params and data
@@ -110,7 +110,7 @@ for whichSub = 1:length(subjects)
             if ee==1 && whichStim == 3
                 plot(log10([1 1]),[0 2],'-k');
             end
-                plot(log10([1 64]),[0 0]-shift_ttf(ee),':k');
+                plot(log10([1 2]),[0 0]-shift_ttf(ee),':k');
 
         end
 

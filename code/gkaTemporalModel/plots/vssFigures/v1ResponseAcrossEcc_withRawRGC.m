@@ -18,7 +18,7 @@ loadPath = fullfile(fileparts(fileparts(fileparts(fileparts(fileparts(mfilename(
 load(fullfile(loadPath,['mriFullResultSet_' paramSearch '.mat']),'mriFullResultSet');
 
 % Place to save figures
-savePath = '/Users/carlynpattersongentile/Aguirre-Brainard Lab Dropbox/Carlyn Patterson Gentile/Patterson_2021_EccentricityFlicker/VSS 2023/figures/';
+savePath = fullfile('~','Desktop','mtSinaiTemporalModelPlots','MRIData_FullModel',modelType);
 
 % Extract some meta info from the mriTemporalModel
 studiedFreqs = mriFullResultSet.meta.studiedFreqs;
@@ -39,25 +39,25 @@ subjectLineSpec = {'-','-'};
 stimOrder = [2 3 1];
 
 % The colors used for the plots
-plotColor={[0.75 0.75 0.75],[0.85 0.55 0.55],[0.75 0.75 1]};
-lineColor={'k','r','b'};
+plotColor={[0.85 0.85 0.85],[0.85 0.55 0.55],[0.75 0.75 1]};
+lineColor={'k',[.5 0.25 0.25],[0.25 0.25 0.5]};
 faceAlpha = 0.4; % Transparency of the shaded error region
-shift_ttf = [0 3 6 9 11 13]; % shifts each ttf down so they can be presented tightly on the same figure
 
 % Loop over subjects
 for whichSub = 1:length(subjects)
 
     % Prepare the figures
     figHandles = figure('Renderer','painters');
-    figuresize(600,700,'pt');
-    tiledlayout(1,3,'TileSpacing','tight','Padding','tight')
+    figuresize(400,800,'pt');
+    tiledlayout(nEccs,3,'TileSpacing','tight','Padding','tight')
 
     % Get the model params and data
     v1Y = mean(mriFullResultSet.(subjects{whichSub}).v1Y,1);
     v1YSEM = std(mriFullResultSet.(subjects{whichSub}).v1Y,0,1);
 
-    % Get the parameter fits for this subject
-        pMRI = mean(mriFullResultSet.(subjects{whichSub}).pMRI,1);
+    % Create a params vector that returns the unmodified RGC model output
+    a = 0.2; % The gain on the RGC output
+    pMRI = [1 120 1 0 a 0 a 0 a 1 0 0 0 0 0 0 a a a a a a 1 0 0 0 0 0 0 a a a a a a 1 0 0 0 0 0 0 a a a a a a];
 
     % Get the temporal model fits
     [~,v1YFitMatrix] = assembleV1Response(pMRI,cellClasses,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel,paramCounts,modelType);
@@ -74,11 +74,11 @@ for whichSub = 1:length(subjects)
 
             % Assemble the average V1 response for plotting later
             v1YThisEcc = v1Y(v1DataIndices);
-            v1YThisEcclow = (v1Y(v1DataIndices)-v1YSEM(v1DataIndices)-shift_ttf(ee));
-            v1YThisEcchigh = (v1Y(v1DataIndices)+v1YSEM(v1DataIndices)-shift_ttf(ee));
+            v1YThisEcclow = (v1Y(v1DataIndices)-v1YSEM(v1DataIndices));
+            v1YThisEcchigh = (v1Y(v1DataIndices)+v1YSEM(v1DataIndices));
 
-            % Select the plot of the correct stimulus direction
-             nexttile(stimOrder(whichStim));
+            % Now plot
+            nexttile((ee-1)*nStims+stimOrder(whichStim));
 
             % Add a patch for the error
             patch(...
@@ -88,18 +88,16 @@ for whichSub = 1:length(subjects)
             hold on
 
             % Add the data symbols
-            plot(log10(studiedFreqs),v1YThisEcc-shift_ttf(ee),...
+            plot(log10(studiedFreqs),v1YThisEcc,...
                 'o','MarkerFaceColor',lineColor{stimOrder(whichStim)},...
-                'MarkerSize',6,'MarkerEdgeColor','w','LineWidth',1);
+                'MarkerSize',5,'MarkerEdgeColor','w','LineWidth',1);
 
             % Add the model fit
-            plot(log10(freqsForPlotting),squeeze(v1YFitMatrix(whichStim,ee,:))-shift_ttf(ee),['-' lineColor{stimOrder(whichStim)}]);
+            plot(log10(freqsForPlotting),squeeze(v1YFitMatrix(whichStim,ee,:)),'-','Color',lineColor{stimOrder(whichStim)});
 
             % Add reference lines
-            if ee==1 && whichStim == 3
-                plot(log10([1 1]),[0 2],'-k');
-            end
-                plot(log10([1 64]),[0 0]-shift_ttf(ee),':k');
+            plot(log10([1 1]),[0 2],'-k');
+            plot(log10([1 64]),[0 0],':k');
 
         end
 
@@ -108,9 +106,9 @@ for whichSub = 1:length(subjects)
     % Clean up
     for ss=1:nStims
         for ee = 1:nEccs
-            nexttile(ss);
+            nexttile((ee-1)*nStims+ss);
             xlim(log10([0.5 150]))
-            ylim([-14 5])
+            ylim([-1 7])
             a=gca;
             a.YTick = [0,2,4,6];
             a.YTickLabel = {'0','2','4','6'};
@@ -122,12 +120,13 @@ for whichSub = 1:length(subjects)
             box off
             if ss>1
                 a.XAxis.Visible = 'off';
+                a.YAxis.Visible = 'off';
             end
         end
     end
 
     % Save the plots
-    plotNamesPDF = [subjects{whichSub} '_v1ResponseAcrossEcc_withFullModel.pdf' ];
+    plotNamesPDF = [subjects{whichSub} '_v1ResponseAcrossEcc_withRawRGCModel.pdf' ];
     saveas(figHandles,fullfile(savePath,plotNamesPDF));
 
 end

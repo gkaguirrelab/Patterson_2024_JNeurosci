@@ -2,12 +2,28 @@
 %% Housekeeping
 clear
 close all
-verbose = true;
+verbose = false;
 
 
 %% Pick a subject, stimulus, and eccentricity band
 whichSub = 1;
 
+        % Options. Indicate that the objective function is deterministic, and
+        % handle verbosity
+        optionsBADS.UncertaintyHandling = 0;
+        if verbose
+            optionsBADS.Display = 'iter';
+        else
+            optionsBADS.Display = 'off';
+        end
+
+        % The optimization toolbox is currently not available for Matlab running
+        % under Apple silicon. Detect this case and tell BADS so that it doesn't
+        % issue a warning
+        V = ver;
+        if ~any(strcmp({V.Name}, 'Optimization Toolbox'))
+            optionsBADS.OptimToolbox = 0;
+        end
 
 %% Load the data and basic model elements
 
@@ -42,20 +58,22 @@ for whichSub = 1:nSubjects
 
     figure
 
-    for eccIdx = 1:6
+    parfor eccIdx = 1:6
         nEccs = 1;
         studiedEccentricites = studiedEccentricitesFull(eccIdx);
+   
+        Y = zeros(3,1,length(studiedFreqs));
+        W = zeros(3,1,length(studiedFreqs));
 
         % Get the data
         for whichStim = 1:nStims
-            for ee = length(eccIdx)
-                whichEcc = eccIdx(ee);
-                thisMatrix = mriData.(subjects{whichSub}).(stimulusDirections{whichStim}).(['v1_ecc' num2str(whichEcc)]);
-                Y(whichStim,ee,:) = mean(thisMatrix);
-                W(whichStim,ee,:) = 1./std(thisMatrix);
-            end
+            %            for ee = length(eccIdx)
+            ee = 1;
+            whichEcc = ee; %eccIdx(ee);
+            thisMatrix = mriData.(subjects{whichSub}).(stimulusDirections{whichStim}).(['v1_ecc' num2str(whichEcc)]);
+            Y(whichStim,ee,:) = mean(thisMatrix);
+            W(whichStim,ee,:) = 1./std(thisMatrix);
         end
-        W(3,:,:) = W(3,:,:).*2;
 
         % Define the response function
         myResponseMatrix = @(p) returnResponse(p,stimulusDirections,studiedEccentricites,studiedFreqs,rgcTemporalModel);
@@ -74,10 +92,10 @@ for whichSub = 1:nSubjects
         % Q parameter
         % Vector of corner frequencies across eccentricity for each cell class
         % Vector of gains for each stimulus class
-        lb =  [0.5,0.5,0.5,0.5,  ...
+        lb =  [1.5,0.6,0.6,0.6,  ...
             repmat(5,1,nEccs), repmat(5,1,nEccs), repmat(10,1,nEccs), ...
             repmat(0.01,1,nCells*nEccs)];
-        ub =  [2.5,2,2,2, ...
+        ub =  [1.8,2.2,1.2,1.2, ...
             repmat(30,1,nEccs), repmat(15,1,nEccs), repmat(45,1,nEccs), ...
             repmat(100,1,nCells*nEccs)];
 
@@ -85,38 +103,21 @@ for whichSub = 1:nSubjects
         %% Set the p0
         switch subjects{whichSub}
             case 'gka'
-                p0 =  [2,1,1,1, ...
+                p0 =  [1.5,1.5,1,1, ...
                     repmat(30,1,nEccs), repmat(10,1,nEccs), repmat(35,1,nEccs), ...
                     repmat(0.1,1,nEccs), repmat(5,1,nEccs), repmat(1,1,nEccs)];
             case 'asb'
-                p0 =  [1.5,1.5,1.5,1, ...
+                p0 =  [1.5,1.5,1,1, ...
                     repmat(30,1,nEccs), repmat(10,1,nEccs), repmat(35,1,nEccs), ...
                     repmat(0.1,1,nEccs), repmat(5,1,nEccs), repmat(1,1,nEccs)];
         end
 
-        % Options. Indicate that the objective function is deterministic, and
-        % handle verbosity
-        optionsBADS.UncertaintyHandling = 0;
-        if verbose
-            optionsBADS.Display = 'iter';
-        else
-            optionsBADS.Display = 'off';
-        end
-
-        % The optimization toolbox is currently not available for Matlab running
-        % under Apple silicon. Detect this case and tell BADS so that it doesn't
-        % issue a warning
-        V = ver;
-        if ~any(strcmp({V.Name}, 'Optimization Toolbox'))
-            optionsBADS.OptimToolbox = 0;
-        end
-
         % BADS it
-        [p,fVal] = bads(myObj,p0,lb,ub,[],[],myNonbcon,optionsBADS)
+        [p,fVal] = bads(myObj,p0,lb,ub,[],[],myNonbcon,optionsBADS);
 
         % Store it
-        results.(subjects{whichSub}).p(eccIdx,:) = p;
-        results.(subjects{whichSub}).fVal(eccIdx,:) = fVal;
+        results(eccIdx).(subjects{whichSub}).p = p;
+        results(eccIdx).(subjects{whichSub}).fVal = fVal;
 
         % Get the response
         yFit = myResponseMatrix(p);
@@ -187,7 +188,7 @@ for ss=1:nStims
             % Second order low pass filter at the level of retino-
             % geniculate synapse
             filter = stageSecondOrderLP(cornerFrequency,Q);
-%            filter = filter ./ double(subs(filter,0));
+            %            filter = filter ./ double(subs(filter,0));
             rfPostRetinal(cc) = rfPostRetinal(cc).*filter;
 
             % Obtain the exponent for the non-linear stage

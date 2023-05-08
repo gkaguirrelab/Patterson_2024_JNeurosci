@@ -180,7 +180,7 @@ for nn = 1:nSearches
                 hold on
             end
         end
-        title(paramsNames{pp});
+        title(paramNames{pp});
         if pp == 2
             refline(0,1);
         end

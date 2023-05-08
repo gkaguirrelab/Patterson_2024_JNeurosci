@@ -170,6 +170,7 @@ for nn = 1:nSearches
     % Plot the params
     figure
     subLine = {'-',':'};
+    paramNames = {'corner Freq','exponent','gain'};
     for pp = 1:nParams
         subplot(1,nParams,pp)
         for whichSub = 1:nSubs
@@ -179,6 +180,7 @@ for nn = 1:nSearches
                 hold on
             end
         end
+        title(paramsNames{pp});
         if pp == 2
             refline(0,1);
         end

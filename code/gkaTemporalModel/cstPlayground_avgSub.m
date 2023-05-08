@@ -63,109 +63,104 @@ for nn = 1:nSearches
     for whichSub = 1:nSubs
 
         % Load the data
-        Y = zeros(nStims,nEccs,length(studiedFreqs));
-        W = zeros(nStims,nEccs,length(studiedFreqs));
+        Y = zeros(nSubs,nStims,nEccs,length(studiedFreqs));
+        W = zeros(nSubs,nStims,nEccs,length(studiedFreqs));
         for eccIdx = 1:nEccs
             for whichStim = 1:nStims
                 thisMatrix = mriData.(subjects{whichSub}).(stimulusDirections{whichStim}).(['v1_ecc' num2str(eccIdx)]);
-                Y(whichStim,eccIdx,:) = mean(thisMatrix);
-                W(whichStim,eccIdx,:) = 1./std(thisMatrix);
+                Y(whichSub,whichStim,eccIdx,:) = mean(thisMatrix);
+                W(whichSub,whichStim,eccIdx,:) = 1./std(thisMatrix);
             end
         end
-
-        % We double the weights on the light-flux fits
-        W(:,3,:) = W(:,3,:)*2;
-
-        % If there was a prior analysis start with the last result
-        load('cstResults.mat','results')
-
-        % Use the prior solution as the p0 guess
-        if nn == 1
-            p0 = results.avgSub.p;
-        else
-            p0 = results.(subjects{whichSub}).p;
-        end
-
-        % Force the low-pass filter frequencies to be in descending order
-        if sortParamsPriorToSearch
-            k = reshape(p0(2:end),nParams,nCells,nEccs);
-            for cc = 1:3
-                k(1,cc,:) = sort(squeeze(k(1,cc,:)),'descend');
-                k(2,cc,:) = sort(squeeze(k(2,cc,:)),'descend');
-            end
-            p0(2:end) = reshape(k,1,nParams*nCells*nEccs);
-        end
-
-        % Bounds on Q, corner frequency, exponentiation, gain
-        lb = [1.0 repmat([ 5, 0.4, 0.01],1,nCells*nEccs)];
-        ub = [1.8 repmat([45, 2.5,  100],1,nCells*nEccs)];
-
-        % If we are on the first search, only allow the gain to vary
-        if nn == 1
-            lbG = p0; ubG = p0;
-            idx = 4:nParams:length(lb);
-            lbG(idx) = lb(idx); ubG(idx) = ub(idx);
-            lb = lbG; ub = ubG;
-        end
-
-        % Define the response function
-        myResponseMatrix = @(p) returnResponse(p,stimulusDirections,studiedEccentricites,studiedFreqs,rgcTemporalModel);
-
-        % A function to vectorize
-        vectorize = @(x) x(:);
-
-        % Define the objective
-        if useMonotonicPenalty
-            myObj = @(p) norm(vectorize(W).*(vectorize(Y) - vectorize(myResponseMatrix(p)))) + ...
-                calcMonotonicPenalty(p,nParams,nCells,nEccs);
-        else
-            myObj = @(p) norm(vectorize(W).*(vectorize(Y) - vectorize(myResponseMatrix(p))));
-        end
-
-        % The place to define a non-linear constraint
-        myNonbcon = [];
-
-        % BADS it
-        if searchFlag
-            [p,fVal] = bads(myObj,p0,lb,ub,[],[],myNonbcon,optionsBADS);
-        else
-            p=p0;
-            fVal = myObj(p0);
-        end
-
-        % Get the response matrix
-        yFit = myResponseMatrix(p);
-
-        % Store it
-        results.(subjects{whichSub}).p0 = p0;
-        results.(subjects{whichSub}).p = p;
-        results.(subjects{whichSub}).fVal = fVal;
-        results.(subjects{whichSub}).Y = Y;
-        results.(subjects{whichSub}).W = W;
-        results.(subjects{whichSub}).yFit = yFit;
-
-        % Save it
-        if searchFlag
-            save('cstResults.mat','results')
-        end
-
-        % Plot it
-        figure
-        Y = results.(subjects{whichSub}).Y;
-        yFit = results.(subjects{whichSub}).yFit;
-        for ee=1:6
-            for ss=1:nStims
-                subplot(nStims,nEccs,(ss-1)*nEccs + ee)
-                plot(squeeze(Y(ss,ee,:)),'.k');
-                hold on
-                plot(squeeze(yFit(ss,ee,:)),['-' plotColor{ss}]);
-                ylim([-2 6]);
-                refline(0,0);
-            end
-        end
-        drawnow
-
     end
+
+    % Take the mean across subjects
+    Y = squeeze(mean(Y,1));
+    W = squeeze(mean(W,1));
+
+    % We double the weights on the light-flux fits
+    W(:,3,:) = W(:,3,:)*2;
+
+    % If there was a prior analysis start with the last result
+    load('cstResults.mat','results')
+
+    % Use the prior solution as the p0 guess
+    if nn == 1
+        p0 = [1.5 repmat([20 1 0.1 10 1 10 30 1 1],1,nEccs) ];
+    else
+        p0 = results.avgSub.p;
+    end
+
+    % Force the low-pass filter frequencies to be in descending order
+    if sortParamsPriorToSearch
+        k = reshape(p0(2:end),nParams,nCells,nEccs);
+        for cc = 1:3
+            k(1,cc,:) = sort(squeeze(k(1,cc,:)),'descend');
+            k(2,cc,:) = sort(squeeze(k(2,cc,:)),'descend');
+        end
+        p0(2:end) = reshape(k,1,nParams*nCells*nEccs);
+    end
+
+    % Bounds on Q, corner frequency, exponentiation, gain
+    lb = [1.0 repmat([2.5, 0.25, 0.01],1,nCells*nEccs)];
+    ub = [1.8 repmat([45, 2.5,  100],1,nCells*nEccs)];
+
+    % Define the response function
+    myResponseMatrix = @(p) returnResponse(p,stimulusDirections,studiedEccentricites,studiedFreqs,rgcTemporalModel);
+
+    % A function to vectorize
+    vectorize = @(x) x(:);
+
+    % Define the objective
+    if nn==1
+        myObj = @(p) norm(vectorize(W).*(vectorize(Y) - vectorize(myResponseMatrix(p))));
+    else
+        myObj = @(p) norm(vectorize(W).*(vectorize(Y) - vectorize(myResponseMatrix(p)))) + ...
+            calcMonotonicPenalty(p,nParams,nCells,nEccs);
+    end
+
+    % The place to define a non-linear constraint
+    myNonbcon = [];
+
+    % BADS it
+    if searchFlag
+        [p,fVal] = bads(myObj,p0,lb,ub,[],[],myNonbcon,optionsBADS);
+    else
+        p=p0;
+        fVal = myObj(p0);
+    end
+
+    % Get the response matrix
+    yFit = myResponseMatrix(p);
+
+    % Store it
+    results.avgSub.p0 = p0;
+    results.avgSub.p = p;
+    results.avgSub.fVal = fVal;
+    results.avgSub.Y = Y;
+    results.avgSub.W = W;
+    results.avgSub.yFit = yFit;
+
+    % Save it
+    if searchFlag
+        save('cstResults.mat','results')
+    end
+
+    % Plot it
+    figure
+    Y = results.avgSub.Y;
+    yFit = results.avgSub.yFit;
+    for ee=1:6
+        for ss=1:nStims
+            subplot(nStims,nEccs,(ss-1)*nEccs + ee)
+            plot(squeeze(Y(ss,ee,:)),'.k');
+            hold on
+            plot(squeeze(yFit(ss,ee,:)),['-' plotColor{ss}]);
+            ylim([-2 6]);
+            refline(0,0);
+        end
+    end
+    drawnow
 
     % Shut down the parpool to prevent memory leaks
     poolobj = gcp('nocreate');
@@ -178,7 +173,7 @@ for nn = 1:nSearches
     for pp = 1:nParams
         subplot(1,nParams,pp)
         for whichSub = 1:nSubs
-            k = reshape(results.(subjects{whichSub}).p(2:end),3,3,6);
+            k = reshape(results.avgSub.p(2:end),3,3,6);
             for ss = 1:nStims
                 plot(squeeze(k(pp,ss,:)),[subLine{whichSub} plotColor{ss}]);
                 hold on

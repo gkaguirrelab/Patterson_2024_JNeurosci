@@ -3,8 +3,8 @@
 clear
 close all
 verbose = true;
-searchFlag = true;
-nSearches = 3;
+searchFlag = false;
+nSearches = 2;
 sortParamsPriorToSearch = true;
 useMonotonicPenalty = true;
 
@@ -57,7 +57,7 @@ if ~any(strcmp({V.Name}, 'Optimization Toolbox'))
 end
 
 % Loop over optimizations
-for nn = 1:nSearches
+for nn = 2:nSearches
 
     % Loop over subjects
     for whichSub = 1:nSubs

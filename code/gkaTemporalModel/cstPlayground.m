@@ -97,7 +97,7 @@ for nn = 1:nSearches
         end
 
         % Bounds on Q, corner frequency, exponentiation, gain
-        lb = [1.0 repmat([ 5, 0.4, 0.01],1,nCells*nEccs)];
+        lb = [1.0 repmat([2.5, 0.25, 0.01],1,nCells*nEccs)];
         ub = [1.8 repmat([45, 2.5,  100],1,nCells*nEccs)];
 
         % If we are on the first search, only allow the gain to vary

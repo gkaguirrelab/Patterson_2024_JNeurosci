@@ -4,7 +4,7 @@ clear
 close all
 verbose = true;
 searchFlag = true;
-nSearches = 3;
+nSearches = 4;
 sortParamsPriorToSearch = true;
 useMonotonicPenalty = true;
 
@@ -57,7 +57,7 @@ if ~any(strcmp({V.Name}, 'Optimization Toolbox'))
 end
 
 % Loop over optimizations
-for nn = 1:nSearches
+for nn = 2:nSearches
 
     % Loop over subjects
     for whichSub = 1:nSubs
@@ -98,7 +98,7 @@ for nn = 1:nSearches
 
         % Bounds on Q, corner frequency, exponentiation, gain
         lb = [1.0 repmat([2.5, 0.25, 0.01],1,nCells*nEccs)];
-        ub = [1.8 repmat([45, 2.5,  100],1,nCells*nEccs)];
+        ub = [1.8 repmat([55, 2.5,  100],1,nCells*nEccs)];
 
         % If we are on the first search, only allow the gain to vary
         if nn == 1
@@ -153,7 +153,7 @@ for nn = 1:nSearches
         figure
         Y = results.(subjects{whichSub}).Y;
         yFit = results.(subjects{whichSub}).yFit;
-        for ee=1:6
+        for ee=1:nEccs
             for ss=1:nStims
                 subplot(nStims,nEccs,(ss-1)*nEccs + ee)
                 plot(squeeze(Y(ss,ee,:)),'.k');
@@ -178,7 +178,7 @@ for nn = 1:nSearches
     for pp = 1:nParams
         subplot(1,nParams,pp)
         for whichSub = 1:nSubs
-            k = reshape(results.(subjects{whichSub}).p(2:end),3,3,6);
+            k = reshape(results.(subjects{whichSub}).p(2:end),nParams,nCells,nEccs);
             for ss = 1:nStims
                 plot(squeeze(k(pp,ss,:)),[subLine{whichSub} plotColor{ss}]);
                 hold on

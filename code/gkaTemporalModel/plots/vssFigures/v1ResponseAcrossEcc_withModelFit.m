@@ -25,7 +25,6 @@ studiedEccentricites = eccDegBinEdges(4:2:14);
 % The identities of the stims and subjects
 subjects = {'gka','asb'};
 stimulusDirections = {'LminusM','S','LMS'};
-plotColor = {'r','b','k'};
 nSubs = length(subjects);
 nStims = length(stimulusDirections);
 

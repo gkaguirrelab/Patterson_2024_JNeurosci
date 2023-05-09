@@ -10,6 +10,7 @@ savePath = '~/Desktop/VSS 2023/';
 subjects = {'gka','asb'};
 nSubs = length(subjects);
 subLine = {'-',':'};
+subSymbol = {'-',':'};
 cellNames = {'midget','bistratified','parasol'};
 lineColor={'r','b','k'};
 nCells = length(cellNames);
@@ -25,7 +26,7 @@ studiedEccentricites = eccDegBinEdges(4:2:14);
 faceAlpha = 0.4; % Transparency of the shaded error region
 
 % Prepare the figures
-figHandles = figure('Renderer','painters');
+figHandle = figure('Renderer','painters');
 figuresize(800,400,'pt');
 tiledlayout(1,4,'TileSpacing','tight','Padding','tight')
 
@@ -45,7 +46,11 @@ for pp = 1:nParams+1
             else
                 vec = squeeze(k(pp,cc,:));
             end
-            plot(1:nEccs,vec,[subLine{whichSub} lineColor{cc}]);
+            plot(1:nEccs,vec,...
+                ['o' subLine{whichSub}],'MarkerFaceColor',lineColor{cc},...
+                'Color',lineColor{cc}, ...
+                'MarkerSize',6,'MarkerEdgeColor','w','LineWidth',1);
+
             hold on
         end
     end
@@ -60,5 +65,9 @@ for pp = 1:nParams+1
         a.YScale = 'log';
     end
 end
+
+% Save the plot
+plotNamesPDF = 'paramPlots.pdf';
+saveas(figHandle,fullfile(savePath,plotNamesPDF));
 
 

@@ -208,7 +208,7 @@ k=reshape(p(2:end),nParams,nCells,nEccs);
 penalty = 0;
 for cc = 1:3
     penalty = penalty + sum(diff(squeeze(k(1,cc,:)))>0);
-    penalty = penalty + sum(diff(squeeze(k(2,cc,:)))>0);
+%    penalty = penalty + sum(diff(squeeze(k(2,cc,:)))>0);
 end
 
 penalty = penalty / 5;

@@ -64,8 +64,23 @@ for whichSub = 1:length(subjects)
     % Get the p0 params for this subject
     pMRI = storedSearchSeeds(subjects{whichSub});
 
+    % Remove all effects except gain
+    pMRI(1) = 1;
+    pMRI(2:3:length(pMRI)) = 200;
+    pMRI(3:3:length(pMRI)) = 1;
+
     % Get the modeled response
     response = returnResponse(pMRI,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel);
+
+    % KLUDGE: Need to scale down the response to LMS at high eccentricities
+    % for display, as the massive response at the un-filtered
+    % high-frequencies interferes with display
+    if whichSub == 1
+        response(3,5:6,:) =     response(3,5:6,:)/2;
+    else
+        response(3,5,:) =     response(3,5,:)/4;
+        response(3,6,:) =     response(3,6,:)/8;
+    end
 
     % Prepare the figures
     figHandles = figure('Renderer','painters');
@@ -136,7 +151,7 @@ for whichSub = 1:length(subjects)
     end
 
     % Save the plots
-    plotNamesPDF = [subjects{whichSub} '_v1ResponseAcrossEcc_withModel.pdf' ];
+    plotNamesPDF = [subjects{whichSub} '_v1ResponseAcrossEcc_gainOnly.pdf' ];
     saveas(figHandles,fullfile(savePath,plotNamesPDF));
 
 end

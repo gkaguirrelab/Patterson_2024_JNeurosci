@@ -5,7 +5,7 @@ close all
 verbose = true;
 searchFlag = true;
 nSearches = 4;
-sortParamsPriorToSearch = true;
+sortParamsPriorToSearch = false;
 useMonotonicPenalty = true;
 
 %% Load the data and basic model elements
@@ -57,7 +57,7 @@ if ~any(strcmp({V.Name}, 'Optimization Toolbox'))
 end
 
 % Loop over optimizations
-for nn = 2:nSearches
+for nn = 1:nSearches
 
     % Loop over subjects
     for whichSub = 1:nSubs
@@ -81,7 +81,14 @@ for nn = 2:nSearches
 
         % Use the prior solution as the p0 guess
         if nn == 1
-            p0 = results.avgSub.p;
+            p0 = [1.5 ...
+                40.0000    1.6545    0.0470    8.0645    0.2500    1.1507   39.8275    1.7215    0.4402 ...
+                40.0000    1.5158    0.0906    7.8748    0.3550    3.4444   37.5956    1.4989    0.6153 ...
+                26.4518    1.1000    0.2256    7.2062    0.3622    5.9395   36.9056    1.3155    0.5311 ...
+                12.1129    1.0000    0.2319    5.4367    0.3879    6.4357   34.5953    1.2660    0.5328 ...
+                11.9229    0.9000    0.8838    5.2646    0.5467    6.0904    4.7764    1.1199    0.1937 ...
+                11.4605    0.8000    3.6194    5.2897    0.5206    4.7633    2.8949    1.0106    1.5963 ...
+                ];
         else
             p0 = results.(subjects{whichSub}).p;
         end
@@ -100,12 +107,21 @@ for nn = 2:nSearches
         lb = [1.0 repmat([2.5, 0.25, 0.01],1,nCells*nEccs)];
         ub = [1.8 repmat([55, 2.5,  100],1,nCells*nEccs)];
 
-        % If we are on the first search, only allow the gain to vary
-        if nn == 1
-            lbG = p0; ubG = p0;
-            idx = 4:nParams:length(lb);
-            lbG(idx) = lb(idx); ubG(idx) = ub(idx);
-            lb = lbG; ub = ubG;
+        switch nn
+            case 1
+                % Only allow the gain and the Q value to vary
+                lbG = p0; ubG = p0;
+                idx = [1,4:nParams:length(lb)];
+                lbG(idx) = lb(idx); ubG(idx) = ub(idx);
+                lb = lbG; ub = ubG;
+            case 2
+                % Only allow the Q, gain, and filter frequency to vary
+                lbG = p0; ubG = p0;
+                idx = [1,4:nParams:length(lb),2:nParams:length(lb)];
+                lbG(idx) = lb(idx); ubG(idx) = ub(idx);
+                lb = lbG; ub = ubG;
+            otherwise
+                % use the full bounds
         end
 
         % Define the response function
@@ -205,10 +221,19 @@ function penalty = calcMonotonicPenalty(p,nParams,nCells,nEccs)
 
 k=reshape(p(2:end),nParams,nCells,nEccs);
 
+% For each parameter, calculate the penalty for two directions, and take
+% the lower value
+
 penalty = 0;
 for cc = 1:3
-    penalty = penalty + sum(diff(squeeze(k(1,cc,:)))>0);
-%    penalty = penalty + sum(diff(squeeze(k(2,cc,:)))>0);
+    penalty = penalty + min([...
+        sum(diff(squeeze(k(1,cc,:)))>0) ...
+        sum(diff(squeeze(k(1,cc,:)))<0) ...
+        ]);
+    penalty = penalty + min([...
+        sum(diff(squeeze(k(2,cc,:)))>0) ...
+        sum(diff(squeeze(k(2,cc,:)))<0) ...
+        ]);
 end
 
 penalty = penalty / 5;

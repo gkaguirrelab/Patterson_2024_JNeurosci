@@ -5,6 +5,7 @@
 %% Housekeeping
 clear
 close all
+rng;
 verbose = false;
 
 % Define where we will save the results
@@ -90,8 +91,8 @@ for whichSub = 1:nSubs
     end
 
     % Fitting the LMS stimuli involves both the midget and parasol
-    % populations; we give these weights a bit of extra oomph to encourage
-    % a good match to the data here.
+    % populations; we give these weights a bit of extra oomph here to
+    % encourage a good match to the data here
     W(3,:,:) = W(3,:,:)*1.5;
 
     % Interpolate the data and weights to the intermediate temporal
@@ -120,7 +121,7 @@ for whichSub = 1:nSubs
     % light upper bounds on the fits to prevent weird over-fitting that
     % happens for the low-amplitude chromatic responses at extreme
     % eccentricities.
-    lb = [Q repmat([1, 0.25, 0.01],1,nCells*nEccs)];
+    lb = [Q repmat([5 0.25 0.01 1 0.25 0.01 5 0.25 0.01],1,nEccs)];
     ub = [Q repmat([40 2.0 100 20 1.0 100 60 1.5 100],1,nEccs)];
 
     % Loop over searches
@@ -150,10 +151,13 @@ for whichSub = 1:nSubs
             myObj = @(p) norm(vectorize(Winterp(:,ee,:)).*(vectorize(Yinterp(:,ee,:)) - vectorize(myResponseMatrix(p))));
 
             % BADS it
-            pSub = bads(myObj,p0(idx),lb(idx),ub(idx),[],[],[],optionsBADS);
+            [pSub,fVal] = bads(myObj,p0(idx),lb(idx),ub(idx),[],[],[],optionsBADS);
 
             % Store this eccentricity
             pPar{ee} = pSub;
+
+            % Report the fVal
+            fprintf('ecc: %d, fVal = %2.2f \n',ee,fVal);
 
         end
 
@@ -191,7 +195,7 @@ for whichSub = 1:nSubs
     % Report it
     fprintf(['subject = ' subjects{whichSub} ', fVal = %2.2f \n'],fVal);
 
-    % Plot it
+    % Plot fits
     figure
     Y = results.(subjects{whichSub}).Y;
     yFit = results.(subjects{whichSub}).yFit;
@@ -206,6 +210,7 @@ for whichSub = 1:nSubs
         end
     end
 
+    % Plot params
     figure
     subLine = {'-','-'};
     yLimSets = {[0 60],[0 2],[0 20]};
@@ -240,13 +245,16 @@ warning(warnstate);
 %% LOCAL FUNCTIONS
 
 
+
 function response = returnResponse(p,stimulusDirections,studiedEccentricites,studiedFreqs,rgcTemporalModel)
 % Assemble the response across eccentricity locations
 
+% Fixed params of the analysis
 nCells = 3;
 nParams = 3;
 blockLength = nParams*nCells;
 
+% Loop over the passed eccentricities
 for ee = 1:length(studiedEccentricites)
 
     % Assemble the sub parameters
@@ -258,9 +266,11 @@ for ee = 1:length(studiedEccentricites)
 
     % Detect if the response is not band pass and in that case make it a
     % bad fit so that we avoid finding these solutions
-    [~,idx] = min(thisTTF);
-    if idx == 1
-        thisTTF = zeros(size(thisTTF))+10;
+    for ss = 1:length(stimulusDirections)
+        [~,idx] = max(thisTTF(ss,:));
+        if idx < 4
+            thisTTF(ss,:) = 100;
+        end
     end
 
     % Store this loop result
@@ -268,7 +278,7 @@ for ee = 1:length(studiedEccentricites)
 
 end
 
-% Reshape the responses into the dimension stim x ecc x freqs
+% Pull the fits out of the par pool cell array and place in a matrix
 for ee = 1:length(studiedEccentricites)
     response(:,ee,:) = ttfAtEcc{ee};
 end

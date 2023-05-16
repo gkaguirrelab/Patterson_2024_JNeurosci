@@ -43,7 +43,7 @@ shift_ttf = [0 3 6 9 11 13]; % shifts each ttf down so they can be presented tig
 pMRI = [1 repmat([200 1 0.15],1,nCells*nEccs)];
 
 % Get the modeled response
-response = returnResponse(pMRI,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel);
+[response, rfsAtEcc] = returnResponse(pMRI,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel);
 
 % Prepare the figures
 figHandles = figure('Renderer','painters');
@@ -63,14 +63,26 @@ for whichStim = 1:nStims
         plot(log10(freqsForPlotting),squeeze(response(whichStim,ee,:))-shift_ttf(ee),...
             ['-' lineColor{stimOrder(whichStim)}],...
             'LineWidth',2);
-
         hold on
+
+        % If this is LMS, show the separate midget and parasol components
+        lineSpecs = {'-','--'};
+        if whichStim == 3
+            for cc=1:2
+                ttfComplex = double(subs(rfsAtEcc{ee}{3}(cc),freqsForPlotting));
+                vec = abs(ttfComplex);
+                plot(log10(freqsForPlotting),vec-shift_ttf(ee),...
+                    lineSpecs{cc},'Color',[0.5 0.5 0.5],...
+                    'LineWidth',2);
+            end
+        end
 
         % Add reference lines
         if ee==1 && whichStim == 3
             plot(log10([1 1]),[0 2],'-k');
         end
         plot(log10([1 2]),[0 0]-shift_ttf(ee),':k');
+            plot(log10([50 100]),[0 0]-shift_ttf(ee),':k');
 
     end
 
@@ -103,7 +115,7 @@ saveas(figHandles,fullfile(savePath,plotNamesPDF));
 
 
 
-function response = returnResponse(p,stimulusDirections,studiedEccentricites,studiedFreqs,rgcTemporalModel)
+function [response,rfsAtEcc] = returnResponse(p,stimulusDirections,studiedEccentricites,studiedFreqs,rgcTemporalModel)
 % Assemble the response across eccentricity locations
 
 nCells = 3;
@@ -117,7 +129,7 @@ for ee = 1:length(studiedEccentricites)
     subP = [p(1) p(startIdx:startIdx+blockLength-1)];
 
     % Obtain the response at this eccentricity
-    ttfAtEcc{ee} = returnTTFAtEcc(subP,stimulusDirections,studiedEccentricites(ee),studiedFreqs,rgcTemporalModel);
+    [ttfAtEcc{ee},rfsAtEcc{ee}] = returnTTFAtEcc(subP,stimulusDirections,studiedEccentricites(ee),studiedFreqs,rgcTemporalModel);
 
 end
 

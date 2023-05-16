@@ -70,17 +70,7 @@ for whichSub = 1:length(subjects)
     pMRI(3:3:length(pMRI)) = 1;
 
     % Get the modeled response
-    response = returnResponse(pMRI,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel);
-
-    % KLUDGE: Need to scale down the response to LMS at high eccentricities
-    % for display, as the massive response at the un-filtered
-    % high-frequencies interferes with display
-    if whichSub == 1
-        response(3,5:6,:) =     response(3,5:6,:)/2;
-    else
-        response(3,5,:) =     response(3,5,:)/4;
-        response(3,6,:) =     response(3,6,:)/8;
-    end
+    [response, rfsAtEcc] = returnResponse(pMRI,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel);
 
     % Prepare the figures
     figHandles = figure('Renderer','painters');
@@ -92,6 +82,20 @@ for whichSub = 1:length(subjects)
 
         % Get the average response across eccentricity
         for ee=1:nEccs
+
+            % KLUDGE: Need to scale down the response to LMS at high eccentricities
+            % for display, as the massive response at the un-filtered
+            % high-frequencies interferes with display
+            kludgeScale = 1;
+            if whichSub == 1 && ee>4
+                kludgeScale = 0.5;
+            end
+            if whichSub == 2 && ee==5
+                kludgeScale = 0.25;
+            end
+            if whichSub == 2 && ee==6
+                kludgeScale = 0.125;
+            end
 
             % Assemble the data
             v1YThisEcc = squeeze(Y(whichStim,ee,:))';
@@ -121,9 +125,21 @@ for whichSub = 1:length(subjects)
                 'MarkerSize',6,'MarkerEdgeColor',lineColor{stimOrder(whichStim)},'LineWidth',1);
 
             % Add the model fit
-            plot(log10(freqsForPlotting),squeeze(response(whichStim,ee,:))-shift_ttf(ee),...
+            plot(log10(freqsForPlotting),kludgeScale*squeeze(response(whichStim,ee,:))-shift_ttf(ee),...
                 ['-' lineColor{stimOrder(whichStim)}],...
                 'LineWidth',2);
+
+            % If this is LMS, show the separate midget and parasol components
+            lineSpecs = {'-','--'};
+            if whichStim == 3
+                for cc=1:2
+                    ttfComplex = double(subs(rfsAtEcc{ee}{3}(cc),freqsForPlotting));
+                    vec = kludgeScale*abs(ttfComplex);
+                    plot(log10(freqsForPlotting),vec-shift_ttf(ee),...
+                        lineSpecs{cc},'Color',[0.5 0.5 0.5],...
+                        'LineWidth',2);
+                end
+            end
 
             % Add reference lines
             if ee==1 && whichStim == 3
@@ -164,7 +180,7 @@ for whichSub = 1:length(subjects)
 end
 
 
-function response = returnResponse(p,stimulusDirections,studiedEccentricites,studiedFreqs,rgcTemporalModel)
+function [response,rfsAtEcc] = returnResponse(p,stimulusDirections,studiedEccentricites,studiedFreqs,rgcTemporalModel)
 % Assemble the response across eccentricity locations
 
 nCells = 3;
@@ -178,7 +194,7 @@ for ee = 1:length(studiedEccentricites)
     subP = [p(1) p(startIdx:startIdx+blockLength-1)];
 
     % Obtain the response at this eccentricity
-    ttfAtEcc{ee} = returnTTFAtEcc(subP,stimulusDirections,studiedEccentricites(ee),studiedFreqs,rgcTemporalModel);
+    [ttfAtEcc{ee},rfsAtEcc{ee}] = returnTTFAtEcc(subP,stimulusDirections,studiedEccentricites(ee),studiedFreqs,rgcTemporalModel);
 
 end
 

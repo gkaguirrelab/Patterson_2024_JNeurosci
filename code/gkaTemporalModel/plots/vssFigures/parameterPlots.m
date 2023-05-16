@@ -31,7 +31,7 @@ figuresize(800,400,'pt');
 tiledlayout(1,3,'TileSpacing','tight','Padding','tight')
 
 yLabels = {'Freq [Hz]','exponent','log gain'};
-yLimSets = {[0 60],[0 2],10.^[-1.5 1.5]};
+yLimSets = {[0 60],[0 2],10.^[0 3]};
 refCell = 3;
 
 % Loop over params
@@ -43,6 +43,13 @@ for pp = 1:nParams
         k = reshape(pMRI(2:end),nParams,nCells,nEccs);
         for cc = 1:nCells
             vec = squeeze(k(pp,cc,:));
+
+            % Given that the gain parameter has arbitrary units, we scale
+            % the values so that they range from 1 --> larger.
+            if pp==3
+                vec = vec * 15;
+            end
+
             plot(1:nEccs,vec,...
                 ['o' subLine{whichSub}],'MarkerFaceColor',lineColor{cc},...
                 'Color',lineColor{cc}, ...

@@ -6,7 +6,8 @@
 clear
 close all
 rng;
-verbose = false;
+verbose = true;
+sortParamsPriorToSearch = true;
 
 % Define where we will save the results
 resultFileName = 'cstResults.mat';
@@ -32,7 +33,7 @@ nStims = length(stimulusDirections);
 
 % Fixed features of the model
 nCells = 3; nParams = 3;
-nSearches = 1;
+nSearches = 3;
 
 % The "quality" parameter of the low-pass filter. In initial analyses we
 % found that using a quality ("Q") parameter of unity for the low-pass
@@ -70,6 +71,9 @@ vectorize = @(x) x(:);
 
 % Save the warning state
 warnstate = warning();
+
+% Turn off the warning
+warning('off','bads:pbUnspecified');
 
 % If there was a prior analysis start with the last result
 if isfile(resultFileName)
@@ -117,12 +121,31 @@ for whichSub = 1:nSubs
         10 1.5 0.1 10 0.5 10 10 1 1 ...
         ];
 
+    % Use the result obtained from fitting individual eccentricities
+    p0 = results.(subjects{whichSub}).p;
+
+    % Force the low-pass filter frequencies to be in descending order
+    if sortParamsPriorToSearch
+        k = reshape(p0(2:end),nParams,nCells,nEccs);
+        for cc = 1:3
+            k(1,cc,:) = sort(squeeze(k(1,cc,:)),'descend');
+        end
+        p0(2:end) = reshape(k,1,nParams*nCells*nEccs);
+    end
+
     % Bounds on Q, corner frequency, exponentiation, gain. We put some
     % light upper bounds on the fits to prevent weird over-fitting that
     % happens for the low-amplitude chromatic responses at extreme
     % eccentricities.
     lb = [Q repmat([5 0.25 0.01 1 0.25 0.01 5 0.25 0.01],1,nEccs)];
     ub = [Q repmat([45 2.0 100 20 1.0 100 60 1.5 100],1,nEccs)];
+
+    % Define the response function integrated across eccentricity
+    myResponseMatrix = @(p) returnResponse(p,stimulusDirections,studiedEccentricites,studiedFreqs,rgcTemporalModel);
+    myResponseMatrixInterp = @(p) returnResponse(p,stimulusDirections,studiedEccentricites,interpFreqs,rgcTemporalModel);
+    myResponseMatrixPlot = @(p) returnResponse(p,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel);
+    myObj = @(p) norm(vectorize(Winterp).*(vectorize(Yinterp) - vectorize(myResponseMatrixInterp(p)))) + ...
+        calcMonotonicPenalty(p,nParams,nCells,nEccs);
 
     % Loop over searches
     for nn = 1:nSearches
@@ -132,52 +155,17 @@ for whichSub = 1:nSubs
             p0 = p;
         end
 
-        % Loop over eccentricities
-        parfor ee = 1:nEccs
+        % BADS it
+        [p,fVal] = bads(myObj,p0,lb,ub,[],[],[],optionsBADS);
 
-            % Turn off the warning
-            warning('off','bads:pbUnspecified');
+        % Shut down the parpool to prevent memory leaks
+        poolobj = gcp('nocreate');
+        delete(poolobj);
 
-            % Clear pSub
-            pSub = [];
-
-            % The parameter indices to work on
-            idx = [1,(ee-1)*nParams*nCells+2 : ee*nParams*nCells+1];
-
-            % Define the response function
-            myResponseMatrix = @(p) returnResponse(p,stimulusDirections,studiedEccentricites(ee),interpFreqs,rgcTemporalModel);
-
-            % Define the objective
-            myObj = @(p) norm(vectorize(Winterp(:,ee,:)).*(vectorize(Yinterp(:,ee,:)) - vectorize(myResponseMatrix(p))));
-
-            % BADS it
-            [pSub,fVal] = bads(myObj,p0(idx),lb(idx),ub(idx),[],[],[],optionsBADS);
-
-            % Store this eccentricity
-            pPar{ee} = pSub;
-
-            % Report the fVal
-            fprintf('ecc: %d, fVal = %2.2f \n',ee,fVal);
-
-        end
-
-        % Sort out the loop p vals
-        p=[];
-        for ee = 1:nEccs
-            idx = [1,(ee-1)*nParams*nCells+2 : ee*nParams*nCells+1];
-            p(idx) = pPar{ee};
-        end
 
     end % loop over searches
 
-    % Define the response function integrated across eccentricity
-    myResponseMatrix = @(p) returnResponse(p,stimulusDirections,studiedEccentricites,studiedFreqs,rgcTemporalModel);
-    myResponseMatrixInterp = @(p) returnResponse(p,stimulusDirections,studiedEccentricites,interpFreqs,rgcTemporalModel);
-    myResponseMatrixPlot = @(p) returnResponse(p,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel);
-    myObj = @(p) norm(vectorize(Winterp).*(vectorize(Yinterp) - vectorize(myResponseMatrixInterp(p))));
-
     % Get the response matrix and fVal
-    fVal = myObj(p);
     yFit = myResponseMatrix(p);
     yPlot = myResponseMatrixPlot(p);
 
@@ -190,7 +178,7 @@ for whichSub = 1:nSubs
     results.(subjects{whichSub}).yFit = yFit;
 
     % Save it
-    save(resultFileName,'results')
+    save('cstResultsConstrained.mat','results')
 
     % Report it
     fprintf(['subject = ' subjects{whichSub} ', fVal = %2.2f \n'],fVal);
@@ -233,10 +221,6 @@ for whichSub = 1:nSubs
 
 end
 
-% Shut down the parpool to prevent memory leaks
-poolobj = gcp('nocreate');
-delete(poolobj);
-
 % Restore the warnstate
 warning(warnstate);
 
@@ -244,6 +228,27 @@ warning(warnstate);
 
 %% LOCAL FUNCTIONS
 
+function penalty = calcMonotonicPenalty(p,nParams,nCells,nEccs)
+% Add a penalty for non-monotonic ordering of corner frequencies and
+% exponents across eccentricity.
+
+k=reshape(p(2:end),nParams,nCells,nEccs);
+
+penalty = 0;
+for cc = 1:nCells
+    penalty = penalty + min([ ...
+        sum(diff(squeeze(k(1,cc,:)))>0) ...
+        sum(diff(squeeze(k(1,cc,:)))<0) ...
+        ]);
+    penalty = penalty + min([ ...
+        sum(diff(squeeze(k(2,cc,:)))>0) ...
+        sum(diff(squeeze(k(2,cc,:)))<0) ...
+        ]);
+end
+
+penalty = penalty / 1;
+
+end
 
 
 function response = returnResponse(p,stimulusDirections,studiedEccentricites,studiedFreqs,rgcTemporalModel)
@@ -255,7 +260,7 @@ nParams = 3;
 blockLength = nParams*nCells;
 
 % Loop over the passed eccentricities
-for ee = 1:length(studiedEccentricites)
+parfor ee = 1:length(studiedEccentricites)
 
     % Assemble the sub parameters
     startIdx = (ee-1)*blockLength + 1 + 1;

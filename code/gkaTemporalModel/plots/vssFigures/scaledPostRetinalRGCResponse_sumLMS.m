@@ -59,23 +59,13 @@ for whichStim = 1:nStims
         % Select the plot of the correct stimulus direction
         nexttile(stimOrder(whichStim));
 
-        % If this is LMS, show the separate midget and parasol components
-        lineSpecs = {'-','--'};
-        if whichStim == 3
-            for cc=1:2
-                ttfComplex = double(subs(rfsAtEcc{ee}{3}(cc),freqsForPlotting));
-                vec = abs(ttfComplex);
-                plot(log10(freqsForPlotting),vec-shift_ttf(ee),...
-                    lineSpecs{cc},'Color',[0.5 0.5 0.5],...
-                    'LineWidth',2);
-                hold on
-            end
-        else
-            plot(log10(freqsForPlotting),squeeze(response(whichStim,ee,:))-shift_ttf(ee),...
-                ['-' lineColor{stimOrder(whichStim)}],...
-                'LineWidth',2);
-            hold on
-        end
+        % Add the model fit
+        vec = squeeze(response(whichStim,ee,:));
+        vec = vec ./ max(vec)*3;
+        plot(log10(freqsForPlotting),vec-shift_ttf(ee),...
+            ['-' lineColor{stimOrder(whichStim)}],...
+            'LineWidth',2);
+        hold on
 
         % Add reference lines
         if ee==1 && whichStim == 3
@@ -111,7 +101,7 @@ for ss=1:nStims
 end
 
 % Save the plots
-plotNamesPDF = 'postRetinalResponseModel.pdf';
+plotNamesPDF = 'scaledPostRetinalResponseModel_sumLMS.pdf';
 saveas(figHandles,fullfile(savePath,plotNamesPDF));
 
 

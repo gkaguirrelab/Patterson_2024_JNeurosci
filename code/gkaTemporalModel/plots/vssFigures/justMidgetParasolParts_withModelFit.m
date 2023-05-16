@@ -87,40 +87,43 @@ for whichSub = 1:length(subjects)
             % Select the plot of the correct stimulus direction
             nexttile(stimOrder(whichStim));
 
-            % Add a patch for the error
-            patch(...
-                [log10(studiedFreqs),fliplr(log10(studiedFreqs))],...
-                [ v1YThisEcclow-shift_ttf(ee), fliplr(v1YThisEcchigh)-shift_ttf(ee) ],...
-                plotColor{whichStim},'EdgeColor','none','FaceColor',plotColor{stimOrder(whichStim)},'FaceAlpha',faceAlpha);
-            hold on
-
-            % Add the data symbols, using reversed markers for values below
-            % zero
-            idx = v1YThisEcc > 0;
-            plot(log10(studiedFreqs(idx)),v1YThisEcc(idx)-shift_ttf(ee),...
-                'o','MarkerFaceColor',lineColor{stimOrder(whichStim)},...
-                'MarkerSize',6,'MarkerEdgeColor','w','LineWidth',1);
-            idx = v1YThisEcc < 0;
-            plot(log10(studiedFreqs(idx)),v1YThisEcc(idx)-shift_ttf(ee),...
-                'o','MarkerFaceColor','w',...
-                'MarkerSize',6,'MarkerEdgeColor',lineColor{stimOrder(whichStim)},'LineWidth',1);
+            % % Add a patch for the error
+            % patch(...
+            %     [log10(studiedFreqs),fliplr(log10(studiedFreqs))],...
+            %     [ v1YThisEcclow-shift_ttf(ee), fliplr(v1YThisEcchigh)-shift_ttf(ee) ],...
+            %     plotColor{whichStim},'EdgeColor','none','FaceColor',plotColor{stimOrder(whichStim)},'FaceAlpha',faceAlpha);
+            % hold on
+            % 
+            % % Add the data symbols, using reversed markers for values below
+            % % zero
+            % idx = v1YThisEcc > 0;
+            % plot(log10(studiedFreqs(idx)),v1YThisEcc(idx)-shift_ttf(ee),...
+            %     'o','MarkerFaceColor',lineColor{stimOrder(whichStim)},...
+            %     'MarkerSize',6,'MarkerEdgeColor','w','LineWidth',1);
+            % idx = v1YThisEcc < 0;
+            % plot(log10(studiedFreqs(idx)),v1YThisEcc(idx)-shift_ttf(ee),...
+            %     'o','MarkerFaceColor','w',...
+            %     'MarkerSize',6,'MarkerEdgeColor',lineColor{stimOrder(whichStim)},'LineWidth',1);
 
             % Add the model fit
+            % If this is LMS, show the separate midget and parasol components
+            lineSpecs = {'-','--'};
+            if whichStim == 3
+                for cc=1:2
+                    ttfComplex = double(subs(rfsAtEcc{ee}{3}(cc),freqsForPlotting));
+                    vec = abs(ttfComplex);
+                    plot(log10(freqsForPlotting),vec-shift_ttf(ee),...
+                        lineSpecs{cc},'Color',[0.5 0.5 0.5],...
+                        'LineWidth',2);
+                    hold on
+                end
+            else
             plot(log10(freqsForPlotting),squeeze(response(whichStim,ee,:))-shift_ttf(ee),...
                 ['-' lineColor{stimOrder(whichStim)}],...
                 'LineWidth',2);
+            hold on
+            end
 
-            % If this is LMS, show the separate midget and parasol components
-            % lineSpecs = {'-','--'};
-            % if whichStim == 3
-            %     for cc=1:2
-            %         ttfComplex = double(subs(rfsAtEcc{ee}{3}(cc),freqsForPlotting));
-            %         vec = abs(ttfComplex);
-            %         plot(log10(freqsForPlotting),vec-shift_ttf(ee),...
-            %             lineSpecs{cc},'Color',[0.5 0.5 0.5],...
-            %             'LineWidth',2);
-            %     end
-            % end
 
             % Add reference lines
             if ee==1 && whichStim == 3
@@ -156,7 +159,7 @@ for whichSub = 1:length(subjects)
     end
 
     % Save the plots
-    plotNamesPDF = [subjects{whichSub} '_v1ResponseAcrossEcc_withModel.pdf' ];
+    plotNamesPDF = [subjects{whichSub} '_showMigetParasolModelFit.pdf' ];
     saveas(figHandles,fullfile(savePath,plotNamesPDF));
 
 end

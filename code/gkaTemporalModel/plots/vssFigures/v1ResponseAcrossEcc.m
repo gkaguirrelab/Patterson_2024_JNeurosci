@@ -116,6 +116,7 @@ for whichSub = 1:length(subjects)
             nexttile(ss);
             xlim(log10([0.5 150]))
             ylim([-14 5])
+            xlabel('Frequency [Hz]')
             a=gca;
             a.YTick = [0,2,4,6];
             a.YTickLabel = {'0','2','4','6'};

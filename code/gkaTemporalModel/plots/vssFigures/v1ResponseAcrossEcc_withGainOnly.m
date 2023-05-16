@@ -109,10 +109,16 @@ for whichSub = 1:length(subjects)
                 plotColor{whichStim},'EdgeColor','none','FaceColor',plotColor{stimOrder(whichStim)},'FaceAlpha',faceAlpha);
             hold on
 
-            % Add the data symbols
-            plot(log10(studiedFreqs),v1YThisEcc-shift_ttf(ee),...
+            % Add the data symbols, using reversed markers for values below
+            % zero
+            idx = v1YThisEcc > 0;
+            plot(log10(studiedFreqs(idx)),v1YThisEcc(idx)-shift_ttf(ee),...
                 'o','MarkerFaceColor',lineColor{stimOrder(whichStim)},...
                 'MarkerSize',6,'MarkerEdgeColor','w','LineWidth',1);
+            idx = v1YThisEcc < 0;
+            plot(log10(studiedFreqs(idx)),v1YThisEcc(idx)-shift_ttf(ee),...
+                'o','MarkerFaceColor','w',...
+                'MarkerSize',6,'MarkerEdgeColor',lineColor{stimOrder(whichStim)},'LineWidth',1);
 
             % Add the model fit
             plot(log10(freqsForPlotting),squeeze(response(whichStim,ee,:))-shift_ttf(ee),...
@@ -124,6 +130,7 @@ for whichSub = 1:length(subjects)
                 plot(log10([1 1]),[0 2],'-k');
             end
             plot(log10([1 2]),[0 0]-shift_ttf(ee),':k');
+            plot(log10([50 100]),[0 0]-shift_ttf(ee),':k');
 
         end
 

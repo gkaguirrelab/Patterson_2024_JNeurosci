@@ -9,7 +9,8 @@ savePath = '~/Desktop/VSS 2023/';
 % The identities of the stims and subjects
 subjects = {'gka','asb'};
 nSubs = length(subjects);
-subSymbol = {'o','s'};
+subLine = {'-',':'};
+subSymbol = {'-',':'};
 cellNames = {'midget','bistratified','parasol'};
 lineColor={'r','b','k'};
 nCells = length(cellNames);
@@ -30,7 +31,7 @@ figuresize(800,400,'pt');
 tiledlayout(1,3,'TileSpacing','tight','Padding','tight')
 
 yLabels = {'Freq [Hz]','exponent','log gain'};
-yLimSets = {[0 60],[0 2],10.^[0 3]};
+yLimSets = {[0 60],[0 2],10.^[-1.5 1.5]};
 refCell = 3;
 
 % Loop over params
@@ -38,46 +39,43 @@ for pp = 1:nParams
     nexttile(pp);
 
     for whichSub = 1:nSubs
-
-        % Get the LGN parameters
-        lgnResultFile = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'cstResultsLGN.mat');
-        load(lgnResultFile,'results');
-        thisP = results.(subjects{whichSub}).p;
-
+        pMRI = storedSearchSeeds(subjects{whichSub});
+        k = reshape(pMRI(2:end),nParams,nCells,nEccs);
         for cc = 1:nCells
-            val = thisP(1+(cc-1)*3+pp);
+            vec = squeeze(k(pp,cc,:));
 
             % Given that the gain parameter has arbitrary units, we scale
             % the values so that they range from 1 --> larger.
             if pp==3
-                val = val * 15;
+                vec = vec ./ squeeze(k(pp,3,:));
             end
 
-            plot(1,val,...
-                subSymbol{whichSub},'MarkerFaceColor',lineColor{cc},...
+            plot(1:nEccs,vec,...
+                ['o' subLine{whichSub}],'MarkerFaceColor',lineColor{cc},...
                 'Color',lineColor{cc}, ...
-                'MarkerSize',15,'MarkerEdgeColor','w');
-            hold on
+                'MarkerSize',6,'MarkerEdgeColor','w','LineWidth',1);
 
+            hold on
         end
-       
     end
     title(paramNames{pp});
+    xlabel('Eccentricity [deg]');
     ylabel(yLabels{pp})
     xlim([0 nEccs+1]);
     a=gca();
+    a.XTick = 1:nEccs;
+    a.XTickLabel = arrayfun(@num2str, round(studiedEccentricites), 'UniformOutput', 0);
     if pp == 2
-        plot([0.5 1.5],[1 1],'-k');
+        plot([0.5 nEccs+0.5],[1 1],'-k');
     end
     if pp >= 3
         a.YScale = 'log';
     end
-    xlim([0.75 1.25])
     ylim(yLimSets{pp});
 end
 
 % Save the plot
-plotNamesPDF = 'paramPlots_wLGN.pdf';
+plotNamesPDF = 'paramPlots_scaledGain.pdf';
 saveas(figHandle,fullfile(savePath,plotNamesPDF));
 
 

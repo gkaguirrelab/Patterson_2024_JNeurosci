@@ -1,4 +1,26 @@
-function [rfPostRetinal, rfRGC, rfBipolar, rfCone] = returnPostRetinalRF(cellClass,stimulusDirection,rgcTemporalModel,eccDeg,stimulusContrastScale)
+function [rfPostRetinal, rfRGC] = returnPostRetinalRF(cellClass,stimulusDirection,eccDeg,stimulusContrastScale,rgcTemporalModel)
+
+
+% Examples:
+%{
+    cellClass = 'midget';
+    stimulusDirection = 'LminusM';
+    eccDeg = 5;
+    stimulusContrastScale = returnStimulusContrastScale(cellClass,stimulusDirection);
+    [rfPostRetinal, rfRGC] = returnPostRetinalRF(cellClass,stimulusDirection,eccDeg,stimulusContrastScale);
+    plotRF(rfPostRetinal);
+%}
+
+% If the rgcTemporalModel variable was not passed, set to empty
+if nargin < 5
+    rgcTemporalModel = [];
+end
+
+% If the rgcTemporalModel variable is empty, load the local result
+if isempty(rgcTemporalModel)
+    modelFileName = fullfile(fileparts(mfilename('fullpath')),'rgcTemporalModel.mat');
+    load(modelFileName,'rgcTemporalModel');
+end
 
 % Obtain the chromatic weights
 [chromaticCenterWeight,chromaticSurroundWeight] = ...
@@ -6,14 +28,15 @@ function [rfPostRetinal, rfRGC, rfBipolar, rfCone] = returnPostRetinalRF(cellCla
 
 % Obtain the pRGC model params for this cell class and eccentricity
 cellIndex = strcmp(cellClass,{'midget','parasol','bistratified'});
-pBlockRGC = nan(1,7);
+pRGCBlock = nan(1,7);
 for ii = 1:7
-    pBlockRGC(ii) = rgcTemporalModel.pFitByEccen{ii,cellIndex}(eccDeg);
+    pRGCBlock(ii) = rgcTemporalModel.pFitByEccen{ii,cellIndex}(eccDeg);
 end
 
 % Get the temporal receptive field for this RGC
-[rfRGC, rfBipolar, rfCone] = ...
-    returnRGCRF(pBlockRGC,rgcTemporalModel.cfCone,rgcTemporalModel.coneDelay,chromaticCenterWeight,chromaticSurroundWeight);
+rfRGC = returnRGCRF(pRGCBlock,...
+    rgcTemporalModel.cfCone,rgcTemporalModel.coneDelay,...
+    chromaticCenterWeight,chromaticSurroundWeight);
 
 % Copy the RGC model into the post-retinal variables
 rfPostRetinal = rfRGC;

@@ -6,7 +6,13 @@ function [rfRGC, rfBipolar, rfCone] = returnRGCRF(pRGCBlock,cfCone,coneDelay,chr
 %
 % Examples:
 %{
-    [rfRGC, rfBipolar, rfCone] = returnRGCRF(pRGCBlock,cfCone,coneDelay,chromaticCenterWeight,chromaticSurroundWeight)
+    pRGCBlock = [ 0.2469    0.5922    5.8057   39.0848    1.3149    0.8984    2.1112 ];
+    cfCone = 14.2376;
+    coneDelay = 13.7579;
+    chromaticCenterWeight = 0.9960;
+    chromaticSurroundWeight = 0.1410;
+    rfRGC = returnRGCRF(pRGCBlock,cfCone,coneDelay,chromaticCenterWeight,chromaticSurroundWeight);
+    plotRF(rfRGC);
 %}
 
 % Extract the parameters

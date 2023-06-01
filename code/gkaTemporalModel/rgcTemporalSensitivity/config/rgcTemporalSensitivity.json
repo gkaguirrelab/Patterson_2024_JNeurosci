@@ -1,0 +1,17 @@
+[
+	{
+		"flavor": "",
+		"hook": "",
+		"importance": "",
+		"localHookTemplate": "config/rgcTemporalSensitivityLocalHookTemplate.m",
+	        "printLocalHookOutput": "1",
+		"name": "rgcTemporalSensitivity",
+		"pathPlacement": "append",
+		"subfolder": ["code"],
+		"toolboxRoot": "",
+		"type": "git",
+		"update": "",
+		"url": "https:\/\/github.com\/gkaguirrelab\/rgcTemporalSensitivity.git"
+	}
+]
+

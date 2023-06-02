@@ -14,9 +14,6 @@ resultFileName = 'cstResultsAvgSub.mat';
 % Load the Mt. Sinai data
 mriData = loadMRIResponseData();
 
-% Create the RGC temporal sensitivity model
-rgcTemporalModel = fitRGCFResponse(false,false);
-
 % Define the eccentricity locations of the data. We use the log-mid point
 % within each of the V1 cortical bins
 nEccs = 6;
@@ -148,7 +145,7 @@ for nn = 1:nSearches
         idx = [1,(ee-1)*nParams*nCells+2 : ee*nParams*nCells+1];
 
         % Define the response function
-        myResponseMatrix = @(p) returnResponse(p,stimulusDirections,studiedEccentricites(ee),interpFreqs,rgcTemporalModel);
+        myResponseMatrix = @(p) returnResponse(p,stimulusDirections,studiedEccentricites(ee),interpFreqs);
 
         % Define the objective
         myObj = @(p) norm(vectorize(Winterp(:,ee,:)).*(vectorize(Yinterp(:,ee,:)) - vectorize(myResponseMatrix(p))));
@@ -174,9 +171,9 @@ for nn = 1:nSearches
 end % loop over searches
 
 % Define the response function integrated across eccentricity
-myResponseMatrix = @(p) returnResponse(p,stimulusDirections,studiedEccentricites,studiedFreqs,rgcTemporalModel);
-myResponseMatrixInterp = @(p) returnResponse(p,stimulusDirections,studiedEccentricites,interpFreqs,rgcTemporalModel);
-myResponseMatrixPlot = @(p) returnResponse(p,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel);
+myResponseMatrix = @(p) returnResponse(p,stimulusDirections,studiedEccentricites,studiedFreqs);
+myResponseMatrixInterp = @(p) returnResponse(p,stimulusDirections,studiedEccentricites,interpFreqs);
+myResponseMatrixPlot = @(p) returnResponse(p,stimulusDirections,studiedEccentricites,freqsForPlotting);
 myObj = @(p) norm(vectorize(Winterp).*(vectorize(Yinterp) - vectorize(myResponseMatrixInterp(p))));
 
 % Get the response matrix and fVal
@@ -248,7 +245,7 @@ warning(warnstate);
 
 
 
-function response = returnResponse(p,stimulusDirections,studiedEccentricites,studiedFreqs,rgcTemporalModel)
+function response = returnResponse(p,stimulusDirections,studiedEccentricites,studiedFreqs)
 % Assemble the response across eccentricity locations
 
 % Fixed params of the analysis
@@ -264,7 +261,7 @@ for ee = 1:length(studiedEccentricites)
     subP = [p(1) p(startIdx:startIdx+blockLength-1)];
 
     % Obtain the response at this eccentricity
-    thisTTF = returnTTFAtEcc(subP,stimulusDirections,studiedEccentricites(ee),studiedFreqs,rgcTemporalModel);
+    thisTTF = returnTTFAtEcc(subP,stimulusDirections,studiedEccentricites(ee),studiedFreqs);
 
     % Detect if the response is not band pass and in that case make it a
     % bad fit so that we avoid finding these solutions

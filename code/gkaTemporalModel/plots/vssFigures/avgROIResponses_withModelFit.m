@@ -6,10 +6,6 @@ clear
 % Properties of which model to plot
 freqsForPlotting = logspace(0,2,50);
 
-% Load the RGC temporal model
-loadPath = fullfile(fileparts(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath')))))),'data','temporalModelResults','rgcTemporalModel.mat');
-load(loadPath,'rgcTemporalModel');
-
 % Load the MRI data
 mriData = loadMRIResponseData();
 
@@ -68,7 +64,7 @@ for whichSub = 1:length(subjects)
         pMRI = results.(subjects{whichSub}).(roiNames{rr}).p;
 
         % Get the modeled response
-        response = returnAvgResponse(pMRI,stimulusDirections,freqsForPlotting,rgcTemporalModel);
+        response = returnAvgResponse(pMRI,stimulusDirections,freqsForPlotting);
 
         % Loop over stimuli and plot
         for whichStim = 1:nStims
@@ -144,7 +140,7 @@ end
 
 
 
-function response = returnAvgResponse(p,stimulusDirections,studiedFreqs,rgcTemporalModel)
+function response = returnAvgResponse(p,stimulusDirections,studiedFreqs)
 % Assemble the response across eccentricity locations
 
 % Define the eccentricity locations of the data. We use the log-mid point
@@ -160,8 +156,8 @@ nParams = 3;
 thisTTF = {};
 parfor ee = 1:length(studiedEccentricites)
 
-    % Obtain the response at this eccentricity
-    thisTTF{ee} = returnTTFAtEcc(p,stimulusDirections,studiedEccentricites(ee),studiedFreqs,rgcTemporalModel);
+    % Obtain the response at this eccentricity    
+    thisTTF{ee} = returnTTFAtEcc(p,stimulusDirections,studiedEccentricites(ee),studiedFreqs);
 
 end
 

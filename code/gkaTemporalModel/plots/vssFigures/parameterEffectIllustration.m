@@ -6,10 +6,6 @@ clear
 % Properties of which model to plot
 freqsForPlotting = logspace(0,2,50);
 
-% Load the RGC temporal model
-loadPath = fullfile(fileparts(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath')))))),'data','temporalModelResults','rgcTemporalModel.mat');
-load(loadPath,'rgcTemporalModel');
-
 % Place to save figures
 savePath = '~/Desktop/VSS 2023/';
 
@@ -31,31 +27,31 @@ freqSet = [60,15];
 for ff=1:length(freqSet)
 
     % Create a p vector with a 60 Hz corner frequency
-pMRI = [1 repmat([freqSet(ff) 1 0.15],1,nCells*nEccs)];
+    pMRI = [1 repmat([freqSet(ff) 1 0.15],1,nCells*nEccs)];
 
-% Get the modeled response
-response = returnResponse(pMRI,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel);
+    % Get the modeled response
+    response = returnResponse(pMRI,stimulusDirections,studiedEccentricites,freqsForPlotting);
 
-% Get the complex filter
-cellEquation = stageSecondOrderLP(freqSet(ff),1);
+    % Get the complex filter
+    cellEquation = stageSecondOrderLP(freqSet(ff),1);
 
-nexttile
-vec = squeeze(response(3,1,:));
-vec = vec./max(vec);
-plot(log10(freqsForPlotting),vec,'-','Color',[0.5 0.5 0.5],'LineWidth',2);
-xlabel('log frequency')
+    nexttile
+    vec = squeeze(response(3,1,:));
+    vec = vec./max(vec);
+    plot(log10(freqsForPlotting),vec,'-','Color',[0.5 0.5 0.5],'LineWidth',2);
+    xlabel('log frequency')
 
-nexttile
-       irfWindowSecs = 0.1;
-         myFreqs = linspace(0,1000,201);
-            ttfComplex = double(subs(cellEquation,myFreqs));
-            [irf, sampleRate] = simpleIFFT( myFreqs, abs(ttfComplex), angle(ttfComplex));
-            myTime = 0:sampleRate:(length(irf)-1)*sampleRate;
-            [~,windowIdx] = min(abs(myTime-irfWindowSecs));
-            irf = irf(1:windowIdx); myTime = myTime(1:windowIdx);
+    nexttile
+    irfWindowSecs = 0.1;
+    myFreqs = linspace(0,1000,201);
+    ttfComplex = double(subs(cellEquation,myFreqs));
+    [irf, sampleRate] = simpleIFFT( myFreqs, abs(ttfComplex), angle(ttfComplex));
+    myTime = 0:sampleRate:(length(irf)-1)*sampleRate;
+    [~,windowIdx] = min(abs(myTime-irfWindowSecs));
+    irf = irf(1:windowIdx); myTime = myTime(1:windowIdx);
     irf = irf ./ max(irf);
-plot(myTime,irf,'-','Color',[0.5 0.5 0.5],'LineWidth',2);
-xlabel('time [msecs]')
+    plot(myTime,irf,'-','Color',[0.5 0.5 0.5],'LineWidth',2);
+    xlabel('time [msecs]')
 end
 
 % Save the plots
@@ -64,7 +60,7 @@ saveas(figHandles,fullfile(savePath,plotNamesPDF));
 
 
 
-function [response,rfsAtEcc] = returnResponse(p,stimulusDirections,studiedEccentricites,studiedFreqs,rgcTemporalModel)
+function [response,rfsAtEcc] = returnResponse(p,stimulusDirections,studiedEccentricites,studiedFreqs)
 % Assemble the response across eccentricity locations
 
 nCells = 3;
@@ -78,7 +74,7 @@ for ee = 1:length(studiedEccentricites)
     subP = [p(1) p(startIdx:startIdx+blockLength-1)];
 
     % Obtain the response at this eccentricity
-    [ttfAtEcc{ee},rfsAtEcc{ee}] = returnTTFAtEcc(subP,stimulusDirections,studiedEccentricites(ee),studiedFreqs,rgcTemporalModel);
+    [ttfAtEcc{ee},rfsAtEcc{ee}] = returnTTFAtEcc(subP,stimulusDirections,studiedEccentricites(ee),studiedFreqs);
 
 end
 

@@ -6,10 +6,6 @@ clear
 % Properties of which model to plot
 freqsForPlotting = logspace(0,2,50);
 
-% Load the RGC temporal model
-loadPath = fullfile(fileparts(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath')))))),'data','temporalModelResults','rgcTemporalModel.mat');
-load(loadPath,'rgcTemporalModel');
-
 % Load the MRI data
 mriData = loadMRIResponseData();
 
@@ -65,7 +61,7 @@ for whichSub = 1:length(subjects)
     pMRI = storedSearchSeeds(subjects{whichSub});
 
     % Get the modeled response
-    [response, rfsAtEcc] = returnResponse(pMRI,stimulusDirections,studiedEccentricites,freqsForPlotting,rgcTemporalModel);
+    [response, rfsAtEcc] = returnResponse(pMRI,stimulusDirections,studiedEccentricites,freqsForPlotting);
 
     % Prepare the figures
     figHandles = figure('Renderer','painters');
@@ -162,7 +158,7 @@ for whichSub = 1:length(subjects)
 end
 
 
-function [response,rfsAtEcc] = returnResponse(p,stimulusDirections,studiedEccentricites,studiedFreqs,rgcTemporalModel)
+function [response,rfsAtEcc] = returnResponse(p,stimulusDirections,studiedEccentricites,studiedFreqs)
 % Assemble the response across eccentricity locations
 
 nCells = 3;
@@ -176,7 +172,7 @@ for ee = 1:length(studiedEccentricites)
     subP = [p(1) p(startIdx:startIdx+blockLength-1)];
 
     % Obtain the response at this eccentricity
-    [ttfAtEcc{ee},rfsAtEcc{ee}] = returnTTFAtEcc(subP,stimulusDirections,studiedEccentricites(ee),studiedFreqs,rgcTemporalModel);
+    [ttfAtEcc{ee},rfsAtEcc{ee}] = returnTTFAtEcc(subP,stimulusDirections,studiedEccentricites(ee),studiedFreqs);
 
 end
 

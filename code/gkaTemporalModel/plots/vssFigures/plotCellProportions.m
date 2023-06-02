@@ -29,13 +29,13 @@ bistratifiedFraction = @(eccDeg) (eccDeg>0.5).*( pp(1).*eccDeg.^2+pp(2).*eccDeg+
 
 cellClass = {'midget','parasol','bistratified'};
 cellLine = {'-','--',':'};
-    x = logspace(log10(1),log10(90));
+x = logspace(log10(1),log10(90));
 
-    figHandle = figure('Renderer','painters');
-    figuresize(300,300,'pt');
-    tiledlayout(3,1,'TileSpacing','tight','Padding','tight')
+figHandle = figure('Renderer','painters');
+figuresize(300,300,'pt');
+tiledlayout(3,1,'TileSpacing','tight','Padding','tight')
 
-    nexttile
+nexttile
 for cc = 1:3
 
     % At each eccentricity, what fraction of the total number of RGCs is of a
@@ -90,6 +90,6 @@ ylabel('annular area');
 box off
 
 
-    plotNamesPDF = ['cellPopulationsIllo.pdf' ];
-    saveas(figHandle,fullfile(savePath,plotNamesPDF));
+plotNamesPDF = ['cellPopulationsIllo.pdf' ];
+saveas(figHandle,fullfile(savePath,plotNamesPDF));
 

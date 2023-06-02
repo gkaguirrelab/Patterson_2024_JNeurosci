@@ -14,10 +14,6 @@ resultFileName = 'cstResultsAvgROI.mat';
 % Load the Mt. Sinai data
 mriData = loadMRIResponseData();
 
-% Create the RGC temporal sensitivity model
-rgcTemporalModel = fitRGCFResponse(false,false);
-
-
 % The identities of the stims and subjects
 subjects = {'gka','asb'};
 stimulusDirections = {'LminusM','S','LMS'};
@@ -136,7 +132,7 @@ for whichSub = 1:nSubs
             end
 
             % Define the response function
-            myResponseMatrix = @(p) returnAvgResponse(p,stimulusDirections,interpFreqs,rgcTemporalModel);
+            myResponseMatrix = @(p) returnAvgResponse(p,stimulusDirections,interpFreqs);
 
             % Define the objective
             myObj = @(p) norm(vectorize(Winterp(:,1,:)).*(vectorize(Yinterp(:,1,:)) - vectorize(myResponseMatrix(p))));
@@ -147,9 +143,9 @@ for whichSub = 1:nSubs
         end % loop over searches
 
         % Define the response function integrated across eccentricity
-        myResponseMatrix = @(p) returnAvgResponse(p,stimulusDirections,studiedFreqs,rgcTemporalModel);
-        myResponseMatrixInterp = @(p) returnAvgResponse(p,stimulusDirections,interpFreqs,rgcTemporalModel);
-        myResponseMatrixPlot = @(p) returnAvgResponse(p,stimulusDirections,freqsForPlotting,rgcTemporalModel);
+        myResponseMatrix = @(p) returnAvgResponse(p,stimulusDirections,studiedFreqs);
+        myResponseMatrixInterp = @(p) returnAvgResponse(p,stimulusDirections,interpFreqs);
+        myResponseMatrixPlot = @(p) returnAvgResponse(p,stimulusDirections,freqsForPlotting);
         myObj = @(p) norm(vectorize(Winterp).*(vectorize(Yinterp) - vectorize(myResponseMatrixInterp(p))));
 
         % Get the response matrix and fVal
@@ -241,7 +237,7 @@ warning(warnstate);
 
 
 
-function response = returnAvgResponse(p,stimulusDirections,studiedFreqs,rgcTemporalModel)
+function response = returnAvgResponse(p,stimulusDirections,studiedFreqs)
 % Assemble the response across eccentricity locations
 
 % Define the eccentricity locations of the data. We use the log-mid point
@@ -258,7 +254,7 @@ thisTTF = {};
 parfor ee = 1:length(studiedEccentricites)
 
     % Obtain the response at this eccentricity
-    thisTTF{ee} = returnTTFAtEcc(p,stimulusDirections,studiedEccentricites(ee),studiedFreqs,rgcTemporalModel);
+    thisTTF{ee} = returnTTFAtEcc(p,stimulusDirections,studiedEccentricites(ee),studiedFreqs);
 
 end
 

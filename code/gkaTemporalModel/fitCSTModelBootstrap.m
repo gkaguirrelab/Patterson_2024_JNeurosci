@@ -34,7 +34,7 @@ nStims = length(stimulusDirections);
 
 % Fixed features of the model
 nAcqs = 12; nCells = 3; nParams = 3;
-nBoots = 2;
+nBoots = 100;
 
 % The "quality" parameter of the low-pass filter. In initial analyses we
 % found that using a quality ("Q") parameter of unity for the low-pass
@@ -96,6 +96,9 @@ p0 = [Q ...
 % Loop over bootstraps
 for bb = 1:nBoots
 
+    % Open the parpool (and do so silentlty within an evalc)
+    evalc('gcp()');
+
     % Get a sampling (with replacement) of the 12 acquisitions
     bootIdx = datasample(1:nAcqs,nAcqs);
 
@@ -104,6 +107,7 @@ for bb = 1:nBoots
 
         % Report that we are starting the search
         fprintf(['boot %d, subject = ' subjects{whichSub} ' ... '],bb);
+        tic
 
         % Load the data for this subject
         Y = zeros(nStims,nEccs,length(studiedFreqs));
@@ -189,7 +193,8 @@ for bb = 1:nBoots
         yPlot = myResponseMatrixPlot(p);
 
         % Report the result
-        fprintf(' fVal = %2.2f \n',fVal);
+        timeMins = round(toc()/60);
+        fprintf(' fVal = %2.2f, time [mins] = %d \n',fVal,timeMins);
 
         % Store it
         if ~isfield(results,subjects{whichSub})
@@ -208,16 +213,16 @@ for bb = 1:nBoots
         results.(subjects{whichSub}).Y{end+1} = Y;
         results.(subjects{whichSub}).W{end+1} = W;
         results.(subjects{whichSub}).yFit{end+1} = yFit;
-        results.(subjects{whichSub}).bootIdx = bootIdx;
+        results.(subjects{whichSub}).bootIdx{end+1} = bootIdx;
 
         % Save it
         save(resultFileName,'results')
 
     end
 
-    % Shut down the parpool to prevent memory leaks
-    poolobj = gcp('nocreate');
-    delete(poolobj);
+    % Shut down the parpool to prevent pseudo memory leaks that arise from
+    % the persistence of symbolic toolbox elements in the workers
+    evalc('delete(gcp(''nocreate''))');
 
     % Restore the warnstate
     warning(warnstate);

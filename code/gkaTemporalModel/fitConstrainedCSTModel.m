@@ -9,7 +9,8 @@ rng;
 verbose = true;
 sortParamsPriorToSearch = true;
 
-% Define where we will save the results
+% Define the source of the p0 values. By default, this is the result
+% obtained by fitting the model separately at each eccentricity.
 resultFileName = 'cstResults.mat';
 
 % Load the Mt. Sinai data
@@ -104,19 +105,6 @@ for whichSub = 1:nSubs
             Winterp(whichStim,eccIdx,:) = interp1(1:nEccs,squeeze(W(whichStim,eccIdx,:)),1:0.5:nEccs);
         end
     end
-
-    % We set the p0 seed to have a declining corner frequency across
-    % eccentricity, and a uniform value of the exponentiation term that
-    % varies by cell class. The gain values are adjusted to be in the
-    % appropriate range for each cell class.
-    p0 = [Q ...
-        30 1.5 0.1 20 0.5 10 60 1 1 ...
-        26 1.5 0.1 18 0.5 10 50 1 1 ...
-        22 1.5 0.1 16 0.5 10 40 1 1 ...
-        18 1.5 0.1 14 0.5 10 30 1 1 ...
-        14 1.5 0.1 12 0.5 10 20 1 1 ...
-        10 1.5 0.1 10 0.5 10 10 1 1 ...
-        ];
 
     % Use the result obtained from fitting individual eccentricities
     p0 = results.(subjects{whichSub}).p;

@@ -29,6 +29,7 @@ studiedEccentricites = eccDegBinEdges(4:2:14);
 subjects = {'gka','asb'};
 stimulusDirections = {'LminusM','S','LMS'};
 plotColor = {'r','b','k'};
+faceAlpha = 0.1; % Transparency of the shaded error region
 nSubs = length(subjects);
 nStims = length(stimulusDirections);
 
@@ -230,46 +231,82 @@ for bb = 1:nBoots
 end % loop over bootstraps
 
 
-% Plot fits
-figure
-Y = results.(subjects{whichSub}).Y;
-yFit = results.(subjects{whichSub}).yFit;
-for ee=1:6
-    for ss=1:nStims
-        subplot(nStims,nEccs,(ss-1)*nEccs + ee)
-        plot(log10(studiedFreqs),squeeze(Y(ss,ee,:)),'.k');
-        hold on
-        plot(log10(freqsForPlotting),squeeze(yPlot(ss,ee,:)),['-' plotColor{ss}]);
-        ylim([-2 6]);
-        refline(0,0);
+% Finish up and plot; loop over subjects
+for whichSub = 1:nSubs
+
+    % Get the mean and the 67% CI of the parameters
+    p = median(results.(subjects{whichSub}).p);
+    pSEM = std(results.(subjects{whichSub}).p);
+    Y = [];
+    for ii = 1:length(results.(subjects{whichSub}).Y)
+        Y(:,:,:,ii) = results.(subjects{whichSub}).Y{ii};
     end
+    YSEM = std(Y,0,4);
+    Y = median(Y,4);
+    yPlot = returnResponse(p,stimulusDirections,studiedEccentricites,freqsForPlotting);
+
+    % Plot fits
+    figure
+    for ee=1:6
+        for ss=1:nStims
+            subplot(nStims,nEccs,(ss-1)*nEccs + ee)
+
+            thisVec = squeeze(Y(ss,ee,:))';
+            thisSEM = squeeze(YSEM(ss,ee,:))';
+
+                        % Add a patch for the error
+            patch(...
+                [log10(studiedFreqs),fliplr(log10(studiedFreqs))],...
+                [ thisVec-thisSEM, fliplr(thisVec+thisSEM) ],...
+                plotColor{whichStim},'EdgeColor','none','FaceColor',plotColor{ss},'FaceAlpha',faceAlpha);
+            hold on
+
+            plot(log10(studiedFreqs),squeeze(Y(ss,ee,:)),'.k');
+            plot(log10(freqsForPlotting),squeeze(yPlot(ss,ee,:)),['-' plotColor{ss}]);
+            ylim([-2 6]);
+            refline(0,0);
+        end
+    end
+
+    % Plot params
+    figure
+    subLine = {'-','-'};
+    yLimSets = {[0 60],[0 2],[0 20]};
+    paramNames = {'corner Freq','exponent','gain'};
+    subP = reshape(p(2:end),nParams,nCells,nEccs);
+    subPSEM = reshape(pSEM(2:end),nParams,nCells,nEccs);
+    for pp = 1:nParams
+        subplot(1,nParams,pp)
+
+        for cc = 1:nCells
+
+            thisVec = squeeze(subP(pp,cc,:))';
+            thisSEM = squeeze(subPSEM(pp,cc,:))';
+
+            % Add a patch for the error
+            patch(...
+                [log10(studiedEccentricites),fliplr(log10(studiedEccentricites))],...
+                [ thisVec-thisSEM, fliplr(thisVec+thisSEM) ],...
+                plotColor{whichStim},'EdgeColor','none','FaceColor',plotColor{cc},'FaceAlpha',faceAlpha);
+            hold on
+            plot(log10(studiedEccentricites),thisVec,[subLine{whichSub} plotColor{cc}]);
+        end
+        title(paramNames{pp});
+        if pp == 2
+            refline(0,1);
+        end
+        if pp == 3
+            a = gca();
+            a.YScale = 'log';
+        end
+        ylim(yLimSets{pp});
+    end
+
 end
 
-% Plot params
-figure
-subLine = {'-','-'};
-yLimSets = {[0 60],[0 2],[0 20]};
-paramNames = {'corner Freq','exponent','gain'};
-for pp = 1:nParams
-    subplot(1,nParams,pp)
-    k = reshape(results.(subjects{whichSub}).p(2:end),3,3,6);
-    for ss = 1:nStims
-        plot(squeeze(k(pp,ss,:)),[subLine{whichSub} plotColor{ss}]);
-        hold on
-    end
-    title(paramNames{pp});
-    if pp == 2
-        refline(0,1);
-    end
-    ylim(yLimSets{pp});
-end
-
-drawnow
 
 
 %% LOCAL FUNCTIONS
-
-
 
 function response = returnResponse(p,stimulusDirections,studiedEccentricites,studiedFreqs)
 % Assemble the response across eccentricity locations

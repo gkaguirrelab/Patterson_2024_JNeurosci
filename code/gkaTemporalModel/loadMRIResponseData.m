@@ -105,6 +105,8 @@ for ss = 1:length(subjectNames)
                 % Filter the indices for goodness
                 goodIdx = logical( (results.R2 > r2Thresh) .* inRangeIdx );
 
+                sum(goodIdx)
+
                 % Loop through the frequencies and obtain the set of values
                 rawVals = cell(1,nFreqs);
                 for ff = 1:nFreqs

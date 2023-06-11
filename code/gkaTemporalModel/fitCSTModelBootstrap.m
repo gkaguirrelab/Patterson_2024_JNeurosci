@@ -35,7 +35,11 @@ nStims = length(stimulusDirections);
 
 % Fixed features of the model
 nAcqs = 12; nCells = 3; nParams = 3;
-nBoots = 100;
+
+% Control and plotting features
+nBoots = 0;
+ciRange = 0.67;
+
 
 % The "quality" parameter of the low-pass filter. In initial analyses we
 % found that using a quality ("Q") parameter of unity for the low-pass
@@ -137,8 +141,8 @@ for bb = 1:nBoots
         % frequencies
         for eccIdx = 1:nEccs
             for whichStim = 1:nStims
-                Yinterp(whichStim,eccIdx,:) = interp1(1:nEccs,squeeze(Y(whichStim,eccIdx,:)),1:0.5:nEccs);
-                Winterp(whichStim,eccIdx,:) = interp1(1:nEccs,squeeze(W(whichStim,eccIdx,:)),1:0.5:nEccs);
+                Yinterp(whichStim,eccIdx,:) = interp1(1:nFreqs,squeeze(Y(whichStim,eccIdx,:)),1:0.5:nFreqs);
+                Winterp(whichStim,eccIdx,:) = interp1(1:nFreqs,squeeze(W(whichStim,eccIdx,:)),1:0.5:nFreqs);
             end
         end
 
@@ -236,12 +240,18 @@ for whichSub = 1:nSubs
 
     % Get the mean and the 67% CI of the parameters
     p = median(results.(subjects{whichSub}).p);
-    pSEM = std(results.(subjects{whichSub}).p);
+    pMat = sort(results.(subjects{whichSub}).p);
+    idxLow = round(length(results.(subjects{whichSub}).Y) * (1-ciRange)/2);
+    idxHi = round(length(results.(subjects{whichSub}).Y) * (1-(1-ciRange)/2));
+    pLow = pMat(idxLow,:);
+    pHi = pMat(idxHi,:);
     Y = [];
     for ii = 1:length(results.(subjects{whichSub}).Y)
         Y(:,:,:,ii) = results.(subjects{whichSub}).Y{ii};
     end
-    YSEM = std(Y,0,4);
+    Y = sort(Y,4);
+    yLow = squeeze(Y(:,:,:,idxLow));
+    yHi = squeeze(Y(:,:,:,idxHi));
     Y = median(Y,4);
     yPlot = returnResponse(p,stimulusDirections,studiedEccentricites,freqsForPlotting);
 
@@ -252,13 +262,14 @@ for whichSub = 1:nSubs
             subplot(nStims,nEccs,(ss-1)*nEccs + ee)
 
             thisVec = squeeze(Y(ss,ee,:))';
-            thisSEM = squeeze(YSEM(ss,ee,:))';
+            thisLow = squeeze(yLow(ss,ee,:))';
+            thisHi = squeeze(yHi(ss,ee,:))';
 
                         % Add a patch for the error
             patch(...
                 [log10(studiedFreqs),fliplr(log10(studiedFreqs))],...
-                [ thisVec-thisSEM, fliplr(thisVec+thisSEM) ],...
-                plotColor{whichStim},'EdgeColor','none','FaceColor',plotColor{ss},'FaceAlpha',faceAlpha);
+                [ thisLow, fliplr(thisHi) ],...
+                plotColor{ss},'EdgeColor','none','FaceColor',plotColor{ss},'FaceAlpha',faceAlpha);
             hold on
 
             plot(log10(studiedFreqs),squeeze(Y(ss,ee,:)),'.k');
@@ -274,20 +285,22 @@ for whichSub = 1:nSubs
     yLimSets = {[0 60],[0 2],[0 20]};
     paramNames = {'corner Freq','exponent','gain'};
     subP = reshape(p(2:end),nParams,nCells,nEccs);
-    subPSEM = reshape(pSEM(2:end),nParams,nCells,nEccs);
+    subPlow = reshape(pLow(2:end),nParams,nCells,nEccs);
+    subPhi = reshape(pHi(2:end),nParams,nCells,nEccs);
     for pp = 1:nParams
         subplot(1,nParams,pp)
 
         for cc = 1:nCells
 
             thisVec = squeeze(subP(pp,cc,:))';
-            thisSEM = squeeze(subPSEM(pp,cc,:))';
+            thisLow = squeeze(subPlow(pp,cc,:))';
+            thisHi = squeeze(subPhi(pp,cc,:))';
 
             % Add a patch for the error
             patch(...
                 [log10(studiedEccentricites),fliplr(log10(studiedEccentricites))],...
-                [ thisVec-thisSEM, fliplr(thisVec+thisSEM) ],...
-                plotColor{whichStim},'EdgeColor','none','FaceColor',plotColor{cc},'FaceAlpha',faceAlpha);
+                [ thisLow, fliplr(thisHi) ],...
+                plotColor{cc},'EdgeColor','none','FaceColor',plotColor{cc},'FaceAlpha',faceAlpha);
             hold on
             plot(log10(studiedEccentricites),thisVec,[subLine{whichSub} plotColor{cc}]);
         end

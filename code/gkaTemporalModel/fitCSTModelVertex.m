@@ -131,7 +131,7 @@ for ss = 1:length(subjectNames)
     % symbolic toolbox
     nChunks = ceil(nGood/chunkSize);
 
-    for cc = 31:nChunks
+    for cc = 1:nChunks
 
         % Set the start and end points of the goodIdx we will process
         startIdx = (cc-1)*chunkSize + 1;
@@ -233,13 +233,13 @@ for ss = 1:length(subjectNames)
         end
 
         % Place the par loop results into a results file
-        fitResults.p(goodIdx(startIdx:endIdx),:) = cell2mat(par_p);
-        fitResults.fVal(goodIdx(startIdx:endIdx)) = cell2mat(par_fVal);
-        fitResults.Y(goodIdx(startIdx:endIdx)) = par_Y;
-        fitResults.yFit(goodIdx(startIdx:endIdx)) = par_yFit;
-        fitResults.eccDeg(goodIdx(startIdx:endIdx)) = cell2mat(par_eccDeg);
-        fitResults.polarAngle(goodIdx(startIdx:endIdx)) = cell2mat(par_polarAngle);
-        fitResults.area(goodIdx(startIdx:endIdx)) = cell2mat(par_area);
+        fitResults.p(goodIdx(startIdx:endIdx),:) = cell2mat(par_p(1:subChunk));
+        fitResults.fVal(goodIdx(startIdx:endIdx)) = cell2mat(par_fVal(1:subChunk));
+        fitResults.Y(goodIdx(startIdx:endIdx)) = par_Y(1:subChunk);
+        fitResults.yFit(goodIdx(startIdx:endIdx)) = par_yFit(1:subChunk);
+        fitResults.eccDeg(goodIdx(startIdx:endIdx)) = cell2mat(par_eccDeg(1:subChunk));
+        fitResults.polarAngle(goodIdx(startIdx:endIdx)) = cell2mat(par_polarAngle(1:subChunk));
+        fitResults.area(goodIdx(startIdx:endIdx)) = cell2mat(par_area(1:subChunk));
 
         % Save the results file for this subject
         filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_fit_results.mat']);

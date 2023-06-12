@@ -111,22 +111,27 @@ for ss = 1:length(subjectNames)
     goodIdx = find(logical( (results.R2 > r2Thresh) .* (vArea>0) .* (vArea<5) ));
     nGood = length(goodIdx);
 
-    % Initialize the fitResults
-    fitResults = [];
-    fitResults.p = nan(nVert,length(p0));
-    fitResults.fVal = nan(nVert,1);
-    fitResults.Y = cell(nVert,1);
-    fitResults.yFit = cell(nVert,1);
-    fitResults.eccDeg = nan(nVert,1);
-    fitResults.polarAngle = nan(nVert,1);
-    fitResults.area = nan(nVert,1);
+    % Initialize or load the fitResults
+    filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_fit_results.mat']);
+    if isfile(filePath)
+        load(filePath,'fitResults')
+    else
+        fitResults = [];
+        fitResults.p = nan(nVert,length(p0));
+        fitResults.fVal = nan(nVert,1);
+        fitResults.Y = cell(nVert,1);
+        fitResults.yFit = cell(nVert,1);
+        fitResults.eccDeg = nan(nVert,1);
+        fitResults.polarAngle = nan(nVert,1);
+        fitResults.area = nan(nVert,1);
+    end
 
     % We chunk the parpool search. This is because we need to occasionally
     % shut down the par pool and re-open it due to memory leaks from the
     % symbolic toolbox
     nChunks = ceil(nGood/chunkSize);
 
-    for cc = 1:nChunks
+    for cc = 31:nChunks
 
         % Set the start and end points of the goodIdx we will process
         startIdx = (cc-1)*chunkSize + 1;

@@ -95,7 +95,7 @@ r2Thresh = 0.1;
 
 
 %% Loop through subjects and fit each vertex
-for ss = 1:length(subjectNames)
+for ss = 2:length(subjectNames)
 
     % Load the results file for this subject
     filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_mtSinai_results.mat']);

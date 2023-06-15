@@ -10,7 +10,7 @@ freqsForPlotting = logspace(0,2,50);
 mriData = loadMRIResponseData();
 
 % Load the avgROI fits
-avgROIResultFile = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'cstResultsAvgROI.mat');
+avgROIResultFile = fullfile(fileparts(fileparts(mfilename('fullpath'))),'cstResultsAvgROI.mat');
 load(avgROIResultFile,'results');
 
 % Place to save figures

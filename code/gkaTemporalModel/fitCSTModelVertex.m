@@ -1,3 +1,5 @@
+% Validate the fit for vertex 53477 for subject GKA
+
 
 %% Housekeeping
 clear
@@ -91,11 +93,11 @@ LGNROI = cifti_read(tmpPath); LGNROI = LGNROI.cdata;
 
 % This is the threshold for the goodness of fit to the fMRI time-series
 % data. We only analyze those voxels with this quality fit or better
-r2Thresh = 0.1;
+r2Thresh = 0.2;
 
 
 %% Loop through subjects and fit each vertex
-for ss = 2:length(subjectNames)
+for ss = 1:length(subjectNames)
 
     % Load the results file for this subject
     filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_mtSinai_results.mat']);
@@ -107,8 +109,8 @@ for ss = 2:length(subjectNames)
     % Grab the stimLabels
     stimLabels = results.model.opts{find(strcmp(results.model.opts,'stimLabels'))+1};
 
-    % Find valid V1, V2, V3, or hV4 voxels
-    goodIdx = find(logical( (results.R2 > r2Thresh) .* (vArea>0) .* (vArea<5) ));
+    % Fit any voxel with an R2 fit above the threshold
+    goodIdx = find(logical( (results.R2 > r2Thresh) ));
     nGood = length(goodIdx);
 
     % Initialize or load the fitResults
@@ -131,7 +133,7 @@ for ss = 2:length(subjectNames)
     % symbolic toolbox
     nChunks = ceil(nGood/chunkSize);
 
-    for cc = 1:nChunks
+    for cc = 8:nChunks
 
         % Set the start and end points of the goodIdx we will process
         startIdx = (cc-1)*chunkSize + 1;
@@ -205,7 +207,7 @@ for ss = 2:length(subjectNames)
             myResponseMatrix = @(p) returnTTFAtEcc(p,stimulusDirections,eccDegThresh,interpFreqs,rfRetinal,[]);
 
             % Define the objective
-            myObj = @(p) norm(vectorize(Winterp).*(vectorize(Yinterp) - vectorize(myResponseMatrix(p))));
+            myObj = @(p) objFunc(p,Winterp,Yinterp,myResponseMatrix);
 
             % Turn off the warning
             warning('off','bads:pbUnspecified');
@@ -256,3 +258,21 @@ end
 % Restore the warnstate
 warning(warnstate);
 
+
+%% LOCAL FUNC
+
+function fVal = objFunc(p,Winterp,Yinterp,responseFunc)
+
+% Use the passed function to obtain the TTFs
+responseMatrix = responseFunc(p);
+
+% The weighted fit error
+fVal = norm(Winterp(:).* (Yinterp(:) - responseMatrix(:)));
+
+% Add a penalty if the TTF is rising at the lowest frequency. This is
+% invariably associated with a bad fit; we don't see vertices with this
+% behavior in practice.
+fVal = fVal + sum(diff(responseMatrix(:,1:2),1,2)<0)*1e6;
+
+
+end

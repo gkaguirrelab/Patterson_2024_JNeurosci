@@ -133,7 +133,7 @@ for ss = 1:length(subjectNames)
     % symbolic toolbox
     nChunks = ceil(nGood/chunkSize);
 
-    for cc = 8:nChunks
+    for cc = [1:7,23:nChunks]
 
         % Set the start and end points of the goodIdx we will process
         startIdx = (cc-1)*chunkSize + 1;

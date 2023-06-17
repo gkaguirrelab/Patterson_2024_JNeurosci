@@ -22,7 +22,8 @@ allFreqs = [0,2,4,8,16,32,64];
 studiedFreqs = [2 4 8 16 32 64];
 nFreqs = length(studiedFreqs);
 initialInterpFreqs = logspace(0,2,50);
-fineInterpFreqs = logspace(0,2,500);
+fineInterpFreqs = logspace(0.301,1.8062,500);
+freqsForPlotting = logspace(0,2,50);
 
 
 
@@ -46,7 +47,7 @@ templateImage = cifti_read(tmpPath);
 
 % This is the threshold for the goodness of fit to the fMRI time-series
 % data. We only analyze those voxels with this quality fit or better
-r2Thresh = 0.2;
+r2Thresh = 0.1;
 
 
 % Loop through subjects and fit each vertex
@@ -76,15 +77,15 @@ for ss = 1:length(subjectNames)
 
         % Find valid V1 voxels
         posRespIdx = zeros(size(results.R2));
-        posRespIdx(fitResults.fVal > 0) = cellfun(@(x) sum(x(whichStim,:))>0, fitResults.Y(fitResults.fVal > 0));
+        posRespIdx(fitResults.fVal > 0) = cellfun(@(x) sum(x(whichStim,:))>1, fitResults.Y(fitResults.fVal > 0));
 
-        goodIdx = find(logical( (results.R2 > r2Thresh) .* (vArea==1) .* (fitResults.fVal<5) .* posRespIdx  ));
+        goodIdx = find(logical( (results.R2 > r2Thresh) .* (vArea==1) .* (fitResults.fVal<Inf) .* posRespIdx  ));
         nGood = length(goodIdx);
 
         peakFreq = [];
         for gg = 1:nGood
 
-            k=interp1(freqsForPlotting,fitResults.yFit{goodIdx(gg)}(whichStim,:),fineInterpFreqs,'spline');
+            k=interp1(studiedFreqs,fitResults.Y{goodIdx(gg)}(whichStim,:),fineInterpFreqs,'spline');
             [~,idx]=max(k);
             peakFreq(gg) = fineInterpFreqs(idx);
 
@@ -107,10 +108,10 @@ for ss = 1:length(subjectNames)
         x(x<0) = 0;
         v = peakFreq(sortedIdx);
         plot(x,v,['.',stimPlotColors{whichStim}]);
-        hold on
-        sp = spaps(x,v,-150);
-        vq = fnval(sp,xq);
-        plot(xq,vq,['-' stimPlotColors{whichStim}],'LineWidth',3)
+       hold on
+       sp = spaps(x,v,-150);
+       vq = fnval(sp,xq);
+       plot(xq,vq,['-' stimPlotColors{whichStim}],'LineWidth',3)
 
             % save a peakFreq map
     newMap = templateImage;

@@ -38,7 +38,6 @@ nAcqs = 12; nCells = 3; nParams = 3;
 
 % Control and plotting features
 nBoots = 0;
-ciRange = 0.67;
 
 
 % The "quality" parameter of the low-pass filter. In initial analyses we
@@ -240,19 +239,18 @@ for whichSub = 1:nSubs
 
     % Get the mean and the 67% CI of the parameters
     p = median(results.(subjects{whichSub}).p);
+    pIQR = iqr(results.(subjects{whichSub}).p);
     pMat = sort(results.(subjects{whichSub}).p);
-    idxLow = round(length(results.(subjects{whichSub}).Y) * (1-ciRange)/2);
-    idxHi = round(length(results.(subjects{whichSub}).Y) * (1-(1-ciRange)/2));
-    pLow = pMat(idxLow,:);
-    pHi = pMat(idxHi,:);
+    pLow = p-pIQR/2;
+    pHi = p+pIQR/2;
     Y = [];
     for ii = 1:length(results.(subjects{whichSub}).Y)
         Y(:,:,:,ii) = results.(subjects{whichSub}).Y{ii};
     end
-    Y = sort(Y,4);
-    yLow = squeeze(Y(:,:,:,idxLow));
-    yHi = squeeze(Y(:,:,:,idxHi));
+    yIQR = iqr(Y,4);
     Y = median(Y,4);
+    yLow = Y - yIQR/2;
+    yHi = Y + yIQR/2;
     yPlot = returnResponse(p,stimulusDirections,studiedEccentricites,freqsForPlotting);
 
     % Plot fits

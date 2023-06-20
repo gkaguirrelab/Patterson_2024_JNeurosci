@@ -1,4 +1,5 @@
-% close all
+clear
+close all
 
 % Place to save figures
 savePath = '~/Desktop/VSS 2023/';
@@ -23,6 +24,9 @@ tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_angle.dtseries
 polarMap = cifti_read(tmpPath); polarMap = polarMap.cdata;
 tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_sigma.dtseries.nii');
 sigmaMap = cifti_read(tmpPath); sigmaMap = sigmaMap.cdata;
+
+% Visual area labels
+roiLabels = {'V1','V2','V3','hV4','VO1','VO2','V3a','V3b','LO1','LO2','IPS0','IPS1'};
 
 % Save a template map variable so we can create new maps below
 templateImage = cifti_read(tmpPath);
@@ -51,6 +55,7 @@ for ss = 1:length(subjectNames)
     filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_fit_results.mat']);
     load(filePath,'fitResults')
 
+
     % Loop over stimulus directions and create a map of the peak frequency
     for whichStim = 1:3
 
@@ -58,6 +63,15 @@ for ss = 1:length(subjectNames)
         % direction
         posRespIdx = zeros(size(results.R2));
         posRespIdx(fitResults.eccDeg > 0) = cellfun(@(x) sum(x(whichStim,:))>1, fitResults.Y(fitResults.eccDeg > 0));
+
+        % Get the median peak freq by area
+        for vv = 1:12
+            goodIdx = find(logical( (results.R2 > r2Thresh) .* posRespIdx .* (vArea == vv)  ));
+            peakFreq = cellfun(@(x) x(whichStim),fitResults.peakFreq(goodIdx));
+            peakFreq(peakFreq == 1) = nan;
+            peakFreq(peakFreq > 40) = nan;
+            freqByROI(ss,whichStim,vv) = median(peakFreq,'omitmissing');           
+        end
 
         % Identify those voxels with a positive response and an overall R2
         % of greater than the threshold

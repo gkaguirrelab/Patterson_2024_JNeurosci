@@ -92,7 +92,7 @@ for ss = 1:length(subjectNames)
         v = v(sortedIdx);
         plot(x,v,['.',stimPlotColors{whichStim}]);
         hold on
-        sp = spaps(x,v,-150);
+        sp = spaps(x,v,-100);
         vq = fnval(sp,xq);
         plot(xq,vq,['-' stimPlotColors{whichStim}],'LineWidth',3)
 

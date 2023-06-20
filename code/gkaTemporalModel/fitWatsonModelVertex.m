@@ -31,12 +31,6 @@ studiedFreqs = [2 4 8 16 32 64];
 nFreqs = length(studiedFreqs);
 interpFreqs = logspace(log10(1),log10(100),501);
 
-% fmincon Options. Indicate that the objective function is deterministic,
-% and handle verbosity
-options = optimoptions('fmincon');
-options.Display = 'none';
-
-
 %% Download Mt Sinai results
 % This script downloads the "results" files Flywheel and
 % extracts BOLD fMRI response amplitudes for each of the stimulus temporal
@@ -60,9 +54,15 @@ sigmaMap = cifti_read(tmpPath); sigmaMap = sigmaMap.cdata;
 tmpPath = fullfile(localDataDir,'retinoFiles','LGN_bilateral.dtseries.nii');
 LGNROI = cifti_read(tmpPath); LGNROI = LGNROI.cdata;
 
+% fmincon Options. Indicate that the objective function is deterministic,
+% and handle verbosity
+options = optimoptions('fmincon');
+options.Display = 'none';
+
 % Set some bounds
-LB = [0 1e-6 1e-6 1e-6];
-UB = [100 100 100 100];
+LB = [0 1 0.5 0.5];
+UB = [5 10 3 3];
+p0 = [1.5 5 1 1.5];
 
 %% Loop through subjects and fit each vertex
 for ss = 1:length(subjectNames)
@@ -130,7 +130,7 @@ for ss = 1:length(subjectNames)
             myObj = @(p) norm( W(dd,:) .* ( Y(dd,:) - p(1)*watsonTemporalModel(studiedFreqs,p(2:end))));
 
             % Fit it
-            [p(dd,:),fVal(dd)] = fmincon(myObj,[1 4 2 1],[],[],[],[],LB,UB,[],options);
+            [p(dd,:),fVal(dd)] = fmincon(myObj,p0,[],[],[],[],LB,UB,[],options);
 
             % Determine the proportion variance explained
             maxfVal = norm( W(dd,:) .* ( Y(dd,:) ));

@@ -2,6 +2,7 @@
 
 % Housekeeping
 clear
+close all
 
 % Properties of which model to plot
 freqsForPlotting = logspace(0,2,50);
@@ -29,6 +30,8 @@ nCells = 3; nParams = 3;
 
 % The frequencies studied
 studiedFreqs = [2 4 8 16 32 64];
+interpFreqs = logspace(log10(1),log10(100),501);
+
 
 % Params that allows the plots to appear in the order LMS, L-M, S
 stimOrder = [2 3 1];
@@ -42,6 +45,19 @@ shift_ttf = [7 10 13]; % shifts each ttf down so they can be presented tightly o
 roiNames = {'lgn','v1_avg','v2v3_avg'};
 nROIs = length(roiNames);
 nAcqs = 12;
+
+% fmincon Options. Indicate that the objective function is deterministic,
+% and handle verbosity
+options = optimoptions('fmincon');
+options.Display = 'none';
+
+optionsBADS.UncertaintyHandling = 0;
+optionsBADS.Display = 'off';
+
+% Set some bounds
+LB = [0 1 0.5 0.5];
+UB = [5 10 3 3];
+p0 = [1.5 5 1 1.5];
 
 % Loop over subjects
 for whichSub = 1:length(subjects)
@@ -57,17 +73,11 @@ for whichSub = 1:length(subjects)
         % Load the data
         Y = zeros(nStims,length(studiedFreqs));
         Ysem = zeros(nStims,length(studiedFreqs));
-            for whichStim = 1:nStims
-                thisMatrix = mriData.(subjects{whichSub}).(stimulusDirections{whichStim}).(roiNames{rr});
-                Y(whichStim,:) = mean(thisMatrix);
-                Ysem(whichStim,:) = std(thisMatrix)/sqrt(nAcqs);
-            end
-
-        % Get the p0 params for this subject
-        p = results.(subjects{whichSub}).(roiNames{rr}).p;
-
-        % Get the modeled response
-        response = returnAvgResponse(p,stimulusDirections,freqsForPlotting);
+        for whichStim = 1:nStims
+            thisMatrix = mriData.(subjects{whichSub}).(stimulusDirections{whichStim}).(roiNames{rr});
+            Y(whichStim,:) = mean(thisMatrix);
+            Ysem(whichStim,:) = std(thisMatrix)/sqrt(nAcqs);
+        end
 
         % Loop over stimuli and plot
         for whichStim = 1:nStims
@@ -77,6 +87,15 @@ for whichSub = 1:length(subjects)
             YsemThisROI = squeeze(Ysem(whichStim,:));
             YThisROIlow = YThisROI - YsemThisROI;
             YThisROIhigh = YThisROI + YsemThisROI;
+
+            % The weighted objective
+            myObj = @(p) norm( (1./YsemThisROI) .* ( YThisROI - p(1)*watsonTemporalModel(studiedFreqs,p(2:end))));
+
+            % Fit it
+            p = fmincon(myObj,p0,[],[],[],[],LB,UB,[],options);
+
+            % Get the fitted response
+            yFit = p(1)*watsonTemporalModel(freqsForPlotting,p(2:end));
 
             % Select the plot of the correct stimulus direction
             nexttile(stimOrder(whichStim));
@@ -100,7 +119,7 @@ for whichSub = 1:length(subjects)
                 'MarkerSize',6,'MarkerEdgeColor',lineColor{stimOrder(whichStim)},'LineWidth',1);
 
             % Add the model fit
-            plot(log10(freqsForPlotting),squeeze(response(whichStim,:))-shift_ttf(rr),...
+            plot(log10(freqsForPlotting),yFit-shift_ttf(rr),...
                 ['-' lineColor{stimOrder(whichStim)}],...
                 'LineWidth',2);
 
@@ -136,7 +155,7 @@ for whichSub = 1:length(subjects)
     end
 
     % Save the plots
-    plotNamesPDF = [subjects{whichSub} '_avgROIResponses_withModel.pdf' ];
+    plotNamesPDF = [subjects{whichSub} '_avgROIResponses_withWatsonModel.pdf' ];
     saveas(figHandles,fullfile(savePath,plotNamesPDF));
 
 end
@@ -144,44 +163,4 @@ end
 
 
 
-
-function response = returnAvgResponse(p,stimulusDirections,studiedFreqs)
-% Assemble the response across eccentricity locations
-
-% Define the eccentricity locations of the data. We use the log-mid point
-% within each of the V1 cortical bins
-nEccs = 5;
-studiedEccentricites = linspace(2,64,nEccs);
-
-% Fixed params of the analysis
-nCells = 3;
-nParams = 3;
-
-% Loop over the passed eccentricities
-thisTTF = {};
-parfor ee = 1:length(studiedEccentricites)
-
-    % Obtain the response at this eccentricity
-    thisTTF{ee} = returnTTFAtEcc(p,stimulusDirections,studiedEccentricites(ee),studiedFreqs);
-
-end
-
-% Obtain the sum across eccentricities
-for ee = 1:length(studiedEccentricites)
-    response(ee,:,:) = thisTTF{ee};
-end
-response = squeeze(mean(response,1));
-
-% Detect if the response is not band pass and in that case make it a
-% bad fit so that we avoid finding these solutions
-for ss = 1:length(stimulusDirections)
-    [~,idx] = max(response(ss,:));
-    if idx < 4
-        response(ss,:) = 100;
-    end
-end
-
-
-
-end
 

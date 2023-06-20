@@ -52,12 +52,10 @@ shift_ttf = [0 3 6 9 11 13]; % shifts each ttf down so they can be presented tig
 % Loop over subjects
 for whichSub = 1:length(subjects)
 
-    % Get the mean and the IQR of the parameters
+    % Get the median of the bootstrap parameters
     p = median(results.(subjects{whichSub}).p);
-    pIQR = iqr(results.(subjects{whichSub}).p);
-    pMat = sort(results.(subjects{whichSub}).p);
-    pLow = p-pIQR/2;
-    pHi = p+pIQR/2;
+
+    % Get the y-values across bootstraps
     Y = [];
     for ii = 1:length(results.(subjects{whichSub}).Y)
         Y(:,:,:,ii) = results.(subjects{whichSub}).Y{ii};

@@ -1,4 +1,4 @@
-function response = returnFitAcrossEccen(p,stimulusDirections,studiedEccentricites,studiedFreqs)
+function [response,rfsAtEcc] = returnFitAcrossEccen(p,stimulusDirections,studiedEccentricites,studiedFreqs)
 % Assemble the response across eccentricity locations
 
 % Fixed params of the analysis
@@ -13,7 +13,7 @@ for ee = 1:length(studiedEccentricites)
     subP = p(idx);
 
     % Obtain the response at this eccentricity
-    thisTTF = returnTTFAtEcc(subP,stimulusDirections,studiedEccentricites(ee),studiedFreqs);
+    [thisTTF,rfsAtEcc{ee}] = returnTTFAtEcc(subP,stimulusDirections,studiedEccentricites(ee),studiedFreqs);
 
     % Detect if the response is not band pass and in that case make it a
     % bad fit so that we avoid finding these solutions

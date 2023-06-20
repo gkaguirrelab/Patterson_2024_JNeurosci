@@ -61,7 +61,7 @@ r2Thresh = 0.1;
 
 
     % Loop over stimulus directions and create a map of the peak frequency
-    for whichStim = 1:3
+    for whichStim = [3 1 2]
 
         % Find those vertices that had a positive response to this stimulus
         % direction

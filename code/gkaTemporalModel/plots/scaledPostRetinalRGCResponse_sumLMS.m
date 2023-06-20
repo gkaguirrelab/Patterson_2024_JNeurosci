@@ -35,11 +35,10 @@ faceAlpha = 0.4; % Transparency of the shaded error region
 shift_ttf = [0 3 6 9 11 13]; % shifts each ttf down so they can be presented tightly on the same figure
 
 % Create a p vector that produces no post-retinal modification
-
 pMRI = [1 repmat([200 1 0.15],1,nCells*nEccs)];
 
 % Get the modeled response
-[response, rfsAtEcc] = returnResponse(pMRI,stimulusDirections,studiedEccentricites,freqsForPlotting);
+response = returnFitAcrossEccen(pMRI,stimulusDirections,studiedEccentricites,freqsForPlotting);
 
 % Prepare the figures
 figHandles = figure('Renderer','painters');
@@ -100,29 +99,3 @@ end
 plotNamesPDF = 'scaledPostRetinalResponseModel_sumLMS.pdf';
 saveas(figHandles,fullfile(savePath,plotNamesPDF));
 
-
-
-function [response,rfsAtEcc] = returnResponse(p,stimulusDirections,studiedEccentricites,studiedFreqs)
-% Assemble the response across eccentricity locations
-
-nCells = 3;
-nParams = 3;
-blockLength = nParams*nCells;
-
-for ee = 1:length(studiedEccentricites)
-
-    % Assemble the sub parameters
-    startIdx = (ee-1)*blockLength + 1 + 1;
-    subP = [p(1) p(startIdx:startIdx+blockLength-1)];
-
-    % Obtain the response at this eccentricity
-    [ttfAtEcc{ee},rfsAtEcc{ee}] = returnTTFAtEcc(subP,stimulusDirections,studiedEccentricites(ee),studiedFreqs);
-
-end
-
-% Reshape the responses into the dimension stim x ecc x freqs
-for ee = 1:length(studiedEccentricites)
-    response(:,ee,:) = ttfAtEcc{ee};
-end
-
-end

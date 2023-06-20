@@ -12,6 +12,12 @@ mriData = loadMRIResponseData();
 % Place to save figures
 savePath = '~/Desktop/VSS 2023/';
 
+% Load the model fitting results
+prefs.verbose = false;
+projectDir = tbLocateProject('mriSinaiAnalysis',prefs);
+resultFilePath = fullfile(projectDir,'data','cstResultsBootstrap.mat');
+load(resultFilePath,'results');
+
 % Define the eccentricity locations of the data. We use the log-mid point
 % within each of the V1 cortical bins
 nEccs = 6;
@@ -46,22 +52,24 @@ shift_ttf = [0 3 6 9 11 13]; % shifts each ttf down so they can be presented tig
 % Loop over subjects
 for whichSub = 1:length(subjects)
 
-    % Load the data
-    Y = zeros(nStims,nEccs,length(studiedFreqs));
-    W = zeros(nStims,nEccs,length(studiedFreqs));
-    for eccIdx = 1:nEccs
-        for whichStim = 1:nStims
-            thisMatrix = mriData.(subjects{whichSub}).(stimulusDirections{whichStim}).(['v1_ecc' num2str(eccIdx)]);
-            Y(whichStim,eccIdx,:) = mean(thisMatrix);
-            W(whichStim,eccIdx,:) = 1./std(thisMatrix);
-        end
-    end
 
-    % Get the p0 params for this subject
-    pMRI = storedSearchSeeds(subjects{whichSub});
+    % Get the median of the bootstrap parameters
+    p = median(results.(subjects{whichSub}).p);
+
+    % Get the y-values across bootstraps
+    Y = [];
+    for ii = 1:length(results.(subjects{whichSub}).Y)
+        Y(:,:,:,ii) = results.(subjects{whichSub}).Y{ii};
+    end
+    yIQR = iqr(Y,4);
+    Y = median(Y,4);
+    yLow = Y - yIQR/2;
+    yHi = Y + yIQR/2;
+    yPlot = returnFitAcrossEccen(p,stimulusDirections,studiedEccentricites,freqsForPlotting);
+
 
     % Get the modeled response
-    [response, rfsAtEcc] = returnResponse(pMRI,stimulusDirections,studiedEccentricites,freqsForPlotting);
+    [response, rfsAtEcc] = returnFitAcrossEccen(p,stimulusDirections,studiedEccentricites,freqsForPlotting);
 
     % Prepare the figures
     figHandles = figure('Renderer','painters');
@@ -76,30 +84,11 @@ for whichSub = 1:length(subjects)
 
             % Assemble the data
             v1YThisEcc = squeeze(Y(whichStim,ee,:))';
-            v1WThisEcc = squeeze(W(whichStim,ee,:))'/sqrt(nAcqs);
-            v1YThisEcclow = v1YThisEcc - v1WThisEcc;
-            v1YThisEcchigh = v1YThisEcc + v1WThisEcc;
+            v1YThisEcclow = squeeze(yLow(whichStim,ee,:))';
+            v1YThisEcchigh = squeeze(yHi(whichStim,ee,:))';
 
             % Select the plot of the correct stimulus direction
             nexttile(stimOrder(whichStim));
-
-            % % Add a patch for the error
-            % patch(...
-            %     [log10(studiedFreqs),fliplr(log10(studiedFreqs))],...
-            %     [ v1YThisEcclow-shift_ttf(ee), fliplr(v1YThisEcchigh)-shift_ttf(ee) ],...
-            %     plotColor{whichStim},'EdgeColor','none','FaceColor',plotColor{stimOrder(whichStim)},'FaceAlpha',faceAlpha);
-            % hold on
-            % 
-            % % Add the data symbols, using reversed markers for values below
-            % % zero
-            % idx = v1YThisEcc > 0;
-            % plot(log10(studiedFreqs(idx)),v1YThisEcc(idx)-shift_ttf(ee),...
-            %     'o','MarkerFaceColor',lineColor{stimOrder(whichStim)},...
-            %     'MarkerSize',6,'MarkerEdgeColor','w','LineWidth',1);
-            % idx = v1YThisEcc < 0;
-            % plot(log10(studiedFreqs(idx)),v1YThisEcc(idx)-shift_ttf(ee),...
-            %     'o','MarkerFaceColor','w',...
-            %     'MarkerSize',6,'MarkerEdgeColor',lineColor{stimOrder(whichStim)},'LineWidth',1);
 
             % Add the model fit
             % If this is LMS, show the separate midget and parasol components
@@ -160,28 +149,3 @@ for whichSub = 1:length(subjects)
 
 end
 
-
-function [response,rfsAtEcc] = returnResponse(p,stimulusDirections,studiedEccentricites,studiedFreqs,rgcTemporalModel)
-% Assemble the response across eccentricity locations
-
-nCells = 3;
-nParams = 3;
-blockLength = nParams*nCells;
-
-for ee = 1:length(studiedEccentricites)
-
-    % Assemble the sub parameters
-    startIdx = (ee-1)*blockLength + 1 + 1;
-    subP = [p(1) p(startIdx:startIdx+blockLength-1)];
-
-    % Obtain the response at this eccentricity
-    [ttfAtEcc{ee},rfsAtEcc{ee}] = returnTTFAtEcc(subP,stimulusDirections,studiedEccentricites(ee),studiedFreqs);
-
-end
-
-% Reshape the responses into the dimension stim x ecc x freqs
-for ee = 1:length(studiedEccentricites)
-    response(:,ee,:) = ttfAtEcc{ee};
-end
-
-end

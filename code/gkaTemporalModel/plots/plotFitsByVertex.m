@@ -94,6 +94,7 @@ for ss = 1:length(subjectNames)
         newMap = templateImage;
         newMap.cdata = single(zeros(size(fitResults.fVal)));
         newMap.cdata(goodIdx) = single(peakFreq(goodIdx));
+        newMap = ciftiMakePseudoHemi(newMap);
         fileOut = fullfile(savePath,[subjectNames{ss} '_' stimulusDirections{whichStim} '_peakFreq.dtseries.nii']);
         cifti_write(newMap, fileOut);
 

@@ -11,24 +11,6 @@ stimPlotColors = {'r','b','k'};
 nSubs = length(subjects);
 nStims = length(stimulusDirections);
 
-% Fixed features of the model
-nAcqs = 12; nCells = 3; nParams = 3;
-
-% The frequencies studied. We also define a set of interpolated frequencies
-% so that the model fit does not wiggle too much in between the studied
-% frequencies. Finally, we define a high-resolution set of the frequencies
-% for plotting.
-allFreqs = [0,2,4,8,16,32,64];
-studiedFreqs = [2 4 8 16 32 64];
-nFreqs = length(studiedFreqs);
-initialInterpFreqs = logspace(0,2,50);
-fineInterpFreqs = logspace(0.301,1.8062,500);
-freqsForPlotting = logspace(0,2,50);
-
-
-
-% Download Mt Sinai results
-
 % Define the localSaveDir
 localDataDir = fullfile(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath'))))),'data');
 
@@ -53,9 +35,14 @@ r2Thresh = 0.1;
 % Loop through subjects and fit each vertex
 for ss = 1:length(subjectNames)
 
+    figure
+
     % Load the results file for this subject
     filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_mtSinai_results.mat']);
     load(filePath,'results')
+
+        % How many vertices total?
+    nVert = length(results.fVal);
 
     % Grab the stimLabels
     stimLabels = results.model.opts{find(strcmp(results.model.opts,'stimLabels'))+1};
@@ -64,111 +51,53 @@ for ss = 1:length(subjectNames)
     filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_fit_results.mat']);
     load(filePath,'fitResults')
 
-    % Create a map of the fVal fit
-    newMap = templateImage;
-    newMap.cdata = single(fitResults.fVal);
-    fileOut = fullfile(savePath,[subjectNames{ss} '_fVal.dtseries.nii']);
-    cifti_write(newMap, fileOut);
-
-    figure
-
-    % Loop over stimulus directions
+    % Loop over stimulus directions and create a map of the peak frequency
     for whichStim = 1:3
 
-        % Find valid V1 voxels
+        % Find those vertices that had a positive response to this stimulus
+        % direction
         posRespIdx = zeros(size(results.R2));
-        posRespIdx(fitResults.fVal > 0) = cellfun(@(x) sum(x(whichStim,:))>1, fitResults.Y(fitResults.fVal > 0));
+        posRespIdx(fitResults.eccDeg > 0) = cellfun(@(x) sum(x(whichStim,:))>1, fitResults.Y(fitResults.eccDeg > 0));
 
-        goodIdx = find(logical( (results.R2 > r2Thresh) .* (vArea==1) .* (fitResults.fVal<Inf) .* posRespIdx  ));
+        % Identify those voxels with a positive response and an overall R2
+        % of greater than the threshold
+        goodIdx = find(logical( (results.R2 > r2Thresh) .* posRespIdx  ));
         nGood = length(goodIdx);
 
-        peakFreq = [];
-        for gg = 1:nGood
+        % Extract the peak frequency for these vertices
+        peakFreq = nan(nVert,1);
+        peakFreq(goodIdx) = cellfun(@(x) x(whichStim),fitResults.peakFreq(goodIdx));
 
-            k=interp1(studiedFreqs,fitResults.Y{goodIdx(gg)}(whichStim,:),fineInterpFreqs,'spline');
-            [~,idx]=max(k);
-            peakFreq(gg) = fineInterpFreqs(idx);
+        % Filter the mis-fit vertices in which the max or minimum frequency
+        % was identified
+        peakFreq(peakFreq == 1) = nan;
+        peakFreq(peakFreq > 40) = nan;
 
-            if whichStim == 3 && peakFreq(gg) > 25
-                foo = 1;
-                %{
-                fitResults.fVal(goodIdx(gg))
-                hold off               
-                plot(log10(studiedFreqs),fitResults.Y{goodIdx(gg)}','*')
-                hold on
-                 plot(log10(initialInterpFreqs),fitResults.yFit{goodIdx(gg)}','-')
-                %}
-            end
+        % Update the goodIdx
+        goodIdx = find(~isnan(peakFreq));
 
-        end
+        % save a peakFreq map
+        newMap = templateImage;
+        newMap.cdata = single(zeros(size(fitResults.fVal)));
+        newMap.cdata(goodIdx) = single(peakFreq(goodIdx));
+        fileOut = fullfile(savePath,[subjectNames{ss} '_' stimulusDirections{whichStim} '_peakFreq.dtseries.nii']);
+        cifti_write(newMap, fileOut);
 
+        % Plot freq vs eccentricity
         x = log10(fitResults.eccDeg(goodIdx));
+        x(x<0)=0;
         [x, sortedIdx] = sort(x);
         xq = 0:0.01:1.8;
-        x(x<0) = 0;
-        v = peakFreq(sortedIdx);
+        v = peakFreq(goodIdx);
+        v = v(sortedIdx);
         plot(x,v,['.',stimPlotColors{whichStim}]);
-       hold on
-       sp = spaps(x,v,-150);
-       vq = fnval(sp,xq);
-       plot(xq,vq,['-' stimPlotColors{whichStim}],'LineWidth',3)
-
-            % save a peakFreq map
-    newMap = templateImage;
-    newMap.cdata = single(zeros(size(fitResults.fVal)));
-    newMap.cdata(goodIdx) = single(peakFreq);
-    fileOut = fullfile(savePath,[subjectNames{ss} '_' stimulusDirections{whichStim} '_peakFreq.dtseries.nii']);
-    cifti_write(newMap, fileOut);
+        hold on
+        sp = spaps(x,v,-150);
+        vq = fnval(sp,xq);
+        plot(xq,vq,['-' stimPlotColors{whichStim}],'LineWidth',3)
 
 
     end
-
-    %
-    %
-    % % Get the peak temporal freququency for the interpolated fit at each
-    % % vertex
-    % k = cell2mat(cellfun(@(x) interpFreqs(find(((x' == max(x'))))-[0; 50; 100]),fitResults.yFit(goodIdx),'UniformOutput',false));
-    %
-    % figure
-    % x = log10(fitResults.eccDeg(goodIdx));
-    % [x, sortedIdx] = sort(x);
-    % xq = 0:0.01:1.8;
-    % x(x<0) = 0;
-    %      v = k(:,whichStim);
-    %     v = v(sortedIdx);
-    %     plot(x,v,['.',stimPlotColors{whichStim}]);
-    %     hold on
-    %         sp = spaps(x,v,-150);
-    %         vq = fnval(sp,xq);
-    %         plot(xq,vq,['-' stimPlotColors{whichStim}],'LineWidth',3)
-    % end
-    %
-    % % Plot params
-    % figure
-    % paramNames = {'corner Freq','exponent','gain'};
-    % sTol = [-100 -100 -1500];
-    % for pp = 1:nParams
-    %     subplot(1,nParams,pp)
-    %
-    %     for cc = 1:nCells
-    %         v = fitResults.p(goodIdx,3*(cc-1)+pp+1);
-    %         v = v(sortedIdx);
-    %         plot(x,v,['.' stimPlotColors{cc}]);
-    %         hold on
-    %         sp = spaps(x,v,sTol(pp));
-    %         vq = fnval(sp,xq);
-    %         plot(xq,vq,['-' stimPlotColors{cc}],'LineWidth',3)
-    %
-    %     end
-    %     title(paramNames{pp});
-    %     if pp == 2
-    %         refline(0,1);
-    %     end
-    %     if pp == 3
-    %         a = gca();
-    %         a.YScale = 'log';
-    %     end
-    % end
 
 
 end

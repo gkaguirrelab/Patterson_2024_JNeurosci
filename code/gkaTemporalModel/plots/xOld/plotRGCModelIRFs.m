@@ -1,18 +1,17 @@
 % plotRGCModelComponents
 
 % Where to save figures
-savePath = fullfile('~','Desktop','mtSinaiTemporalModelPlots','rgcModelIRFs');
+savePath = fullfile('~','Desktop','VSS 2023');
 
 % Load the RGC temporal model
-loadPath = fullfile(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath'))))),'data','temporalModelResults','rgcTemporalModel.mat');
-load(loadPath,'rgcTemporalModel');
+rgcTemporalModel = fitRGCFResponse();
 
 % Pick an eccentricity, cell, and stimulus direction
 eccDeg = 20.5;
 cellClass = 'midget';
 stimulusDirection = 'LMS';
 stimulusContrastScale = returnStimulusContrastScale(cellClass,stimulusDirection);
-[rfPostRetinal, rfRGC, rfBipolar, rfCone] = returnPostRetinalRF(cellClass,stimulusDirection,rgcTemporalModel,eccDeg,stimulusContrastScale);
+[rfPostRetinal, rfRGC, rfBipolar, rfCone] = returnRetinalRF(cellClass,stimulusDirection,rgcTemporalModel,eccDeg,stimulusContrastScale);
 
 % Plot the cell IRFs
 figHandle = figure();

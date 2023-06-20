@@ -9,6 +9,7 @@ subjectNames = {'HEROgka1','HEROasb1'};
 subjects = {'gka','asb'};
 stimulusDirections = {'LminusM','S','LMS'};
 stimPlotColors = {'r','b','k'};
+stimAlphas = [0.05 0.05 0.1];
 nSubs = length(subjects);
 nStims = length(stimulusDirections);
 
@@ -36,16 +37,19 @@ templateImage = cifti_read(tmpPath);
 r2Thresh = 0.1;
 
 
-% Loop through subjects and fit each vertex
-for ss = 1:length(subjectNames)
+    % Prepare the figures
+    figHandle = figure('Renderer','painters');
+    figuresize(200,400,'pt');
+    tiledlayout(2,1,'TileSpacing','tight','Padding','tight')
 
-    figure
+% Loop through subjects and fit each vertex
+    for ss = 1:length(subjectNames)
 
     % Load the results file for this subject
     filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_mtSinai_results.mat']);
     load(filePath,'results')
 
-        % How many vertices total?
+    % How many vertices total?
     nVert = length(results.fVal);
 
     % Grab the stimLabels
@@ -98,22 +102,44 @@ for ss = 1:length(subjectNames)
         fileOut = fullfile(savePath,[subjectNames{ss} '_' stimulusDirections{whichStim} '_peakFreq.dtseries.nii']);
         cifti_write(newMap, fileOut);
 
-        % Plot freq vs eccentricity
+        % Plot freq vs eccentricity for V1
+        nexttile(ss);
+        goodIdx = find(logical( (results.R2 > r2Thresh) .* posRespIdx .* ~isnan(peakFreq) .* (vArea == 1)  ));
         x = log10(fitResults.eccDeg(goodIdx));
-        x(x<(-1.5))=-1.5;
+        x(x<0)=x(x<0)/10;
         [x, sortedIdx] = sort(x);
-        xq = 0:0.01:1.8;
         v = peakFreq(goodIdx);
         v = v(sortedIdx);
-        plot(x,v,['.',stimPlotColors{whichStim}]);
+        pHandle=scatter(x,v,10,'w','o',...
+            'MarkerEdgeColor','none','MarkerFaceColor',stimPlotColors{whichStim},...
+            'MarkerFaceAlpha',stimAlphas(whichStim));
+
         hold on
         x(x<0)=0;
-        sp = spaps(x,v,-100);
+        % bin x and get median v in each bin
+        nBins = 30;
+        [binIdx,edges] = discretize(x,nBins);
+        binCenters = edges(1:end-1)+diff(edges)/2;
+        for ii = 1:nBins
+            binV(ii) = median(v(binIdx==ii));
+        end
+        sp = spaps(binCenters,binV,-750);
+        xq = binCenters(1):0.01:1.8;
         vq = fnval(sp,xq);
-        plot(xq,vq,['-' stimPlotColors{whichStim}],'LineWidth',3)
-
-
+        plot(xq,vq,['-' stimPlotColors{whichStim}],'LineWidth',1.5)
+        a = gca();
+        xTickVals = [1,2.5,5,10,20,40,80];
+        xTickLabels = {'<1','2.5','5','10','20','40','80'};
+        a.XTick = log10(xTickVals);
+        a.XTickLabels = xTickLabels;
+        xlim([-0.2 2.0]);
+        xlabel('Eccentricity [deg]');
+        ylabel('Peak frequency [Hz]');
+        box off
     end
 
-
 end
+
+plotNamesPDF = 'freqByVertexEccen.pdf';
+saveas(figHandle,fullfile(savePath,plotNamesPDF));
+

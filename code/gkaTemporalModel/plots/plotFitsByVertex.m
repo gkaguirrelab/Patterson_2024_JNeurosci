@@ -99,13 +99,14 @@ for ss = 1:length(subjectNames)
 
         % Plot freq vs eccentricity
         x = log10(fitResults.eccDeg(goodIdx));
-        x(x<0)=0;
+        x(x<(-1.5))=-1.5;
         [x, sortedIdx] = sort(x);
         xq = 0:0.01:1.8;
         v = peakFreq(goodIdx);
         v = v(sortedIdx);
         plot(x,v,['.',stimPlotColors{whichStim}]);
         hold on
+        x(x<0)=0;
         sp = spaps(x,v,-100);
         vq = fnval(sp,xq);
         plot(xq,vq,['-' stimPlotColors{whichStim}],'LineWidth',3)

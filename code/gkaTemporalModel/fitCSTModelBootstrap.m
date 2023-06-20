@@ -14,7 +14,9 @@ rng('shuffle'); % Want a random order so we get different bootstraps
 verbose = false;
 
 % Define where we will save the results
-resultFileName = 'cstResultsBootstrap.mat';
+prefs.verbose = false;
+projectDir = tbLocateProject('mriSinaiAnalysis',prefs);
+resultFilePath = fullfile(projectDir,'data','cstResultsBootstrap.mat');
 
 % Load the Mt. Sinai data
 mriData = loadMRIResponseData();
@@ -78,8 +80,8 @@ vectorize = @(x) x(:);
 warnstate = warning();
 
 % If there was a prior analysis load it
-if isfile(resultFileName)
-    load(resultFileName,'results')
+if isfile(resultFilePath)
+    load(resultFilePath,'results')
 else
     results = [];
 end
@@ -165,7 +167,7 @@ for bb = 1:nBoots
             idx = [1,(ee-1)*nParams*nCells+2 : ee*nParams*nCells+1];
 
             % Define the response function
-            myResponseMatrix = @(p) returnResponse(p,stimulusDirections,studiedEccentricites(ee),interpFreqs);
+            myResponseMatrix = @(p) returnFitAcrossEccen(p,stimulusDirections,studiedEccentricites(ee),interpFreqs);
 
             % Define the objective
             myObj = @(p) norm(vectorize(Winterp(:,ee,:)).*(vectorize(Yinterp(:,ee,:)) - vectorize(myResponseMatrix(p))));
@@ -186,9 +188,9 @@ for bb = 1:nBoots
         end
 
         % Define the response function integrated across eccentricity
-        myResponseMatrix = @(p) returnResponse(p,stimulusDirections,studiedEccentricites,studiedFreqs);
-        myResponseMatrixInterp = @(p) returnResponse(p,stimulusDirections,studiedEccentricites,interpFreqs);
-        myResponseMatrixPlot = @(p) returnResponse(p,stimulusDirections,studiedEccentricites,freqsForPlotting);
+        myResponseMatrix = @(p) returnFitAcrossEccen(p,stimulusDirections,studiedEccentricites,studiedFreqs);
+        myResponseMatrixInterp = @(p) returnFitAcrossEccen(p,stimulusDirections,studiedEccentricites,interpFreqs);
+        myResponseMatrixPlot = @(p) returnFitAcrossEccen(p,stimulusDirections,studiedEccentricites,freqsForPlotting);
         myObj = @(p) norm(vectorize(Winterp).*(vectorize(Yinterp) - vectorize(myResponseMatrixInterp(p))));
 
         % Get the response matrix and fVal
@@ -220,7 +222,7 @@ for bb = 1:nBoots
         results.(subjects{whichSub}).bootIdx{end+1} = bootIdx;
 
         % Save it
-        save(resultFileName,'results')
+        save(resultFilePath,'results')
 
     end
 
@@ -237,7 +239,7 @@ end % loop over bootstraps
 % Finish up and plot; loop over subjects
 for whichSub = 1:nSubs
 
-    % Get the mean and the 67% CI of the parameters
+    % Get the mean and the IQR of the parameters
     p = median(results.(subjects{whichSub}).p);
     pIQR = iqr(results.(subjects{whichSub}).p);
     pMat = sort(results.(subjects{whichSub}).p);
@@ -251,7 +253,7 @@ for whichSub = 1:nSubs
     Y = median(Y,4);
     yLow = Y - yIQR/2;
     yHi = Y + yIQR/2;
-    yPlot = returnResponse(p,stimulusDirections,studiedEccentricites,freqsForPlotting);
+    yPlot = returnFitAcrossEccen(p,stimulusDirections,studiedEccentricites,freqsForPlotting);
 
     % Plot fits
     figure
@@ -263,7 +265,7 @@ for whichSub = 1:nSubs
             thisLow = squeeze(yLow(ss,ee,:))';
             thisHi = squeeze(yHi(ss,ee,:))';
 
-                        % Add a patch for the error
+            % Add a patch for the error
             patch(...
                 [log10(studiedFreqs),fliplr(log10(studiedFreqs))],...
                 [ thisLow, fliplr(thisHi) ],...
@@ -314,47 +316,4 @@ for whichSub = 1:nSubs
     end
 
 end
-
-
-
-%% LOCAL FUNCTIONS
-
-function response = returnResponse(p,stimulusDirections,studiedEccentricites,studiedFreqs)
-% Assemble the response across eccentricity locations
-
-% Fixed params of the analysis
-nCells = 3;
-nParams = 3;
-
-% Loop over the passed eccentricities
-for ee = 1:length(studiedEccentricites)
-
-    % Assemble the sub parameters
-    idx = [1,(ee-1)*nParams*nCells+2 : ee*nParams*nCells+1];
-    subP = p(idx);
-
-    % Obtain the response at this eccentricity
-    thisTTF = returnTTFAtEcc(subP,stimulusDirections,studiedEccentricites(ee),studiedFreqs);
-
-    % Detect if the response is not band pass and in that case make it a
-    % bad fit so that we avoid finding these solutions
-    for ss = 1:length(stimulusDirections)
-        [~,idx] = max(thisTTF(ss,:));
-        if idx < length(studiedFreqs)/3
-            thisTTF(ss,:) = 100;
-        end
-    end
-
-    % Store this loop result
-    ttfAtEcc{ee} = thisTTF;
-
-end
-
-% Pull the fits out of the par pool cell array and place in a matrix
-for ee = 1:length(studiedEccentricites)
-    response(:,ee,:) = ttfAtEcc{ee};
-end
-
-end
-
 

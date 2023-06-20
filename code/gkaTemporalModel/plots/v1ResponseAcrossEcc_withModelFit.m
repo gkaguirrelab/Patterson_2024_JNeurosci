@@ -9,6 +9,12 @@ freqsForPlotting = logspace(0,2,50);
 % Load the MRI data
 mriData = loadMRIResponseData();
 
+% Load the model fitting results
+prefs.verbose = false;
+projectDir = tbLocateProject('mriSinaiAnalysis',prefs);
+resultFilePath = fullfile(projectDir,'data','cstResultsBootstrap.mat');
+load(resultFilePath,'results');
+
 % Place to save figures
 savePath = '~/Desktop/VSS 2023/';
 
@@ -46,22 +52,21 @@ shift_ttf = [0 3 6 9 11 13]; % shifts each ttf down so they can be presented tig
 % Loop over subjects
 for whichSub = 1:length(subjects)
 
-    % Load the data
-    Y = zeros(nStims,nEccs,length(studiedFreqs));
-    W = zeros(nStims,nEccs,length(studiedFreqs));
-    for eccIdx = 1:nEccs
-        for whichStim = 1:nStims
-            thisMatrix = mriData.(subjects{whichSub}).(stimulusDirections{whichStim}).(['v1_ecc' num2str(eccIdx)]);
-            Y(whichStim,eccIdx,:) = mean(thisMatrix);
-            W(whichStim,eccIdx,:) = 1./std(thisMatrix);
-        end
+    % Get the mean and the IQR of the parameters
+    p = median(results.(subjects{whichSub}).p);
+    pIQR = iqr(results.(subjects{whichSub}).p);
+    pMat = sort(results.(subjects{whichSub}).p);
+    pLow = p-pIQR/2;
+    pHi = p+pIQR/2;
+    Y = [];
+    for ii = 1:length(results.(subjects{whichSub}).Y)
+        Y(:,:,:,ii) = results.(subjects{whichSub}).Y{ii};
     end
-
-    % Get the p0 params for this subject
-    pMRI = storedSearchSeeds(subjects{whichSub});
-
-    % Get the modeled response
-    [response, rfsAtEcc] = returnResponse(pMRI,stimulusDirections,studiedEccentricites,freqsForPlotting);
+    yIQR = iqr(Y,4);
+    Y = median(Y,4);
+    yLow = Y - yIQR/2;
+    yHi = Y + yIQR/2;
+    yPlot = returnFitAcrossEccen(p,stimulusDirections,studiedEccentricites,freqsForPlotting);
 
     % Prepare the figures
     figHandles = figure('Renderer','painters');
@@ -75,10 +80,10 @@ for whichSub = 1:length(subjects)
         for ee=1:nEccs
 
             % Assemble the data
-            v1YThisEcc = squeeze(Y(whichStim,ee,:))';
-            v1WThisEcc = squeeze(W(whichStim,ee,:))'/sqrt(nAcqs);
-            v1YThisEcclow = v1YThisEcc - v1WThisEcc;
-            v1YThisEcchigh = v1YThisEcc + v1WThisEcc;
+            thisVec = squeeze(Y(whichStim,ee,:))';
+            thisLow = squeeze(yLow(whichStim,ee,:))';
+            thisHi = squeeze(yHi(whichStim,ee,:))';
+            thisFit = squeeze(yPlot(whichStim,ee,:))';
 
             % Select the plot of the correct stimulus direction
             nexttile(stimOrder(whichStim));
@@ -86,37 +91,25 @@ for whichSub = 1:length(subjects)
             % Add a patch for the error
             patch(...
                 [log10(studiedFreqs),fliplr(log10(studiedFreqs))],...
-                [ v1YThisEcclow-shift_ttf(ee), fliplr(v1YThisEcchigh)-shift_ttf(ee) ],...
+                [ thisLow-shift_ttf(ee), fliplr(thisHi)-shift_ttf(ee) ],...
                 plotColor{whichStim},'EdgeColor','none','FaceColor',plotColor{stimOrder(whichStim)},'FaceAlpha',faceAlpha);
             hold on
 
             % Add the data symbols, using reversed markers for values below
             % zero
-            idx = v1YThisEcc > 0;
-            plot(log10(studiedFreqs(idx)),v1YThisEcc(idx)-shift_ttf(ee),...
+            idx = thisVec > 0;
+            plot(log10(studiedFreqs(idx)),thisVec(idx)-shift_ttf(ee),...
                 'o','MarkerFaceColor',lineColor{stimOrder(whichStim)},...
                 'MarkerSize',6,'MarkerEdgeColor','w','LineWidth',1);
-            idx = v1YThisEcc < 0;
-            plot(log10(studiedFreqs(idx)),v1YThisEcc(idx)-shift_ttf(ee),...
+            idx = thisVec < 0;
+            plot(log10(studiedFreqs(idx)),thisVec(idx)-shift_ttf(ee),...
                 'o','MarkerFaceColor','w',...
                 'MarkerSize',6,'MarkerEdgeColor',lineColor{stimOrder(whichStim)},'LineWidth',1);
 
             % Add the model fit
-            plot(log10(freqsForPlotting),squeeze(response(whichStim,ee,:))-shift_ttf(ee),...
+            plot(log10(freqsForPlotting),thisFit-shift_ttf(ee),...
                 ['-' lineColor{stimOrder(whichStim)}],...
                 'LineWidth',2);
-
-            % If this is LMS, show the separate midget and parasol components
-            % lineSpecs = {'-','--'};
-            % if whichStim == 3
-            %     for cc=1:2
-            %         ttfComplex = double(subs(rfsAtEcc{ee}{3}(cc),freqsForPlotting));
-            %         vec = abs(ttfComplex);
-            %         plot(log10(freqsForPlotting),vec-shift_ttf(ee),...
-            %             lineSpecs{cc},'Color',[0.5 0.5 0.5],...
-            %             'LineWidth',2);
-            %     end
-            % end
 
             % Add reference lines
             if ee==1 && whichStim == 3
@@ -154,31 +147,5 @@ for whichSub = 1:length(subjects)
     % Save the plots
     plotNamesPDF = [subjects{whichSub} '_v1ResponseAcrossEcc_withModel.pdf' ];
     saveas(figHandles,fullfile(savePath,plotNamesPDF));
-
-end
-
-
-function [response,rfsAtEcc] = returnResponse(p,stimulusDirections,studiedEccentricites,studiedFreqs)
-% Assemble the response across eccentricity locations
-
-nCells = 3;
-nParams = 3;
-blockLength = nParams*nCells;
-
-for ee = 1:length(studiedEccentricites)
-
-    % Assemble the sub parameters
-    startIdx = (ee-1)*blockLength + 1 + 1;
-    subP = [p(1) p(startIdx:startIdx+blockLength-1)];
-
-    % Obtain the response at this eccentricity
-    [ttfAtEcc{ee},rfsAtEcc{ee}] = returnTTFAtEcc(subP,stimulusDirections,studiedEccentricites(ee),studiedFreqs);
-
-end
-
-% Reshape the responses into the dimension stim x ecc x freqs
-for ee = 1:length(studiedEccentricites)
-    response(:,ee,:) = ttfAtEcc{ee};
-end
 
 end

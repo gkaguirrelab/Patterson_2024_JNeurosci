@@ -10,12 +10,6 @@ freqsForPlotting = logspace(0,2,50);
 % Load the MRI data
 mriData = loadMRIResponseData();
 
-% Load the model fitting results for the average ROI
-prefs.verbose = false;
-projectDir = tbLocateProject('mriSinaiAnalysis',prefs);
-resultFilePath = fullfile(projectDir,'data','cstResultsAvgROI.mat');
-load(resultFilePath,'results');
-
 % Place to save figures
 savePath = '~/Desktop/VSS 2023/';
 

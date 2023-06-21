@@ -2,7 +2,7 @@
 
 % Housekeeping
 clear
-%close all
+close all
 
 % Load the RGC temporal model
 rgcTemporalModel = fitRGCFResponse();

@@ -128,8 +128,8 @@ r2Thresh = 0.1;
         vq = fnval(sp,xq);
         plot(xq,vq,['-' stimPlotColors{whichStim}],'LineWidth',1.5)
         a = gca();
-        xTickVals = [1,2.5,5,10,20,40,80];
-        xTickLabels = {'<1','2.5','5','10','20','40','80'};
+        xTickVals = [1,2,5,10,20,40,80];
+        xTickLabels = {'<1','2','5','10','20','40','80'};
         a.XTick = log10(xTickVals);
         a.XTickLabels = xTickLabels;
         xlim([-0.2 2.0]);

@@ -2,7 +2,7 @@
 
 % Housekeeping
 clear
-%close all
+close all
 
 % Where to save figures
 savePath = fullfile('~','Desktop','VSS 2023');

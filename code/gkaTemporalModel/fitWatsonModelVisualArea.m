@@ -133,8 +133,8 @@ for ss = 1:length(subjectNames)
                 % Get the fit at the plotting frequencies
                 yFit = p(1)*watsonTemporalModel(interpFreqs,p(2:end));
 
-                % Determine the peak frequency
-                peakFreq(whichStim,rr,bb) = interpFreqs(yFit==max(yFit));
+                % Determine the peak frequency in the log domain
+                peakFreq(whichStim,rr,bb) = log10(interpFreqs(yFit==max(yFit)));
 
             end % stimuli
 
@@ -142,8 +142,8 @@ for ss = 1:length(subjectNames)
 
     end % Bootstraps
 
-    peakFreqSEM = std(peakFreq,0,3);
-    peakFreqMean = mean(peakFreq,3);
+    peakFreqSEM = 10.^std(peakFreq,0,3);
+    peakFreqMean = 10.^mean(peakFreq,3);
 
 
 end

@@ -48,7 +48,8 @@ options.Display = 'none';
 % Set some bounds
 LB = [0 1 0.5 0.5];
 UB = [5 10 3 3];
-p0 = [1.5 5 1.1 1.5];
+p0A = [1.5 5 1.1 1.5];
+p0B = [4 1.5 1.5 1];
 
 % Loop over subjects
 for whichSub = 1:length(subjects)
@@ -79,7 +80,13 @@ for whichSub = 1:length(subjects)
             myObj = @(p) norm( (1./YsemThisROI) .* ( YThisROI - watsonTemporalModel(p,studiedFreqs)));
 
             % Fit it
-            p = fmincon(myObj,p0,[],[],[],[],LB,UB,[],options);
+            [pA, fValA] = fmincon(myObj,p0A,[],[],[],[],LB,UB,[],options);
+            [pB, fValB] = fmincon(myObj,p0B,[],[],[],[],LB,UB,[],options);
+            if fValA < fValB
+                p = pA;
+            else
+                p = pB;
+            end
 
             % Get the fitted response
             yFit = watsonTemporalModel(p,freqsForPlotting);

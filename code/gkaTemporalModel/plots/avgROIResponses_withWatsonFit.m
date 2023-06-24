@@ -83,13 +83,13 @@ for whichSub = 1:length(subjects)
             YThisROIhigh = YThisROI + YsemThisROI;
 
             % The weighted objective
-            myObj = @(p) norm( (1./YsemThisROI) .* ( YThisROI - p(1)*watsonTemporalModel(studiedFreqs,p(2:end))));
+            myObj = @(p) norm( (1./YsemThisROI) .* ( YThisROI - watsonTemporalModel(p,studiedFreqs)));
 
             % Fit it
             p = fmincon(myObj,p0,[],[],[],[],LB,UB,[],options);
 
             % Get the fitted response
-            yFit = p(1)*watsonTemporalModel(freqsForPlotting,p(2:end));
+            yFit = watsonTemporalModel(p,freqsForPlotting);
 
             % Select the plot of the correct stimulus direction
             nexttile(stimOrder(whichStim));

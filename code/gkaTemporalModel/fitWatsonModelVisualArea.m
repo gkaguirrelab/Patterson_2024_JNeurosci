@@ -11,7 +11,7 @@ verbose = false;
 % This is the threshold for the goodness of fit to the fMRI time-series
 % data. We only analyze those voxels with this quality fit or better
 r2Thresh = 0.1;
-nBoots = 100;
+nBoots = 10;
 
 % These variables define the subject names, stimulus directions. The
 % Flywheel analysis IDs are listed for completeness, but not used here.
@@ -34,7 +34,7 @@ interpFreqs = logspace(log10(1),log10(100),501);
 nAcqs = 12;
 
 % Define some ROI sets
-roiSet = {'lgn','V1','V2/V3','hV4'};
+roiSet = {'LGN','V1','V2/V3','hV4','MT'};
 
 %% Download Mt Sinai results
 % This script downloads the "results" files Flywheel and
@@ -55,9 +55,13 @@ polarMap = cifti_read(tmpPath); polarMap = polarMap.cdata;
 tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_sigma.dtseries.nii');
 sigmaMap = cifti_read(tmpPath); sigmaMap = sigmaMap.cdata;
 
-% Load the LGN ROI.
+% Load the LGN ROI
 tmpPath = fullfile(localDataDir,'retinoFiles','LGN_bilateral.dtseries.nii');
 LGNROI = cifti_read(tmpPath); LGNROI = LGNROI.cdata;
+
+% Load the MT ROI
+tmpPath = fullfile(localDataDir,'retinoFiles','MT.dtseries.nii');
+MTROI = cifti_read(tmpPath); MTROI = MTROI.cdata;
 
 % fmincon Options. Indicate that the objective function is deterministic,
 % and handle verbosity
@@ -88,7 +92,7 @@ for ss = 1:length(subjectNames)
         for rr = 1:length(roiSet)
 
             switch roiSet{rr}
-                case 'lgn'
+                case 'LGN'
                     goodIdx = find(logical( (results.R2 > r2Thresh) .* (LGNROI == 1)));
                 case 'V1'
                     goodIdx = find(logical( (results.R2 > r2Thresh) .* (vArea == 1)));
@@ -96,8 +100,10 @@ for ss = 1:length(subjectNames)
                     goodIdx = find(logical( (results.R2 > r2Thresh) .* (vArea > 1) .* (vArea < 4) ));
                 case 'hV4'
                     goodIdx = find(logical( (results.R2 > r2Thresh) .* (vArea == 4) ));
+                case 'MT'
+                    goodIdx = find(logical( (results.R2 > r2Thresh) .* (MTROI == 1)));
             end
-            nGood = length(goodIdx);
+            nGood(rr) = length(goodIdx);
 
             % Loop over the stimuli
             for whichStim = 1:nStims
@@ -142,8 +148,9 @@ for ss = 1:length(subjectNames)
 
     end % Bootstraps
 
-    peakFreqSEM = 10.^std(peakFreq,0,3);
-    peakFreqMean = 10.^mean(peakFreq,3);
+    peakFreqSEM = 10.^std(peakFreq,0,3)
+    peakFreqMean = 10.^mean(peakFreq,3)
+    nGood
 
 
 end

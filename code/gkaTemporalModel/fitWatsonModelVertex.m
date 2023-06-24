@@ -127,7 +127,7 @@ for ss = 1:length(subjectNames)
         for dd = 1:nStims
 
             % The weighted objective
-            myObj = @(p) norm( W(dd,:) .* ( Y(dd,:) - p(1)*watsonTemporalModel(studiedFreqs,p(2:end))));
+            myObj = @(p) norm( W(dd,:) .* ( Y(dd,:) - watsonTemporalModel(p,studiedFreqs)));
 
             % Fit it
             [p(dd,:),fVal(dd)] = fmincon(myObj,p0,[],[],[],[],LB,UB,[],options);
@@ -137,7 +137,7 @@ for ss = 1:length(subjectNames)
             rSquared(dd) = (maxfVal - fVal(dd)) / maxfVal;
 
             % Get the fit at the plotting frequencies
-            yFit(dd,:) = p(dd,1)*watsonTemporalModel(interpFreqs,p(dd,2:end));
+            yFit(dd,:) = watsonTemporalModel(p(dd,:),interpFreqs);
 
             % Determine the peak frequency
             peakFreq(dd) = interpFreqs(yFit(dd,:)==max(yFit(dd,:)));

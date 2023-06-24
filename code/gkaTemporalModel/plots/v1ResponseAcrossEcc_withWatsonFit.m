@@ -88,6 +88,9 @@ for whichSub = 1:length(subjects)
                 p = pB;
             end
 
+            % Store the params
+            pData(whichSub,whichStim,rr,:) = p;
+
             % Get the fitted response
             yFit = watsonTemporalModel(p,freqsForPlotting);
 

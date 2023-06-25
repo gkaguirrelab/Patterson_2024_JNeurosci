@@ -87,7 +87,7 @@ for ss = 1:length(subjectNames)
                 case 'V1'
                     goodIdx = find(logical( (results.R2 > r2Thresh) .* (vArea == 1)));
                 case 'V2/V3'
-                    goodIdx = find(logical( (results.R2 > r2Thresh) .* (vArea > 1) .* (vArea < 4) ));
+                    goodIdx = find(logical( (results.R2 > r2Thresh) .* (vArea >= 2) .* (vArea <= 3) ));
                 case 'hV4'
                     goodIdx = find(logical( (results.R2 > r2Thresh) .* (vArea == 4) ));
                 case 'MT'
@@ -131,9 +131,9 @@ for ss = 1:length(subjectNames)
 
     end % Bootstraps
 
-    peakFreqSEM = 10.^std(peakFreq,0,3)
-    peakFreqMean = 10.^mean(peakFreq,3)
-    nGood
+    peakFreqSEM(ss,:,:) = 10.^std(peakFreq,0,3);
+    peakFreqMean(ss,:,:) = 10.^mean(peakFreq,3);
+    nGoodSub(ss,:) = nGood;
 
 
 end

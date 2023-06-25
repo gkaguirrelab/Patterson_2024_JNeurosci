@@ -151,7 +151,7 @@ for ss = 1:length(subjectNames)
             rSquared(dd) = (maxfVal - fVal(dd)) / maxfVal;
 
             % Get the fit at the plotting frequencies
-            yFit(dd,:) = watsonTemporalModel(p(dd,:),interpFreqs);
+            yFit(dd,:) = myRespInterp(p(dd,:));
 
             % Determine the peak frequency
             peakFreq(dd) = interpFreqs(yFit(dd,:)==max(yFit(dd,:)));

@@ -152,7 +152,7 @@ for ss = 1:length(subjectNames)
                 end
 
                 % Get the fit at the plotting frequencies
-                yFit = p(1)*watsonTemporalModel(interpFreqs,p(2:end));
+                yFit = myRespInterp(p);
 
                 % Determine the peak frequency in the log domain
                 peakFreq(whichStim,rr,bb) = log10(interpFreqs(yFit==max(yFit)));

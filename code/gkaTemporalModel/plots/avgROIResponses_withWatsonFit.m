@@ -53,6 +53,11 @@ LB = [0 1 0.5 0.5];
 UB = [5 10 3 3];
 p0 = [1.5 5 1 1.5];
 
+% Anonymous functions for the search
+myResp = @(p) watsonTemporalModel(p,studiedFreqs);
+myRespInterp = @(p) watsonTemporalModel(p,interpFreqs);
+modalPenalty = @(p) sum(sum(sign(diff(sign(diff(myRespInterp(p)))))) == 0)*1e3;
+
 % Loop over subjects
 for whichSub = 1:length(subjects)
 
@@ -83,7 +88,8 @@ for whichSub = 1:length(subjects)
             YThisROIhigh = YThisROI + YsemThisROI;
 
             % The weighted objective
-            myObj = @(p) norm( (1./YsemThisROI) .* ( YThisROI - watsonTemporalModel(p,studiedFreqs)));
+            myObj = @(p) norm( (1./YsemThisROI) .* ( YThisROI - myResp(p))) ...
+                + modalPenalty(p);
 
             % Fit it
             p = fmincon(myObj,p0,[],[],[],[],LB,UB,[],options);

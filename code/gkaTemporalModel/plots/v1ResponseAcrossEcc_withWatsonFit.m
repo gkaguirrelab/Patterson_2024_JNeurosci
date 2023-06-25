@@ -51,6 +51,12 @@ UB = [5 10 3 3];
 p0A = [1.5 5 1.1 1.5];
 p0B = [4 1.5 1.5 1];
 
+% Anonymous functions for the search. The "modalPenalty" enforces that the
+% interpolated response has a uni-modal distribution
+myResp = @(p) watsonTemporalModel(p,studiedFreqs);
+myRespInterp = @(p) watsonTemporalModel(p,interpFreqs);
+modalPenalty = @(p) sum(sum(sign(diff(sign(diff(myRespInterp(p)))))) == 0)*1e3;
+
 % Loop over subjects
 for whichSub = 1:length(subjects)
 
@@ -77,7 +83,8 @@ for whichSub = 1:length(subjects)
             YThisROIhigh = YThisROI + YsemThisROI;
 
             % The weighted objective
-            myObj = @(p) norm( (1./YsemThisROI) .* ( YThisROI - watsonTemporalModel(p,studiedFreqs)));
+            myObj = @(p) norm( (1./YsemThisROI) .* ( YThisROI - myResp(p))) ...
+                + modalPenalty(p);
 
             % Fit it
             [pA, fValA] = fmincon(myObj,p0A,[],[],[],[],LB,UB,[],options);

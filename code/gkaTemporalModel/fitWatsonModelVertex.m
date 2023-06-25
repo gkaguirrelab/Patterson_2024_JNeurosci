@@ -31,6 +31,7 @@ studiedFreqs = [2 4 8 16 32 64];
 nFreqs = length(studiedFreqs);
 interpFreqs = logspace(log10(1),log10(100),501);
 
+
 %% Download Mt Sinai results
 % This script downloads the "results" files Flywheel and
 % extracts BOLD fMRI response amplitudes for each of the stimulus temporal
@@ -50,10 +51,6 @@ polarMap = cifti_read(tmpPath); polarMap = polarMap.cdata;
 tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_sigma.dtseries.nii');
 sigmaMap = cifti_read(tmpPath); sigmaMap = sigmaMap.cdata;
 
-% Load the LGN ROI.
-tmpPath = fullfile(localDataDir,'retinoFiles','LGN_bilateral.dtseries.nii');
-LGNROI = cifti_read(tmpPath); LGNROI = LGNROI.cdata;
-
 % fmincon Options. Indicate that the objective function is deterministic,
 % and handle verbosity
 options = optimoptions('fmincon');
@@ -62,7 +59,15 @@ options.Display = 'none';
 % Set some bounds
 LB = [0 1 0.5 0.5];
 UB = [5 10 3 3];
-p0 = [1.5 5 1 1.5];
+p0A = [1.5 5 1.1 1.5];
+p0B = [4 1.5 1.5 1];
+
+% Anonymous functions for the search. The "modalPenalty" enforces that the
+% interpolated response has a uni-modal distribution
+myResp = @(p) watsonTemporalModel(p,studiedFreqs);
+myRespInterp = @(p) watsonTemporalModel(p,interpFreqs);
+modalPenalty = @(p) sum(sum(sign(diff(sign(diff(myRespInterp(p)))))) == 0)*1e3;
+
 
 %% Loop through subjects and fit each vertex
 for ss = 1:length(subjectNames)
@@ -127,10 +132,19 @@ for ss = 1:length(subjectNames)
         for dd = 1:nStims
 
             % The weighted objective
-            myObj = @(p) norm( W(dd,:) .* ( Y(dd,:) - watsonTemporalModel(p,studiedFreqs)));
+            myObj = @(p) norm( W(dd,:) .* ( Y(dd,:) - myResp(p))) ...
+                + modalPenalty(p);
 
             % Fit it
-            [p(dd,:),fVal(dd)] = fmincon(myObj,p0,[],[],[],[],LB,UB,[],options);
+            [pA, fValA] = fmincon(myObj,p0A,[],[],[],[],LB,UB,[],options);
+            [pB, fValB] = fmincon(myObj,p0B,[],[],[],[],LB,UB,[],options);
+            if fValA < fValB
+                p(dd,:) = pA;
+                fVal(dd) = fValA;
+            else
+                p(dd,:) = pB;
+                fVal(dd) = fValB;
+            end
 
             % Determine the proportion variance explained
             maxfVal = norm( W(dd,:) .* ( Y(dd,:) ));

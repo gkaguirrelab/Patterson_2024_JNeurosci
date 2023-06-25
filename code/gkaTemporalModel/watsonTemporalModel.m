@@ -84,20 +84,21 @@ function y = watsonTemporalModel(params, frequenciesToModel, filterOrder)
     hold off
 %}
 
-if nargin == 3
-    centerFilterOrder = filterOrder(1); % Order of the center (usually fast) filter
-    surroundFilterOrder = filterOrder(2); % Order of the surround (usually slow) filter
-else
+% handle inputs
+if nargin < 3
     % Fixed parameters (taken from Figure 6.4 and 6.5 of Watson 1986)
     centerFilterOrder = 9; % Order of the center (usually fast) filter
     surroundFilterOrder = 10; % Order of the surround (usually slow) filter
 end
+if nargin == 3
+    centerFilterOrder = filterOrder(1); % Order of the center (usually fast) filter
+    surroundFilterOrder = filterOrder(2); % Order of the surround (usually slow) filter
+end
 
-
-% Define a frequency domain in Hz over which the model is defined. The
-% maximum and minimum value of the y response should be contained within
-% this range for any plausible set of parameters. We hard code a log-spaced
-% range of 0.1 - 200 Hz here.
+% Set a frequency domain in Hz over which the model is defined. The maximum
+% and minimum value of the y response should be contained within this range
+% for any plausible set of parameters. We hard code a log-spaced range of
+% 0.1 - 200 Hz here.
 freqDomain = logspace(-1,log10(200),100);
 
 % Sanity check the frequency input

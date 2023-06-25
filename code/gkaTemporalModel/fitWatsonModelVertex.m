@@ -51,23 +51,6 @@ polarMap = cifti_read(tmpPath); polarMap = polarMap.cdata;
 tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_sigma.dtseries.nii');
 sigmaMap = cifti_read(tmpPath); sigmaMap = sigmaMap.cdata;
 
-% fmincon Options. Indicate that the objective function is deterministic,
-% and handle verbosity
-options = optimoptions('fmincon');
-options.Display = 'none';
-
-% Set some bounds
-LB = [0 1 0.5 0.5];
-UB = [5 10 3 3];
-p0A = [1.5 5 1.1 1.5];
-p0B = [4 1.5 1.5 1];
-
-% Anonymous functions for the search. The "modalPenalty" enforces that the
-% interpolated response has a uni-modal distribution
-myResp = @(p) watsonTemporalModel(p,studiedFreqs);
-myRespInterp = @(p) watsonTemporalModel(p,interpFreqs);
-modalPenalty = @(p) sum(sum(sign(diff(sign(diff(myRespInterp(p)))))) == 0)*1e3;
-
 
 %% Loop through subjects and fit each vertex
 for ss = 1:length(subjectNames)
@@ -85,7 +68,7 @@ for ss = 1:length(subjectNames)
     fitResults.fVal = cell(nVert,1);
     fitResults.rSquared = cell(nVert,1);
     fitResults.Y = cell(nVert,1);
-    fitResults.yFit = cell(nVert,1);
+    fitResults.yFitInterp = cell(nVert,1);
     fitResults.peakFreq = cell(nVert,1);
     fitResults.eccDeg = nan(nVert,1);
     fitResults.polarAngle = nan(nVert,1);
@@ -96,6 +79,7 @@ for ss = 1:length(subjectNames)
 
     % Fit any voxel with an R2 fit above the threshold
     goodIdx = find(logical( (results.R2 > r2Thresh) ));
+    goodIdx = goodIdx(1:10);
     nGood = length(goodIdx);
 
     % Loop over the valid voxels
@@ -126,35 +110,19 @@ for ss = 1:length(subjectNames)
         Y = mean(adjustedVals,3,"omitmissing");
 
         % Define some variables to keep par happy       
-        peakFreq = []; fVal = []; p = []; yFit = []; rSquared = [];
+        p = []; peakFreq = []; fVal = []; p = []; yFitInterp = []; rSquared = [];
 
         % Fit each stimulus with the Watson TTF
         for dd = 1:nStims
 
-            % The weighted objective
-            myObj = @(p) norm( W(dd,:) .* ( Y(dd,:) - myResp(p))) ...
-                + modalPenalty(p);
-
-            % Fit it
-            [pA, fValA] = fmincon(myObj,p0A,[],[],[],[],LB,UB,[],options);
-            [pB, fValB] = fmincon(myObj,p0B,[],[],[],[],LB,UB,[],options);
-            if fValA < fValB
-                p(dd,:) = pA;
-                fVal(dd) = fValA;
-            else
-                p(dd,:) = pB;
-                fVal(dd) = fValB;
-            end
+            [p(dd,:),fVal(dd),~,yFitInterp(dd,:)] = fitWatsonModel(Y(dd,:),W(dd,:),studiedFreqs,interpFreqs)
 
             % Determine the proportion variance explained
             maxfVal = norm( W(dd,:) .* ( Y(dd,:) ));
             rSquared(dd) = (maxfVal - fVal(dd)) / maxfVal;
 
-            % Get the fit at the plotting frequencies
-            yFit(dd,:) = myRespInterp(p(dd,:));
-
             % Determine the peak frequency
-            peakFreq(dd) = interpFreqs(yFit(dd,:)==max(yFit(dd,:)));
+            peakFreq(dd) = interpFreqs(yFitInterp(dd,:)==max(yFitInterp(dd,:)));
 
         end
 
@@ -164,7 +132,7 @@ for ss = 1:length(subjectNames)
         parLoop_fVal{gg} = fVal;
         parLoop_rSquared{gg} = rSquared;
         parLoop_Y{gg} = Y;
-        parLoop_yFit{gg} = yFit;
+        parLoop_yFitInterp{gg} = yFitInterp;
         parLoop_peakFreq{gg} = peakFreq;
         parLoop_eccDeg{gg} = eccenMap(thisIdx);
         parLoop_polarAngle{gg} = polarMap(thisIdx);
@@ -179,7 +147,7 @@ for ss = 1:length(subjectNames)
     fitResults.fVal(idxSet) = parLoop_fVal;
     fitResults.rSquared(idxSet) = parLoop_rSquared;
     fitResults.Y(idxSet) = parLoop_Y;
-    fitResults.yFit(idxSet) = parLoop_yFit;
+    fitResults.yFitInterp(idxSet) = parLoop_yFitInterp;
     fitResults.peakFreq(idxSet) = parLoop_peakFreq;
     fitResults.eccDeg(idxSet) = cell2mat(parLoop_eccDeg);
     fitResults.polarAngle(idxSet) = cell2mat(parLoop_polarAngle);

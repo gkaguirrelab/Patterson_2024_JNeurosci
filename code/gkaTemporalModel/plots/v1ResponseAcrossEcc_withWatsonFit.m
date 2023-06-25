@@ -4,9 +4,6 @@
 clear
 close all
 
-% Properties of which model to plot
-freqsForPlotting = logspace(0,2,50);
-
 % Load the MRI data
 mriData = loadMRIResponseData();
 
@@ -40,23 +37,6 @@ eccDegBinEdges = logspace(log10(0.7031),log10(90),15);
 studiedEccentricites = eccDegBinEdges(4:2:14);
 nAcqs = 12;
 
-% fmincon Options. Indicate that the objective function is deterministic,
-% and handle verbosity
-options = optimoptions('fmincon');
-options.Display = 'none';
-
-% Set some bounds
-LB = [0 1 0.5 0.5];
-UB = [5 10 3 3];
-p0A = [1.5 5 1.1 1.5];
-p0B = [4 1.5 1.5 1];
-
-% Anonymous functions for the search. The "modalPenalty" enforces that the
-% interpolated response has a uni-modal distribution
-myResp = @(p) watsonTemporalModel(p,studiedFreqs);
-myRespInterp = @(p) watsonTemporalModel(p,interpFreqs);
-modalPenalty = @(p) sum(sum(sign(diff(sign(diff(myRespInterp(p)))))) == 0)*1e3;
-
 % Loop over subjects
 for whichSub = 1:length(subjects)
 
@@ -82,24 +62,7 @@ for whichSub = 1:length(subjects)
             YThisROIlow = YThisROI - YsemThisROI;
             YThisROIhigh = YThisROI + YsemThisROI;
 
-            % The weighted objective
-            myObj = @(p) norm( (1./YsemThisROI) .* ( YThisROI - myResp(p))) ...
-                + modalPenalty(p);
-
-            % Fit it
-            [pA, fValA] = fmincon(myObj,p0A,[],[],[],[],LB,UB,[],options);
-            [pB, fValB] = fmincon(myObj,p0B,[],[],[],[],LB,UB,[],options);
-            if fValA < fValB
-                p = pA;
-            else
-                p = pB;
-            end
-
-            % Store the params
-            pData(whichSub,whichStim,rr,:) = p;
-
-            % Get the fitted response
-            yFit = watsonTemporalModel(p,freqsForPlotting);
+            [pData(whichSub,whichStim,rr,:),~,~,yFitInterp] = fitWatsonModel(YThisROI,1./YsemThisROI,studiedFreqs,interpFreqs);
 
             % Select the plot of the correct stimulus direction
             nexttile(stimOrder(whichStim));
@@ -123,7 +86,7 @@ for whichSub = 1:length(subjects)
                 'MarkerSize',6,'MarkerEdgeColor',lineColor{stimOrder(whichStim)},'LineWidth',1);
 
             % Add the model fit
-            plot(log10(freqsForPlotting),yFit-shift_ttf(rr),...
+            plot(log10(interpFreqs),yFitInterp-shift_ttf(rr),...
                 ['-' lineColor{stimOrder(whichStim)}],...
                 'LineWidth',2);
 

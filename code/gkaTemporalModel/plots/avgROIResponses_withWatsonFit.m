@@ -4,9 +4,6 @@
 clear
 close all
 
-% Properties of which model to plot
-freqsForPlotting = logspace(0,2,50);
-
 % Load the MRI data
 mriData = loadMRIResponseData();
 
@@ -26,7 +23,6 @@ nCells = 3; nParams = 3;
 studiedFreqs = [2 4 8 16 32 64];
 interpFreqs = logspace(log10(1),log10(100),501);
 
-
 % Params that allows the plots to appear in the order LMS, L-M, S
 stimOrder = [2 3 1];
 
@@ -39,24 +35,6 @@ shift_ttf = [7 10 13]; % shifts each ttf down so they can be presented tightly o
 roiNames = {'lgn','v1_avg','v2v3_avg'};
 nROIs = length(roiNames);
 nAcqs = 12;
-
-% fmincon Options. Indicate that the objective function is deterministic,
-% and handle verbosity
-options = optimoptions('fmincon');
-options.Display = 'none';
-
-optionsBADS.UncertaintyHandling = 0;
-optionsBADS.Display = 'off';
-
-% Set some bounds
-LB = [0 1 0.5 0.5];
-UB = [5 10 3 3];
-p0 = [1.5 5 1 1.5];
-
-% Anonymous functions for the search
-myResp = @(p) watsonTemporalModel(p,studiedFreqs);
-myRespInterp = @(p) watsonTemporalModel(p,interpFreqs);
-modalPenalty = @(p) sum(sum(sign(diff(sign(diff(myRespInterp(p)))))) == 0)*1e3;
 
 % Loop over subjects
 for whichSub = 1:length(subjects)
@@ -87,15 +65,7 @@ for whichSub = 1:length(subjects)
             YThisROIlow = YThisROI - YsemThisROI;
             YThisROIhigh = YThisROI + YsemThisROI;
 
-            % The weighted objective
-            myObj = @(p) norm( (1./YsemThisROI) .* ( YThisROI - myResp(p))) ...
-                + modalPenalty(p);
-
-            % Fit it
-            p = fmincon(myObj,p0,[],[],[],[],LB,UB,[],options);
-
-            % Get the fitted response
-            yFit = watsonTemporalModel(p,freqsForPlotting);
+            [~,~,~,yFitInterp] = fitWatsonModel(YThisROI,1./YsemThisROI,studiedFreqs,interpFreqs);
 
             % Select the plot of the correct stimulus direction
             nexttile(stimOrder(whichStim));
@@ -119,7 +89,7 @@ for whichSub = 1:length(subjects)
                 'MarkerSize',6,'MarkerEdgeColor',lineColor{stimOrder(whichStim)},'LineWidth',1);
 
             % Add the model fit
-            plot(log10(freqsForPlotting),yFit-shift_ttf(rr),...
+            plot(log10(interpFreqs),yFitInterp-shift_ttf(rr),...
                 ['-' lineColor{stimOrder(whichStim)}],...
                 'LineWidth',2);
 

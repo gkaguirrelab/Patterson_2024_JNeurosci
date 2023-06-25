@@ -63,24 +63,6 @@ LGNROI = cifti_read(tmpPath); LGNROI = LGNROI.cdata;
 tmpPath = fullfile(localDataDir,'retinoFiles','MT.dtseries.nii');
 MTROI = cifti_read(tmpPath); MTROI = MTROI.cdata;
 
-% fmincon Options. Indicate that the objective function is deterministic,
-% and handle verbosity
-options = optimoptions('fmincon');
-options.Display = 'none';
-
-
-% Set some bounds
-LB = [0 1 0.5 0.5];
-UB = [5 10 3 3];
-p0A = [1.5 5 1.1 1.5];
-p0B = [4 1.5 1.5 1];
-
-% Anonymous functions for the search. The "modalPenalty" enforces that the
-% interpolated response has a uni-modal distribution
-myResp = @(p) watsonTemporalModel(p,studiedFreqs);
-myRespInterp = @(p) watsonTemporalModel(p,interpFreqs);
-modalPenalty = @(p) sum(sum(sign(diff(sign(diff(myRespInterp(p)))))) == 0)*1e3;
-
 %% Loop through subjects and fit each vertex
 for ss = 1:length(subjectNames)
 
@@ -138,24 +120,10 @@ for ss = 1:length(subjectNames)
                 W = 1./std(adjustedVals(:,bootIdx),0,2)';
                 Y = mean(adjustedVals(:,bootIdx),2)';
 
-                % The weighted objective
-                myObj = @(p) norm( W .* ( Y - myResp(p))) ...
-                    + modalPenalty(p);
-
-                % Fit it
-                [pA, fValA] = fmincon(myObj,p0A,[],[],[],[],LB,UB,[],options);
-                [pB, fValB] = fmincon(myObj,p0B,[],[],[],[],LB,UB,[],options);
-                if fValA < fValB
-                    p = pA;
-                else
-                    p = pB;
-                end
-
-                % Get the fit at the plotting frequencies
-                yFit = myRespInterp(p);
+                [~,~,~,yFitInterp] = fitWatsonModel(Y,W,studiedFreqs,interpFreqs);
 
                 % Determine the peak frequency in the log domain
-                peakFreq(whichStim,rr,bb) = log10(interpFreqs(yFit==max(yFit)));
+                peakFreq(whichStim,rr,bb) = log10(interpFreqs(yFitInterp==max(yFitInterp)));
 
             end % stimuli
 

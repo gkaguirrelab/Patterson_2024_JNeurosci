@@ -11,7 +11,7 @@ verbose = false;
 % This is the threshold for the goodness of fit to the fMRI time-series
 % data. We only analyze those voxels with this quality fit or better
 r2Thresh = 0.1;
-nBoots = 10;
+nBoots = 100;
 
 % These variables define the subject names, stimulus directions. The
 % Flywheel analysis IDs are listed for completeness, but not used here.
@@ -35,6 +35,7 @@ nAcqs = 12;
 
 % Define some ROI sets
 roiSet = {'LGN','V1','V2/V3','hV4','MT'};
+nROIs = length(roiSet);
 
 %% Download Mt Sinai results
 % This script downloads the "results" files Flywheel and
@@ -74,10 +75,13 @@ for ss = 1:length(subjectNames)
     stimLabels = results.model.opts{find(strcmp(results.model.opts,'stimLabels'))+1};
 
     % Loop over bootstraps
-    for bb = 1:nBoots
+    parfor bb = 1:nBoots
 
         % Get a sampling (with replacement) of the 12 acquisitions
         bootIdx = datasample(1:nAcqs,nAcqs);
+
+        % Define some variables for parpool happiness
+        nGood = []; peakFreq = []; peakAmp = []; goodIdx = [];
 
         for rr = 1:length(roiSet)
 
@@ -123,25 +127,29 @@ for ss = 1:length(subjectNames)
                 [p,~,~,yFitInterp] = fitWatsonModel(Y,W,studiedFreqs);
 
                 % Determine the peak frequency in the log domain
-                peakFreq(whichStim,rr,bb) = log10(interpFreqs(yFitInterp==max(yFitInterp)));
+                peakFreq(whichStim,rr) = log10(interpFreqs(yFitInterp==max(yFitInterp)));
 
                 % Save the peak amplitude, which is given by the first
                 % param value
-                peakAmp(whichStim,rr,bb) = p(1);
+                peakAmp(whichStim,rr) = p(1);
 
             end % stimuli
 
         end % ROIs
 
+        % Store the bootstrap result in a par cell variable
+        par_peakFreq{bb} = peakFreq;
+        par_peakAmp{bb} = peakAmp;
+
     end % Bootstraps
 
+    % Reshape the par cell data into matrices and get mean and SEM
+    peakFreq =  reshape(cell2mat(par_peakFreq),nStims,nROIs,nBoots);
     peakFreqSEM(ss,:,:) = 10.^std(peakFreq,0,3);
     peakFreqMean(ss,:,:) = 10.^mean(peakFreq,3);
 
+    peakAmp =  reshape(cell2mat(par_peakAmp),nStims,nROIs,nBoots);
     peakAmpSEM(ss,:,:) = std(peakAmp,0,3);
     peakAmpMean(ss,:,:) = mean(peakAmp,3);
-            
-    nGoodSub(ss,:) = nGood;
-
 
 end

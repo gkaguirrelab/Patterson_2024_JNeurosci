@@ -65,7 +65,7 @@ for whichSub = 1:length(subjects)
             YThisROIlow = YThisROI - YsemThisROI;
             YThisROIhigh = YThisROI + YsemThisROI;
 
-            [~,~,~,yFitInterp] = fitWatsonModel(YThisROI,1./YsemThisROI,studiedFreqs,interpFreqs);
+            [~,~,~,yFitInterp] = fitWatsonModel(YThisROI,1./YsemThisROI,studiedFreqs);
 
             % Select the plot of the correct stimulus direction
             nexttile(stimOrder(whichStim));

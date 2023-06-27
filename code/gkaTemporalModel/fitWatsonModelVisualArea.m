@@ -120,10 +120,14 @@ for ss = 1:length(subjectNames)
                 W = 1./std(adjustedVals(:,bootIdx),0,2)';
                 Y = mean(adjustedVals(:,bootIdx),2)';
 
-                [~,~,~,yFitInterp] = fitWatsonModel(Y,W,studiedFreqs,interpFreqs);
+                [p,~,~,yFitInterp] = fitWatsonModel(Y,W,studiedFreqs);
 
                 % Determine the peak frequency in the log domain
                 peakFreq(whichStim,rr,bb) = log10(interpFreqs(yFitInterp==max(yFitInterp)));
+
+                % Save the peak amplitude, which is given by the first
+                % param value
+                peakAmp(whichStim,rr,bb) = p(1);
 
             end % stimuli
 
@@ -133,6 +137,10 @@ for ss = 1:length(subjectNames)
 
     peakFreqSEM(ss,:,:) = 10.^std(peakFreq,0,3);
     peakFreqMean(ss,:,:) = 10.^mean(peakFreq,3);
+
+    peakAmpSEM(ss,:,:) = std(peakAmp,0,3);
+    peakAmpMean(ss,:,:) = mean(peakAmp,3);
+            
     nGoodSub(ss,:) = nGood;
 
 

@@ -26,24 +26,25 @@ polarMap = cifti_read(tmpPath); polarMap = polarMap.cdata;
 tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_sigma.dtseries.nii');
 sigmaMap = cifti_read(tmpPath); sigmaMap = sigmaMap.cdata;
 
-% Visual area labels
-roiLabels = {'V1','V2','V3','hV4','VO1','VO2','V3a','V3b','LO1','LO2','IPS0','IPS1'};
-
 % Save a template map variable so we can create new maps below
 templateImage = cifti_read(tmpPath);
 
 % This is the threshold for the goodness of fit to the fMRI time-series
-% data. We only analyze those voxels with this quality fit or better
+% data. We only display those voxels with this quality fit or better
 r2Thresh = 0.1;
 
+% This is the threshold for the goodness of fit of the Watson model to the
+% TTF in each vertex. We only display those voxels with this fVal or lower
+fValThresh = 2;
 
-    % Prepare the figures
-    figHandle = figure('Renderer','painters');
-    figuresize(200,400,'pt');
-    tiledlayout(2,1,'TileSpacing','tight','Padding','tight')
+
+% Prepare the figures
+figHandle = figure('Renderer','painters');
+figuresize(200,400,'pt');
+tiledlayout(2,1,'TileSpacing','tight','Padding','tight')
 
 % Loop through subjects and fit each vertex
-    for ss = 1:length(subjectNames)
+for ss = 1:length(subjectNames)
 
     % Load the results file for this subject
     filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_mtSinai_results.mat']);
@@ -65,31 +66,17 @@ r2Thresh = 0.1;
 
         % Find those vertices that had a positive response to this stimulus
         % direction
-        posRespIdx = zeros(size(results.R2));
-        posRespIdx(fitResults.eccDeg > 0) = cellfun(@(x) sum(x(whichStim,:))>1, fitResults.Y(fitResults.eccDeg > 0));
-
-        % Get the median peak freq by area
-        for vv = 1:12
-            goodIdx = find(logical( (results.R2 > r2Thresh) .* posRespIdx .* (vArea == vv)  ));
-            peakFreq = cellfun(@(x) x(whichStim),fitResults.peakFreq(goodIdx));
-            peakFreq(peakFreq == 1) = nan;
-            peakFreq(peakFreq > 40) = nan;
-            freqByROI(ss,whichStim,vv) = median(peakFreq,'omitmissing');           
-        end
+        fValSet = nan(size(results.R2));
+        fValSet(fitResults.eccDeg > 0) = cellfun(@(x) x(whichStim), fitResults.fVal(fitResults.eccDeg > 0));
 
         % Identify those voxels with a positive response and an overall R2
-        % of greater than the threshold
-        goodIdx = find(logical( (results.R2 > r2Thresh) .* posRespIdx  ));
+        % of greater than the threshold, and an fVal below the threshold
+        goodIdx = find(logical( (results.R2 > r2Thresh) .* (fValSet < fValThresh)  ));
         nGood = length(goodIdx);
 
         % Extract the peak frequency for these vertices
         peakFreq = nan(nVert,1);
         peakFreq(goodIdx) = cellfun(@(x) x(whichStim),fitResults.peakFreq(goodIdx));
-
-        % Filter the mis-fit vertices in which the max or minimum frequency
-        % was identified
-        peakFreq(peakFreq == 1) = nan;
-        peakFreq(peakFreq > 40) = nan;
 
         % Update the goodIdx
         goodIdx = find(~isnan(peakFreq));
@@ -104,7 +91,7 @@ r2Thresh = 0.1;
 
         % Plot freq vs eccentricity for V1
         nexttile(ss);
-        goodIdx = find(logical( (results.R2 > r2Thresh) .* posRespIdx .* ~isnan(peakFreq) .* (vArea == 1)  ));
+        goodIdx = find(logical( (results.R2 > r2Thresh) .* (fValSet < fValThresh) .* (vArea == 1) ));
         x = log10(fitResults.eccDeg(goodIdx));
         x(x<0)=x(x<0)/10;
         [x, sortedIdx] = sort(x);
@@ -127,6 +114,7 @@ r2Thresh = 0.1;
         xq = binCenters(1):0.01:1.8;
         vq = fnval(sp,xq);
         plot(xq,vq,['-' stimPlotColors{whichStim}],'LineWidth',1.5)
+        ylim([0 60]);
         a = gca();
         xTickVals = [1,2,5,10,20,40,80];
         xTickLabels = {'<1','2','5','10','20','40','80'};

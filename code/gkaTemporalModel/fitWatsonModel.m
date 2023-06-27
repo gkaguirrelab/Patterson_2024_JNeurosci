@@ -1,7 +1,12 @@
-function [p,fVal,yFit,yFitInterp] = fitWatsonModel(Y,W,studiedFreqs,interpFreqs)
+function [p,fVal,yFit,yFitInterp] = fitWatsonModel(Y,W,studiedFreqs,p0A,interpFreqs)
 
 % Handle inputs
 if nargin == 3
+    p0A = [1.5 5 1.1 1.5];
+    interpFreqs = logspace(log10(1),log10(100),501);
+end
+
+if nargin == 4
     interpFreqs = logspace(log10(1),log10(100),501);
 end
 
@@ -11,18 +16,18 @@ options.Display = 'none';
 
 % Set some bounds
 LB = [0 1 0.5 0.5];
-UB = [5 10 3 3];
+UB = [10 10 3 3];
 
 % Two different p0 options
-p0A = [1.5 5 1.1 1.5];
 p0B = [4 1.5 1.5 1];
 
 % Set up the objective
-myObj = @(p) conditionedObj(p,Y,W,studiedFreqs,interpFreqs);
+myObj = @(p) objectiveFunc(p,Y,W,studiedFreqs);
+myNonlcon = @(p) unimodalConstraint(p,interpFreqs);
 
 % Fit with two different p0 values
-[pA, fValA] = fmincon(myObj,p0A,[],[],[],[],LB,UB,[],options);
-[pB, fValB] = fmincon(myObj,p0B,[],[],[],[],LB,UB,[],options);
+[pA, fValA] = fmincon(myObj,p0A,[],[],[],[],LB,UB,myNonlcon,options);
+[pB, fValB] = fmincon(myObj,p0B,[],[],[],[],LB,UB,myNonlcon,options);
 if fValA < fValB
     p = pA;
     fVal = fValA;
@@ -38,19 +43,24 @@ yFitInterp = watsonTemporalModel(p,interpFreqs);
 end
 
 
-function fVal = conditionedObj(p,Y,W,studiedFreqs,interpFreqs)
+function [c,ceq] = unimodalConstraint(p,interpFreqs)
 
-% Get the L2 norm of the weighted fit to the data
-yFit = watsonTemporalModel(p,studiedFreqs);
-fVal = norm( W .* ( Y - yFit) );
+% We don't need c
+c = [];
 
 % Get the interpolated fit
 yFitInterp = watsonTemporalModel(p,interpFreqs);
 
-% Penalize responses that are not unimodal; this includes penalizing
-% responses that have their highest value at either end of the frequency
-% range
-fVal = fVal + sum(sum(sign(diff(sign(diff(yFitInterp))))) == 0)*1e3;
+% Penalize responses that are not unimodal
+ceq = sum(sum(sign(diff(sign(diff(yFitInterp))))) == 0)*10;
+
+end
+
+function fVal = objectiveFunc(p,Y,W,studiedFreqs)
+
+% Get the L2 norm of the weighted fit to the data
+yFit = watsonTemporalModel(p,studiedFreqs);
+fVal = norm( W .* ( Y - yFit) );
 
 end
 

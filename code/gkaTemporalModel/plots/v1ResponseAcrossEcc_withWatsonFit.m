@@ -62,7 +62,18 @@ for whichSub = 1:length(subjects)
             YThisROIlow = YThisROI - YsemThisROI;
             YThisROIhigh = YThisROI + YsemThisROI;
 
-            [pData(whichSub,whichStim,rr,:),~,~,yFitInterp] = fitWatsonModel(YThisROI,1./YsemThisROI,studiedFreqs,interpFreqs);
+            % A default p0 search point
+            p0 = [1.5 5 1.1 1.5];
+
+            % Special case a few p0 situations. The Watson model is quite
+            % sensitive to the initial guess and prone to local minima in
+            % fitting
+            if (rr == 1) && (whichSub == 1) && (whichStim == 1)
+                p0 = [3.5848    6.6386    0.8967    0.9982];
+            end
+
+            % Fit the model
+            [pData(whichSub,whichStim,rr,:),~,~,yFitInterp] = fitWatsonModel(YThisROI,1./YsemThisROI,studiedFreqs,p0,interpFreqs);
 
             % Select the plot of the correct stimulus direction
             nexttile(stimOrder(whichStim));

@@ -145,11 +145,11 @@ for ss = 1:length(subjectNames)
 
     % Reshape the par cell data into matrices and get mean and SEM
     peakFreq =  reshape(cell2mat(par_peakFreq),nStims,nROIs,nBoots);
-    peakFreqSEM(ss,:,:) = 10.^std(peakFreq,0,3);
-    peakFreqMean(ss,:,:) = 10.^mean(peakFreq,3);
+    peakFreqIQR(ss,:,:) = 10.^iqr(peakFreq,3);
+    peakFreqMedian(ss,:,:) = 10.^median(peakFreq,3);
 
     peakAmp =  reshape(cell2mat(par_peakAmp),nStims,nROIs,nBoots);
-    peakAmpSEM(ss,:,:) = std(peakAmp,0,3);
-    peakAmpMean(ss,:,:) = mean(peakAmp,3);
+    peakAmpIQR(ss,:,:) = iqr(peakAmp,3);
+    peakAmpMedian(ss,:,:) = median(peakAmp,3);
 
 end

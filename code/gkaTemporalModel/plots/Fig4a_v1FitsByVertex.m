@@ -40,8 +40,8 @@ fValThresh = 2;
 
 % Prepare the figures
 figHandle = figure('Renderer','painters');
-figuresize(200,400,'pt');
-tiledlayout(2,1,'TileSpacing','tight','Padding','tight')
+figuresize(400,400,'pt');
+tiledlayout(2,2,'TileSpacing','tight','Padding','tight')
 
 % Loop through subjects and fit each vertex
 for ss = 1:length(subjectNames)
@@ -74,12 +74,22 @@ for ss = 1:length(subjectNames)
         goodIdx = find(logical( (results.R2 > r2Thresh) .* (fValSet < fValThresh)  ));
         nGood = length(goodIdx);
 
-        % Extract the peak frequency for these vertices
+        % Extract the peak amplitude and frequency for these vertices
+        peakAmp = nan(nVert,1);
+        peakAmp(goodIdx) = cellfun(@(x) x(whichStim),fitResults.peakAmp(goodIdx));
         peakFreq = nan(nVert,1);
         peakFreq(goodIdx) = cellfun(@(x) x(whichStim),fitResults.peakFreq(goodIdx));
 
         % Update the goodIdx
         goodIdx = find(~isnan(peakFreq));
+
+        % save a peakAmp map
+        newMap = templateImage;
+        newMap.cdata = single(zeros(size(fitResults.fVal)));
+        newMap.cdata(goodIdx) = single(peakAmp(goodIdx));
+        newMap = ciftiMakePseudoHemi(newMap);
+        fileOut = fullfile(savePath,[subjectNames{ss} '_' stimulusDirections{whichStim} '_peakAmp.dtseries.nii']);
+        cifti_write(newMap, fileOut);
 
         % save a peakFreq map
         newMap = templateImage;
@@ -89,21 +99,69 @@ for ss = 1:length(subjectNames)
         fileOut = fullfile(savePath,[subjectNames{ss} '_' stimulusDirections{whichStim} '_peakFreq.dtseries.nii']);
         cifti_write(newMap, fileOut);
 
+                % Plot Amplitude vs eccentricity for V1
+        nexttile((ss-1)*2+1);
+        goodIdx = find(logical( (results.R2 > r2Thresh) .* (fValSet < fValThresh) .* (vArea == 1) ));
+        x = log10(fitResults.eccDeg(goodIdx));
+        x(x<0)=x(x<0)/10;
+        [x, sortedIdx] = sort(x);
+        v = peakAmp(goodIdx);
+        v = v(sortedIdx);
+        v(v>6) = 6 + (v(v>6)-6)/5;
+        pHandle=scatter(x,v,10,'w','o',...
+            'MarkerEdgeColor','none','MarkerFaceColor',stimPlotColors{whichStim},...
+            'MarkerFaceAlpha',stimAlphas(whichStim));
+
+        % Add a fit line through the median value in each of 30
+        % eccentricity bins
+        hold on
+        x(x<0)=0;
+        nBins = 30;
+        [binIdx,edges] = discretize(x,nBins);
+        binCenters = edges(1:end-1)+diff(edges)/2;
+        for ii = 1:nBins
+            binV(ii) = median(v(binIdx==ii));
+        end
+        % plot(binCenters,binV,'*','Color',stimPlotColors{whichStim});
+        sp = spaps(binCenters,binV,-750);
+        xq = binCenters(1):0.01:1.8;
+        vq = fnval(sp,xq);
+        plot(xq,vq,['-' stimPlotColors{whichStim}],'LineWidth',1.5)
+
+        % Clean up
+        ylim([0 7]);
+        a = gca();
+        a.YTick = [0 1 2 3 4 5 6];
+        a.YTickLabels = {'0','1','2','3','4','5','>6'};
+        xTickVals = [1,2,5,10,20,40,80];
+        xTickLabels = {'<1','2','5','10','20','40','80'};
+        a.XTick = log10(xTickVals);
+        a.XTickLabels = xTickLabels;
+        xlim([-0.2 2.0]);
+        xlabel('Eccentricity [deg]');
+        ylabel('Amplitude [BOLD Pct change]');
+        box off
+
+        title(subjects{ss});
+
+
         % Plot freq vs eccentricity for V1
-        nexttile(ss);
+        nexttile((ss-1)*2+2);
         goodIdx = find(logical( (results.R2 > r2Thresh) .* (fValSet < fValThresh) .* (vArea == 1) ));
         x = log10(fitResults.eccDeg(goodIdx));
         x(x<0)=x(x<0)/10;
         [x, sortedIdx] = sort(x);
         v = peakFreq(goodIdx);
         v = v(sortedIdx);
+        v(v>40) = 40 + (v(v>40)-40)/10;
         pHandle=scatter(x,v,10,'w','o',...
             'MarkerEdgeColor','none','MarkerFaceColor',stimPlotColors{whichStim},...
             'MarkerFaceAlpha',stimAlphas(whichStim));
 
+        % Add a fit line through the median value in each of 30
+        % eccentricity bins
         hold on
         x(x<0)=0;
-        % bin x and get median v in each bin
         nBins = 30;
         [binIdx,edges] = discretize(x,nBins);
         binCenters = edges(1:end-1)+diff(edges)/2;
@@ -114,8 +172,12 @@ for ss = 1:length(subjectNames)
         xq = binCenters(1):0.01:1.8;
         vq = fnval(sp,xq);
         plot(xq,vq,['-' stimPlotColors{whichStim}],'LineWidth',1.5)
-        ylim([0 60]);
+
+        % Clean up
+        ylim([0 45]);
         a = gca();
+                a.YTick = [0 10 20 30 40];
+        a.YTickLabels = {'0','10','20','30','>40'};
         xTickVals = [1,2,5,10,20,40,80];
         xTickLabels = {'<1','2','5','10','20','40','80'};
         a.XTick = log10(xTickVals);
@@ -124,10 +186,14 @@ for ss = 1:length(subjectNames)
         xlabel('Eccentricity [deg]');
         ylabel('Peak frequency [Hz]');
         box off
+
+        title(subjects{ss});
+
+
     end
 
 end
 
-plotNamesPDF = 'freqByVertexEccen.pdf';
+plotNamesPDF = 'ampAndFreqByVertexEccen.pdf';
 saveas(figHandle,fullfile(savePath,plotNamesPDF));
 

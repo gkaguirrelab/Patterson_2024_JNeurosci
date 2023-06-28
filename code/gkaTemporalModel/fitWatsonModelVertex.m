@@ -107,12 +107,13 @@ for ss = 1:length(subjectNames)
         Y = mean(adjustedVals,3,"omitmissing");
 
         % Define some variables to keep par happy       
-        p = []; peakFreq = []; fVal = []; p = []; yFitInterp = []; rSquared = [];
+        p = []; peakFreq = []; peakAmp = [];
+        fVal = []; p = []; yFitInterp = []; rSquared = [];
 
         % Fit each stimulus with the Watson TTF
         for dd = 1:nStims
 
-            [p(dd,:),fVal(dd),~,yFitInterp(dd,:)] = fitWatsonModel(Y(dd,:),W(dd,:),studiedFreqs,interpFreqs)
+            [p(dd,:),fVal(dd),~,yFitInterp(dd,:)] = fitWatsonModel(Y(dd,:),W(dd,:),studiedFreqs)
 
             % Determine the proportion variance explained
             maxfVal = norm( W(dd,:) .* ( Y(dd,:) ));
@@ -120,6 +121,9 @@ for ss = 1:length(subjectNames)
 
             % Determine the peak frequency
             peakFreq(dd) = interpFreqs(yFitInterp(dd,:)==max(yFitInterp(dd,:)));
+
+            % Determine the peak ampitude
+            peakAmp(dd) = p(dd,1);
 
         end
 
@@ -131,6 +135,7 @@ for ss = 1:length(subjectNames)
         parLoop_Y{gg} = Y;
         parLoop_yFitInterp{gg} = yFitInterp;
         parLoop_peakFreq{gg} = peakFreq;
+        parLoop_peakAmp{gg} = peakAmp;
         parLoop_eccDeg{gg} = eccenMap(thisIdx);
         parLoop_polarAngle{gg} = polarMap(thisIdx);
         parLoop_area{gg} = vArea(thisIdx);
@@ -146,6 +151,7 @@ for ss = 1:length(subjectNames)
     fitResults.Y(idxSet) = parLoop_Y;
     fitResults.yFitInterp(idxSet) = parLoop_yFitInterp;
     fitResults.peakFreq(idxSet) = parLoop_peakFreq;
+    fitResults.peakAmp(idxSet) = parLoop_peakAmp;
     fitResults.eccDeg(idxSet) = cell2mat(parLoop_eccDeg);
     fitResults.polarAngle(idxSet) = cell2mat(parLoop_polarAngle);
     fitResults.area(idxSet) = cell2mat(parLoop_area);

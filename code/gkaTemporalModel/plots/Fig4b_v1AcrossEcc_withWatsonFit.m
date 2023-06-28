@@ -85,6 +85,11 @@ for whichSub = 1:length(subjects)
                 plotColor{whichStim},'EdgeColor','none','FaceColor',plotColor{stimOrder(whichStim)},'FaceAlpha',faceAlpha);
             hold on
 
+            % Add the model fit
+            plot(log10(interpFreqs),yFitInterp-shift_ttf(rr),...
+                ['-' lineColor{stimOrder(whichStim)}],...
+                'LineWidth',2);
+
             % Add the data symbols, using reversed markers for values below
             % zero
             idx = YThisROI > 0;
@@ -95,11 +100,6 @@ for whichSub = 1:length(subjects)
             plot(log10(studiedFreqs(idx)),YThisROI(idx)-shift_ttf(rr),...
                 'o','MarkerFaceColor','w',...
                 'MarkerSize',6,'MarkerEdgeColor',lineColor{stimOrder(whichStim)},'LineWidth',1);
-
-            % Add the model fit
-            plot(log10(interpFreqs),yFitInterp-shift_ttf(rr),...
-                ['-' lineColor{stimOrder(whichStim)}],...
-                'LineWidth',2);
 
             % Add reference lines
             if rr==1 && whichStim == 3

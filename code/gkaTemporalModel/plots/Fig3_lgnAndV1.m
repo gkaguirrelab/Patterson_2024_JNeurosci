@@ -127,7 +127,7 @@ for ss = 1:nSubs
 
                 % Determine the peak frequency in the log domain
                 peakFreq(whichStim,rr) = log10(interpFreqs(yFitInterp==max(yFitInterp)));
-               
+
                 % Save the peak amplitude, which is given by the first
                 % param value
                 peakAmp(whichStim,rr) = p(1);
@@ -199,12 +199,25 @@ for whichSub = 1:length(subjects)
             % Get the Watson fit
             [~,~,~,yFitInterp] = fitWatsonModel(thisY,1./thisIQR,studiedFreqs);
 
+            % Add reference lines
+            if whichStim == 2
+                plot(log10([1 1]),[0 2]-shift_ttf(stimOrder(whichStim)),'-k');
+            else
+                plot(log10([1 1]),[0 4]-shift_ttf(stimOrder(whichStim)),'-k');
+            end
+            hold on
+            plot(log10([1 100]),[0 0]-shift_ttf(stimOrder(whichStim)),'-k');
+
             % Add a patch for the error
             patch(...
                 [log10(studiedFreqs),fliplr(log10(studiedFreqs))],...
                 [ lowY-shift_ttf(stimOrder(whichStim)), fliplr(highY)-shift_ttf(stimOrder(whichStim)) ],...
                 plotColor{whichStim},'EdgeColor','none','FaceColor',plotColor{stimOrder(whichStim)},'FaceAlpha',faceAlpha);
-            hold on
+
+            % Add the model fit
+            plot(log10(interpFreqs),yFitInterp-shift_ttf(stimOrder(whichStim)),...
+                ['-' lineColor{stimOrder(whichStim)}],...
+                'LineWidth',2);
 
             % Add the data symbols, using reversed markers for values below
             % zero
@@ -216,19 +229,6 @@ for whichSub = 1:length(subjects)
             plot(log10(studiedFreqs(idx)),thisY(idx)-shift_ttf(stimOrder(whichStim)),...
                 'o','MarkerFaceColor','w',...
                 'MarkerSize',6,'MarkerEdgeColor',lineColor{stimOrder(whichStim)},'LineWidth',1);
-
-            % Add the model fit
-            plot(log10(interpFreqs),yFitInterp-shift_ttf(stimOrder(whichStim)),...
-                ['-' lineColor{stimOrder(whichStim)}],...
-                'LineWidth',2);
-
-            % Add reference lines
-            if whichStim == 2
-                plot(log10([1 1]),[0 2]-shift_ttf(stimOrder(whichStim)),'-k');
-            else
-                plot(log10([1 1]),[0 4]-shift_ttf(stimOrder(whichStim)),'-k');
-            end
-            plot(log10([1 100]),[0 0]-shift_ttf(stimOrder(whichStim)),'-k');
 
             % Clean up
             xlim(log10([0.5 150]))
@@ -351,4 +351,4 @@ end
 
 % Save the plot
 plotNamesPDF = 'Fig3b_lgnAndV1_withWatsonModel.pdf';
-saveas(figHandleA,fullfile(savePath,plotNamesPDF));
+saveas(figHandleB,fullfile(savePath,plotNamesPDF));

@@ -18,7 +18,7 @@ savePath = '~/Desktop/VSS 2023/';
 % This is the threshold for the goodness of fit to the fMRI time-series
 % data. We only analyze those voxels with this quality fit or better
 r2Thresh = 0.1;
-nBoots = 100;
+nBoots = 250;
 
 % These variables define the subject names, stimulus directions. The
 % Flywheel analysis IDs are listed for completeness, but not used here.
@@ -85,7 +85,7 @@ for ss = 1:nSubs
         bootIdx = datasample(1:nAcqs,nAcqs);
 
         % Define some variables for parpool happiness
-        nGood = []; peakFreq = []; peakAmp = []; goodIdx = []; Y = [];
+        nGood = []; peakFreq = []; peakAmp = []; goodIdx = []; Yset = [];
 
         for rr = 1:length(roiSet)
 
@@ -120,16 +120,20 @@ for ss = 1:nSubs
 
                 % Get the mean across (bootstrap resampled) acquisitions
                 W = 1./std(adjustedVals(:,bootIdx),0,2)';
-                Y(whichStim,rr,:) = mean(adjustedVals(:,bootIdx),2);
+                Y = mean(adjustedVals(:,bootIdx),2)';
 
-                [p,~,~,yFitInterp] = fitWatsonModel(squeeze(Y(whichStim,rr,:)),W,studiedFreqs);
+                % Perform the fit
+                [p,~,~,yFitInterp] = fitWatsonModel(Y,W,studiedFreqs);
 
                 % Determine the peak frequency in the log domain
                 peakFreq(whichStim,rr) = log10(interpFreqs(yFitInterp==max(yFitInterp)));
-
+               
                 % Save the peak amplitude, which is given by the first
                 % param value
                 peakAmp(whichStim,rr) = p(1);
+
+                % Save the Y values
+                Yset(whichStim,rr,:) = Y;
 
             end % stimuli
 
@@ -138,7 +142,7 @@ for ss = 1:nSubs
         % Store the bootstrap result in a par cell variable
         par_peakFreq{bb} = peakFreq;
         par_peakAmp{bb} = peakAmp;
-        par_Y{bb} = Y;
+        par_Yset{bb} = Yset;
 
     end % Bootstraps
 
@@ -151,7 +155,7 @@ for ss = 1:nSubs
     peakAmpIQR(ss,:,:) = iqr(peakAmp,3);
     peakAmpMedian(ss,:,:) = median(peakAmp,3);
 
-    bootY = reshape(cell2mat(par_Y),nStims,nROIs,nBoots,nFreqs);
+    bootY = reshape(cell2mat(par_Yset),nStims,nROIs,nBoots,nFreqs);
     YMedian(ss,:,:,:) = squeeze(median(bootY,3));
     YIQR(ss,:,:,:) = squeeze(iqr(bootY,3));
 
@@ -180,10 +184,10 @@ for whichSub = 1:length(subjects)
     % Loop over ROIS
     for rr = 1:nROIs
 
-            % Select the plot of the correct stimulus direction
-            nexttile((whichSub-1)*nROIs+rr);
+        % Select the plot of the correct stimulus direction
+        nexttile((whichSub-1)*nROIs+rr);
 
-            % Loop over stimuli and plot
+        % Loop over stimuli and plot
         for whichStim = 1:nStims
 
             % Assemble the data
@@ -220,7 +224,7 @@ for whichSub = 1:length(subjects)
 
             % Add reference lines
             if whichStim == 2
-               plot(log10([1 1]),[0 2]-shift_ttf(stimOrder(whichStim)),'-k');
+                plot(log10([1 1]),[0 2]-shift_ttf(stimOrder(whichStim)),'-k');
             else
                 plot(log10([1 1]),[0 4]-shift_ttf(stimOrder(whichStim)),'-k');
             end
@@ -266,37 +270,82 @@ saveas(figHandleA,fullfile(savePath,plotNamesPDF));
 % Prepare the peak freq figure
 figHandleB = figure('Renderer','painters');
 figuresize(460,600,'pt');
-tiledlayout(1,2,'TileSpacing','tight','Padding','tight')
+tiledlayout(2,2,'TileSpacing','tight','Padding','tight')
 roiShift = 0.25;
 % Loop over subjects
 for whichSub = 1:length(subjects)
 
-            % Select the plot of the correct stimulus direction
-            nexttile();
+    % Select the plot of the correct stimulus direction
+    nexttile();
 
-        for whichStim = 1:nStims
+    for whichStim = 1:nStims
 
-            val = squeeze(peakAmpMedian(whichSub,whichStim,1));
-            valIQR = squeeze(peakAmpIQR(whichSub,whichStim,1));
-            
-            % Loop over stimuli and plot
-            plot([stimOrder(whichStim) stimOrder(whichStim)],[val-valIQR/2,val+valIQR/2],'-','Color',plotColor{stimOrder(whichStim)});
-            hold on
-            plot(stimOrder(whichStim),val,'o','Color',plotColor{stimOrder(whichStim)});
+        val = squeeze(peakAmpMedian(whichSub,whichStim,1));
+        valIQR = squeeze(peakAmpIQR(whichSub,whichStim,1));
 
-                        val = squeeze(peakAmpMedian(whichSub,whichStim,2));
-            valIQR = squeeze(peakAmpIQR(whichSub,whichStim,2));
-            
-            % Loop over stimuli and plot
-            plot([stimOrder(whichStim)+roiShift stimOrder(whichStim)+roiShift],[val-valIQR/2,val+valIQR/2],'-','Color',plotColor{stimOrder(whichStim)});
-            hold on
-            plot(stimOrder(whichStim)+roiShift,val,'o','Color',plotColor{stimOrder(whichStim)});
+        % Loop over stimuli and plot
+        plot([stimOrder(whichStim) stimOrder(whichStim)],[val-valIQR/2,val+valIQR/2],'-','Color',plotColor{stimOrder(whichStim)});
+        hold on
+        plot(stimOrder(whichStim),val,'o','Color',plotColor{stimOrder(whichStim)});
 
-        end
+        val = squeeze(peakAmpMedian(whichSub,whichStim,2));
+        valIQR = squeeze(peakAmpIQR(whichSub,whichStim,2));
 
-        ylim([0 6])
-        xlim([0.5 3.5]);
+        % Loop over stimuli and plot
+        plot([stimOrder(whichStim)+roiShift stimOrder(whichStim)+roiShift],[val-valIQR/2,val+valIQR/2],'-','Color',plotColor{stimOrder(whichStim)});
+        hold on
+        plot(stimOrder(whichStim)+roiShift,val,'^','Color',plotColor{stimOrder(whichStim)});
 
+    end
+
+    ylim([0 6])
+    ylabel('BOLD response [Pct change]');
+    xlim([0.5 3.5]);
+    a = gca;
+    a.XTick = [1 1.25 2 2.25 3 3.25];
+    a.XTickLabelRotation = 90;
+    a.XTickLabel = {'lgn','v1','lgn','v1','lgn','v1'};
+
+    title(subjects{whichSub});
+
+end
+
+% Loop over subjects
+for whichSub = 1:length(subjects)
+
+    % Select the plot of the correct stimulus direction
+    nexttile();
+
+    for whichStim = 1:nStims
+
+        val = squeeze(peakFreqMedian(whichSub,whichStim,1));
+        valIQR = squeeze(peakFreqIQR(whichSub,whichStim,1));
+
+        % Loop over stimuli and plot
+        plot([stimOrder(whichStim) stimOrder(whichStim)],[val-valIQR/2,val+valIQR/2],'-','Color',plotColor{stimOrder(whichStim)});
+        hold on
+        plot(stimOrder(whichStim),val,'o','Color',plotColor{stimOrder(whichStim)});
+
+        val = squeeze(peakFreqMedian(whichSub,whichStim,2));
+        valIQR = squeeze(peakFreqIQR(whichSub,whichStim,2));
+
+        % Loop over stimuli and plot
+        plot([stimOrder(whichStim)+roiShift stimOrder(whichStim)+roiShift],[val-valIQR/2,val+valIQR/2],'-','Color',plotColor{stimOrder(whichStim)});
+        hold on
+        plot(stimOrder(whichStim)+roiShift,val,'^','Color',plotColor{stimOrder(whichStim)});
+
+    end
+
+    ylim([0 30])
+    ylabel('Peak frequency [Hz]');
+    xlim([0.5 3.5]);
+
+    a = gca;
+    a.XTick = [1 1.25 2 2.25 3 3.25];
+    a.XTickLabelRotation = 90;
+    a.XTickLabel = {'lgn','v1','lgn','v1','lgn','v1'};
+
+    title(subjects{whichSub});
 
 end
 

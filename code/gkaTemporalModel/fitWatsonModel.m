@@ -25,6 +25,11 @@ p0B = [4 2.5 1.5 1];
 myObj = @(p) objectiveFunc(p,Y,W,studiedFreqs);
 myNonlcon = @(p) unimodalConstraint(p,interpFreqs);
 
+% Turn off some warnings that can occur during the search
+warningState = warning;
+warning('off','MATLAB:singularMatrix');
+warning('off','MATLAB:nearlySingularMatrix');
+
 % Fit with two different p0 values
 [pA, fValA] = fmincon(myObj,p0A,[],[],[],[],LB,UB,myNonlcon,options);
 [pB, fValB] = fmincon(myObj,p0B,[],[],[],[],LB,UB,myNonlcon,options);
@@ -39,6 +44,9 @@ end
 % Get the values at the solution
 yFit = watsonTemporalModel(p,studiedFreqs);
 yFitInterp = watsonTemporalModel(p,interpFreqs);
+
+% Restore the warning state
+warning(warningState);
 
 end
 

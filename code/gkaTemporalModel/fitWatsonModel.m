@@ -19,7 +19,7 @@ LB = [0 1 0.5 0.5];
 UB = [10 10 3 3];
 
 % Two different p0 options
-p0B = [4 1.5 1.5 1];
+p0B = [4 2.5 1.5 1];
 
 % Set up the objective
 myObj = @(p) objectiveFunc(p,Y,W,studiedFreqs);

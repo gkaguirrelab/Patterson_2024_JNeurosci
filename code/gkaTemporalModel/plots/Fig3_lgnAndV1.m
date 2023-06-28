@@ -158,7 +158,7 @@ for ss = 1:nSubs
 end
 
 
-%% Do the plotting
+%% Plot the TTFs
 
 % Params that allows the plots to appear in the order LMS, L-M, S
 stimOrder = [2 3 1];
@@ -180,7 +180,10 @@ for whichSub = 1:length(subjects)
     % Loop over ROIS
     for rr = 1:nROIs
 
-        % Loop over stimuli and plot
+            % Select the plot of the correct stimulus direction
+            nexttile((whichSub-1)*nROIs+rr);
+
+            % Loop over stimuli and plot
         for whichStim = 1:nStims
 
             % Assemble the data
@@ -189,10 +192,8 @@ for whichSub = 1:length(subjects)
             lowY = thisY - thisIQR/2;
             highY = thisY + thisIQR/2;
 
+            % Get the Watson fit
             [~,~,~,yFitInterp] = fitWatsonModel(thisY,1./thisIQR,studiedFreqs);
-
-            % Select the plot of the correct stimulus direction
-            nexttile((whichSub-1)*nROIs+rr);
 
             % Add a patch for the error
             patch(...
@@ -253,7 +254,52 @@ end
 
 % Save the plot
 plotNamesPDF = 'Fig3a_lgnAndV1_withWatsonModel.pdf';
-saveas(figHandles,fullfile(savePath,plotNamesPDF));
+saveas(figHandleA,fullfile(savePath,plotNamesPDF));
 
 
 
+
+
+%% Plot the peak Amplitude and Frequency
+
+
+% Prepare the peak freq figure
+figHandleB = figure('Renderer','painters');
+figuresize(460,600,'pt');
+tiledlayout(1,2,'TileSpacing','tight','Padding','tight')
+roiShift = 0.25;
+% Loop over subjects
+for whichSub = 1:length(subjects)
+
+            % Select the plot of the correct stimulus direction
+            nexttile();
+
+        for whichStim = 1:nStims
+
+            val = squeeze(peakAmpMedian(whichSub,whichStim,1));
+            valIQR = squeeze(peakAmpIQR(whichSub,whichStim,1));
+            
+            % Loop over stimuli and plot
+            plot([stimOrder(whichStim) stimOrder(whichStim)],[val-valIQR/2,val+valIQR/2],'-','Color',plotColor{stimOrder(whichStim)});
+            hold on
+            plot(stimOrder(whichStim),val,'o','Color',plotColor{stimOrder(whichStim)});
+
+                        val = squeeze(peakAmpMedian(whichSub,whichStim,2));
+            valIQR = squeeze(peakAmpIQR(whichSub,whichStim,2));
+            
+            % Loop over stimuli and plot
+            plot([stimOrder(whichStim)+roiShift stimOrder(whichStim)+roiShift],[val-valIQR/2,val+valIQR/2],'-','Color',plotColor{stimOrder(whichStim)});
+            hold on
+            plot(stimOrder(whichStim)+roiShift,val,'o','Color',plotColor{stimOrder(whichStim)});
+
+        end
+
+        ylim([0 6])
+        xlim([0.5 3.5]);
+
+
+end
+
+% Save the plot
+plotNamesPDF = 'Fig3b_lgnAndV1_withWatsonModel.pdf';
+saveas(figHandleA,fullfile(savePath,plotNamesPDF));

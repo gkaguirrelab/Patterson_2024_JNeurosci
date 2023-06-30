@@ -1,27 +1,47 @@
 % scriptCreatePlots
 
-% Housekeeping
+
+%% Housekeeping
 clear
 close all
-
-% Load the MRI data
-mriData = loadMRIResponseData();
+rng(1); % Fix the random number generator
+verbose = false;
 
 % Place to save figures
 savePath = '~/Desktop/VSS 2023/';
 
-% The identities of the stims and subjects
+%% Analysis properties
+% This is the threshold for the goodness of fit to the fMRI time-series
+% data. We only analyze those voxels with this quality fit or better
+r2Thresh = 0.1;
+nBoots = 250;
+
+% These variables define the subject names, stimulus directions. The
+% Flywheel analysis IDs are listed for completeness, but not used here.
+% Other software downloads the files from Flywheel.
+analysisIDs = {'6117d4db18adcc19d6e0f820','611d158fa296f805e7a2da75'};
+subjectNames = {'HEROgka1','HEROasb1'};
 subjects = {'gka','asb'};
 stimulusDirections = {'LminusM','S','LMS'};
 nSubs = length(subjects);
 nStims = length(stimulusDirections);
 
-% Fixed features of the model
-nCells = 3; nParams = 3;
-
-% The frequencies studied
+% The frequencies studied. We also define a set of interpolated frequencies
+% so that the model fit does not wiggle too much in between the studied
+% frequencies. Finally, we define a high-resolution set of the frequencies
+% for plotting.
+allFreqs = [0,2,4,8,16,32,64];
 studiedFreqs = [2 4 8 16 32 64];
+nFreqs = length(studiedFreqs);
 interpFreqs = logspace(log10(1),log10(100),501);
+nAcqs = 12;
+
+% Define the eccentricity properties of the analysis
+eccenDivs = [0 90./(2.^(5:-1:0))];
+for ii=1:length(eccenDivs)-1
+    eccenBins{ii}=[eccenDivs(ii),eccenDivs(ii+1)];
+end
+nEccs = length(eccenBins);
 
 % Params that allows the plots to appear in the order LMS, L-M, S
 stimOrder = [2 3 1];
@@ -32,35 +52,74 @@ lineColor={'k','r','b'};
 faceAlpha = 0.4; % Transparency of the shaded error region
 shift_ttf = [0 3 6 9 11 13]; % shifts each ttf down so they can be presented tightly on the same figure
 
-nEccs = 6;
-eccDegBinEdges = logspace(log10(0.7031),log10(90),15);
-studiedEccentricites = eccDegBinEdges(4:2:14);
-nAcqs = 12;
+
+%% Download Mt Sinai results
+% This script downloads the "results" files Flywheel and
+% extracts BOLD fMRI response amplitudes for each of the stimulus temporal
+% frequencies. The response for each acquisition is retained to support
+% subsequent boot-strap resampling of the data.
+
+% Define the localDataDir
+localDataDir = fullfile(tbLocateProjectSilent('mriSinaiAnalysis'),'data');
+
+% Load the retino maps
+tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_varea.dtseries.nii');
+vArea = cifti_read(tmpPath); vArea = vArea.cdata;
+tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_eccen.dtseries.nii');
+eccenMap = cifti_read(tmpPath); eccenMap = eccenMap.cdata;
+tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_angle.dtseries.nii');
+polarMap = cifti_read(tmpPath); polarMap = polarMap.cdata;
+tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_sigma.dtseries.nii');
+sigmaMap = cifti_read(tmpPath); sigmaMap = sigmaMap.cdata;
+
 
 % Loop over subjects
-for whichSub = 1:length(subjects)
+for ss = 1:length(subjects)
+
+    % Load the results file for this subject
+    filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_mtSinai_results.mat']);
+    load(filePath,'results')
+
+    % Grab the stimLabels
+    stimLabels = results.model.opts{find(strcmp(results.model.opts,'stimLabels'))+1};
 
     % Prepare the figure
     figHandles = figure('Renderer','painters');
     figuresize(600,400,'pt');
     tiledlayout(1,3,'TileSpacing','tight','Padding','tight')
 
-    % Loop over ROIS
+    % Loop over eccentricities
     for rr = 1:nEccs
 
-        % Load the data
-        Y = zeros(nStims,length(studiedFreqs));
-        Ysem = zeros(nStims,length(studiedFreqs));
-        for whichStim = 1:nStims
-            thisMatrix = mriData.(subjects{whichSub}).(stimulusDirections{whichStim}).(['v1_ecc' num2str(rr)]);
-            Y(whichStim,:) = mean(thisMatrix);
-            Ysem(whichStim,:) = std(thisMatrix)/sqrt(nAcqs);
+        % Find the goodIdx
+        eccenRange = eccenBins{rr};
+        goodIdx = find(logical( (results.R2 > r2Thresh) .* (vArea == 1) .* (eccenMap > eccenRange(1)) .* (eccenMap < eccenRange(2))  ));
 
-            % Assemble the data
-            YThisROI = squeeze(Y(whichStim,:));
-            YsemThisROI = squeeze(Ysem(whichStim,:));
-            YThisROIlow = YThisROI - YsemThisROI;
-            YThisROIhigh = YThisROI + YsemThisROI;
+        % Loop through the stimuli
+        for whichStim = 1:nStims
+
+            % Loop through the frequencies and obtain the set of values
+            rawVals = cell(1,nFreqs+1);
+            for ff = 1:nFreqs+1
+                subString = sprintf(['f%dHz_' stimulusDirections{whichStim}],allFreqs(ff));
+                idx = find(contains(stimLabels,subString));
+                rawVals{ff} = mean(results.params(goodIdx,idx),'omitnan');
+            end
+
+            % Adjust the values for the zero frequency
+            adjustedVals = [];
+            for ff = 2:nFreqs+1
+                adjustedVals(:,ff-1) = rawVals{ff}-rawVals{1};
+            end
+
+            % Bootstrap over acquisitions to obtain the median data values
+            % and the IQR
+            bootY = zeros(nBoots,length(studiedFreqs));
+            for bb = 1:nBoots
+                bootY(bb,:) = mean(adjustedVals(datasample(1:nAcqs,nAcqs),:),1);
+            end
+            YMedian = median(bootY,1);
+            YIQR = iqr(bootY,1);
 
             % A default p0 search point
             p0 = [1.5 5 1.1 1.5];
@@ -68,20 +127,25 @@ for whichSub = 1:length(subjects)
             % Special case a few p0 situations. The Watson model is quite
             % sensitive to the initial guess and prone to local minima in
             % fitting
-            if (rr == 1) && (whichSub == 1) && (whichStim == 1)
+            if (rr == 1) && (ss == 1) && (whichStim == 1)
                 p0 = [3.5848    6.6386    0.8967    0.9982];
+            end
+            if (rr == 5) && (ss == 1) && (whichStim == 3)
+                p0 = [2.5825    2.1325    2.6702    1.5639];
             end
 
             % Fit the model
-            [pData(whichSub,whichStim,rr,:),~,~,yFitInterp] = fitWatsonModel(YThisROI,1./YsemThisROI,studiedFreqs,p0,interpFreqs);
+            [pData(ss,whichStim,rr,:),fVal,~,yFitInterp] = fitWatsonModel(YMedian,1./YIQR,studiedFreqs,p0,interpFreqs);
 
             % Select the plot of the correct stimulus direction
             nexttile(stimOrder(whichStim));
 
             % Add a patch for the error
+            Ylow = YMedian - YIQR/2;
+            Yhi = YMedian + YIQR/2;
             patch(...
                 [log10(studiedFreqs),fliplr(log10(studiedFreqs))],...
-                [ YThisROIlow-shift_ttf(rr), fliplr(YThisROIhigh)-shift_ttf(rr) ],...
+                [ Ylow-shift_ttf(rr), fliplr(Yhi)-shift_ttf(rr) ],...
                 plotColor{whichStim},'EdgeColor','none','FaceColor',plotColor{stimOrder(whichStim)},'FaceAlpha',faceAlpha);
             hold on
 
@@ -92,12 +156,12 @@ for whichSub = 1:length(subjects)
 
             % Add the data symbols, using reversed markers for values below
             % zero
-            idx = YThisROI > 0;
-            plot(log10(studiedFreqs(idx)),YThisROI(idx)-shift_ttf(rr),...
+            idx = YMedian > 0;
+            plot(log10(studiedFreqs(idx)),YMedian(idx)-shift_ttf(rr),...
                 'o','MarkerFaceColor',lineColor{stimOrder(whichStim)},...
                 'MarkerSize',6,'MarkerEdgeColor','w','LineWidth',1);
-            idx = YThisROI < 0;
-            plot(log10(studiedFreqs(idx)),YThisROI(idx)-shift_ttf(rr),...
+            idx = YMedian < 0;
+            plot(log10(studiedFreqs(idx)),YMedian(idx)-shift_ttf(rr),...
                 'o','MarkerFaceColor','w',...
                 'MarkerSize',6,'MarkerEdgeColor',lineColor{stimOrder(whichStim)},'LineWidth',1);
 
@@ -113,8 +177,8 @@ for whichSub = 1:length(subjects)
     end
 
     % Clean up
-    for ss=1:nStims
-        nexttile(ss);
+    for whichStim=1:nStims
+        nexttile(whichStim);
         xlim(log10([0.5 150]))
         ylim([-14 5])
         xlabel('Frequency [Hz]')
@@ -127,13 +191,13 @@ for whichSub = 1:length(subjects)
         a.XMinorTick = 'off';
         a.YAxis.Visible = 'off';
         box off
-        if ss>1
+        if whichStim>1
             a.XAxis.Visible = 'off';
         end
     end
 
     % Save the plots
-    plotNamesPDF = [subjects{whichSub} '_v1Ecc_withWatsonModel.pdf' ];
+    plotNamesPDF = [subjects{ss} '_v1Ecc_withWatsonModel.pdf' ];
     saveas(figHandles,fullfile(savePath,plotNamesPDF));
 
 end

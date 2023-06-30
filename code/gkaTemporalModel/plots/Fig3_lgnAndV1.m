@@ -2,8 +2,6 @@
 % acquisitions and use the Watson model fit to obtain the peak amplitude
 % and frequency for each stimulus direction. Make plots of these.
 
-% Validate the fit for vertex 53477 for subject GKA
-
 
 %% Housekeeping
 clear
@@ -18,7 +16,7 @@ savePath = '~/Desktop/VSS 2023/';
 % This is the threshold for the goodness of fit to the fMRI time-series
 % data. We only analyze those voxels with this quality fit or better
 r2Thresh = 0.1;
-nBoots = 250;
+nBoots = 200;
 
 % These variables define the subject names, stimulus directions. The
 % Flywheel analysis IDs are listed for completeness, but not used here.
@@ -68,7 +66,7 @@ tmpPath = fullfile(localDataDir,'retinoFiles','LGN_bilateral.dtseries.nii');
 LGNROI = cifti_read(tmpPath); LGNROI = LGNROI.cdata;
 
 
-%% Loop through subjects and fit each vertex
+% Loop through subjects
 for ss = 1:nSubs
 
     % Load the results file for this subject
@@ -87,6 +85,7 @@ for ss = 1:nSubs
         % Define some variables for parpool happiness
         nGood = []; peakFreq = []; peakAmp = []; goodIdx = []; Yset = [];
 
+        % Loop over the ROIs
         for rr = 1:length(roiSet)
 
             switch roiSet{rr}

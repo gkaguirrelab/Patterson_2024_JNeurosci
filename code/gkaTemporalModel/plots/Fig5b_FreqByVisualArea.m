@@ -6,11 +6,14 @@ close all
 rng(1); % Fix the random number generator
 verbose = false;
 
+% Place to save figures
+savePath = '~/Desktop/VSS 2023/';
+
 %% Analysis properties
 % This is the threshold for the goodness of fit to the fMRI time-series
 % data. We only analyze those voxels with this quality fit or better
 r2Thresh = 0.1;
-nBoots = 200;
+nBoots = 250;
 
 % These variables define the subject names, stimulus directions. The
 % Flywheel analysis IDs are listed for completeness, but not used here.
@@ -74,6 +77,7 @@ stimOrder = [2 3 1];
 % The colors used for the plots
 plotColor={[0.75 0.75 0.75],[0.85 0.55 0.55],[0.75 0.75 1]};
 lineColor={'k','r','b'};
+subMarkers = {'^','square'};
 
 
 %% Loop through subjects and fit each vertex
@@ -138,8 +142,10 @@ for ss = 1:length(subjectNames)
 
                 [p,~,~,yFitInterp] = fitWatsonModel(Y,W,studiedFreqs);
 
-                % Determine the peak frequency in the log domain
-                peakFreq(whichStim,rr) = log10(interpFreqs(yFitInterp==max(yFitInterp)));
+                % Determine the peak frequency in the log domain. There's a
+                % little business here to handle the edge case of more than
+                % one frequency being equally maximal.
+                peakFreq(whichStim,rr) = mean(log10(interpFreqs(yFitInterp==max(yFitInterp))));
 
                 % Save the peak amplitude, which is given by the first
                 % param value
@@ -170,20 +176,21 @@ for ss = 1:length(subjectNames)
     for whichStim  = 1:nStims
         vec = squeeze(peakFreqMedian(ss,whichStim,:))';
         veciqr = squeeze(peakFreqIQR(ss,whichStim,:))';
-        x = (1:nROIs) + (stimOrder(whichStim)-2)/4;
+        x = (1:nROIs) + (stimOrder(whichStim)-2)/6;
         for rr=1:length(x)
             plot([x(rr) x(rr)],[vec(rr)-veciqr(rr)/2, vec(rr)+veciqr(rr)/2],'-','Color',plotColor{stimOrder(whichStim)});
         hold on
         end
-        plot(x,vec,'o','Color',plotColor{stimOrder(whichStim)});
+        plot(x,vec,subMarkers{ss},'Color',plotColor{stimOrder(whichStim)});
         plot(x,vec,':','Color',plotColor{stimOrder(whichStim)});
     end
 
-            a = gca();
+    a = gca();
     a.XTick = 1:nROIs;
     a.XTickLabel = roiSet;
 
     title(subjects{ss});
+    ylim([0 40])
     drawnow
 
 end

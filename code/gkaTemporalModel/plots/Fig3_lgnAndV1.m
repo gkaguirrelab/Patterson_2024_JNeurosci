@@ -16,7 +16,7 @@ savePath = '~/Desktop/VSS 2023/';
 % This is the threshold for the goodness of fit to the fMRI time-series
 % data. We only analyze those voxels with this quality fit or better
 r2Thresh = 0.1;
-nBoots = 200;
+nBoots = 250;
 
 % These variables define the subject names, stimulus directions. The
 % Flywheel analysis IDs are listed for completeness, but not used here.
@@ -125,7 +125,7 @@ for ss = 1:nSubs
                 [p,~,~,yFitInterp] = fitWatsonModel(Y,W,studiedFreqs);
 
                 % Determine the peak frequency in the log domain
-                peakFreq(whichStim,rr) = log10(interpFreqs(yFitInterp==max(yFitInterp)));
+                peakFreq(whichStim,rr) = mean(log10(interpFreqs(yFitInterp==max(yFitInterp))));
 
                 % Save the peak amplitude, which is given by the first
                 % param value

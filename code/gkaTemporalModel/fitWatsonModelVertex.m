@@ -120,7 +120,7 @@ for ss = 1:length(subjectNames)
             rSquared(dd) = (maxfVal - fVal(dd)) / maxfVal;
 
             % Determine the peak frequency
-            peakFreq(dd) = interpFreqs(yFitInterp(dd,:)==max(yFitInterp(dd,:)));
+            peakFreq(dd) = mean(interpFreqs(yFitInterp(dd,:)==max(yFitInterp(dd,:))));
 
             % Determine the peak ampitude
             peakAmp(dd) = p(dd,1);

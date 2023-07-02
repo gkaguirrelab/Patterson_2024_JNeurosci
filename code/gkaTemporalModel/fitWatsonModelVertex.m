@@ -37,7 +37,7 @@ interpFreqs = logspace(log10(1),log10(100),501);
 % subsequent boot-strap resampling of the data.
 
 % Define the localSaveDir
-localDataDir = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data');
+localDataDir = fullfile(tbLocateProjectSilent('mriSinaiAnalysis'),'data');
 
 % Load the retino maps
 tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_varea.dtseries.nii');

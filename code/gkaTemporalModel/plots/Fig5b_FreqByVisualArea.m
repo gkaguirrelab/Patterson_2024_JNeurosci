@@ -36,7 +36,7 @@ interpFreqs = logspace(log10(1),log10(100),501);
 nAcqs = 12;
 
 % Define some ROI sets
-roiSet = {'LGN','V1','V2/V3','hV4','MT'};
+roiSet = {'V1','V2/V3','hV4','MT'};
 nROIs = length(roiSet);
 
 %% Download Mt Sinai results

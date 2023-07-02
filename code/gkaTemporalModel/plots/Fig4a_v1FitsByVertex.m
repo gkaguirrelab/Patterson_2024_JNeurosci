@@ -13,8 +13,8 @@ stimAlphas = [0.05 0.05 0.1];
 nSubs = length(subjects);
 nStims = length(stimulusDirections);
 
-% Define the localSaveDir
-localDataDir = fullfile(fileparts(fileparts(fileparts(fileparts(mfilename('fullpath'))))),'data');
+% Define the localDataDir
+localDataDir = fullfile(tbLocateProjectSilent('mriSinaiAnalysis'),'data');
 
 % Load the retino maps
 tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_varea.dtseries.nii');
@@ -60,7 +60,6 @@ for ss = 1:length(subjectNames)
     filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_fit_results.mat']);
     load(filePath,'fitResults')
 
-
     % Loop over stimulus directions and create a map of the peak frequency
     for whichStim = [3 1 2]
 
@@ -68,11 +67,7 @@ for ss = 1:length(subjectNames)
         % direction
         fValSet = nan(size(results.R2));
         fValSet(fitResults.eccDeg > 0) = cellfun(@(x) x(whichStim), fitResults.fVal(fitResults.eccDeg > 0));
-
-        % Identify those voxels with a positive response and an overall R2
-        % of greater than the threshold, and an fVal below the threshold
-        goodIdx = find(logical( (results.R2 > r2Thresh) .* (fValSet < fValThresh)  ));
-        nGood = length(goodIdx);
+        goodIdx = find(logical( (results.R2 > r2Thresh) .* (fValSet < fValThresh) .* (vArea == 1) ));
 
         % Extract the peak amplitude and frequency for these vertices
         peakAmp = nan(nVert,1);
@@ -80,28 +75,8 @@ for ss = 1:length(subjectNames)
         peakFreq = nan(nVert,1);
         peakFreq(goodIdx) = cellfun(@(x) x(whichStim),fitResults.peakFreq(goodIdx));
 
-        % Update the goodIdx
-        goodIdx = find(~isnan(peakFreq));
-
-        % save a peakAmp map
-        newMap = templateImage;
-        newMap.cdata = single(zeros(size(fitResults.fVal)));
-        newMap.cdata(goodIdx) = single(peakAmp(goodIdx));
-        newMap = ciftiMakePseudoHemi(newMap);
-        fileOut = fullfile(savePath,[subjectNames{ss} '_' stimulusDirections{whichStim} '_peakAmp.dtseries.nii']);
-        cifti_write(newMap, fileOut);
-
-        % save a peakFreq map
-        newMap = templateImage;
-        newMap.cdata = single(zeros(size(fitResults.fVal)));
-        newMap.cdata(goodIdx) = single(peakFreq(goodIdx));
-        newMap = ciftiMakePseudoHemi(newMap);
-        fileOut = fullfile(savePath,[subjectNames{ss} '_' stimulusDirections{whichStim} '_peakFreq.dtseries.nii']);
-        cifti_write(newMap, fileOut);
-
-                % Plot Amplitude vs eccentricity for V1
+        % Plot Amplitude vs eccentricity for V1
         nexttile((ss-1)*2+1);
-        goodIdx = find(logical( (results.R2 > r2Thresh) .* (fValSet < fValThresh) .* (vArea == 1) ));
         x = log10(fitResults.eccDeg(goodIdx));
         x(x<0)=x(x<0)/10;
         [x, sortedIdx] = sort(x);
@@ -176,7 +151,7 @@ for ss = 1:length(subjectNames)
         % Clean up
         ylim([0 45]);
         a = gca();
-                a.YTick = [0 10 20 30 40];
+        a.YTick = [0 10 20 30 40];
         a.YTickLabels = {'0','10','20','30','>40'};
         xTickVals = [1,2,5,10,20,40,80];
         xTickLabels = {'<1','2','5','10','20','40','80'};

@@ -1,6 +1,5 @@
 %% downloadResultsFromFlywheel
 
-% Get the localDataDir pref
 % Define the localDataDir
 localDataDir = fullfile(tbLocateProjectSilent('mriSinaiAnalysis'),'data');
 
@@ -8,10 +7,7 @@ localDataDir = fullfile(tbLocateProjectSilent('mriSinaiAnalysis'),'data');
 % analysis IDs
 subjectNames = {'HEROgka1','HEROasb1'};
 shortNames = {'gka','asb'};
-%analysisIDs = { '6117d4db18adcc19d6e0f820','611d158fa296f805e7a2da75' };
-
-
-analysisIDs = { '64a15f8851c8e9fe6c0dfb83','64a15fd2ea1ad16e18fc2cf3' };
+analysisIDs = { '6117d4db18adcc19d6e0f820','611d158fa296f805e7a2da75' };
 
 % List of the output files to download
 desiredOutputs = {'fig1.pdf','fig2.pdf','maps_cifti.zip','mtSinai_results.mat'};

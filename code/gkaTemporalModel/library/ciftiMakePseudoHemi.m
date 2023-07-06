@@ -8,7 +8,7 @@ function ciftiOut = ciftiMakePseudoHemi(ciftiIn)
     rightHemi = cifti_struct_dense_extract_surface_data(ciftiIn, 'CORTEX_RIGHT');
     
     % Average
-    averageHemi = nanmean([rightHemi,leftHemi], 2);
+    averageHemi = mean([rightHemi,leftHemi], 2, 'omitmissing');
     
     % Replace the left hemi and right hemi values with the new average
     ciftiOut = cifti_struct_dense_replace_surface_data(ciftiOut, averageHemi, 'CORTEX_LEFT');

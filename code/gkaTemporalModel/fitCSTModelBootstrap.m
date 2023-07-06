@@ -167,7 +167,7 @@ for bb = 1:nBoots
             idx = [1,(ee-1)*nParams*nCells+2 : ee*nParams*nCells+1];
 
             % Define the response function
-            myResponseMatrix = @(p) returnFitAcrossEccen(p,stimulusDirections,studiedEccentricites(ee),interpFreqs);
+            myResponseMatrix = @(p) returnCSTFitAcrossEccen(p,stimulusDirections,studiedEccentricites(ee),interpFreqs);
 
             % Define the objective
             myObj = @(p) norm(vectorize(Winterp(:,ee,:)).*(vectorize(Yinterp(:,ee,:)) - vectorize(myResponseMatrix(p))));
@@ -188,9 +188,9 @@ for bb = 1:nBoots
         end
 
         % Define the response function integrated across eccentricity
-        myResponseMatrix = @(p) returnFitAcrossEccen(p,stimulusDirections,studiedEccentricites,studiedFreqs);
-        myResponseMatrixInterp = @(p) returnFitAcrossEccen(p,stimulusDirections,studiedEccentricites,interpFreqs);
-        myResponseMatrixPlot = @(p) returnFitAcrossEccen(p,stimulusDirections,studiedEccentricites,freqsForPlotting);
+        myResponseMatrix = @(p) returnCSTFitAcrossEccen(p,stimulusDirections,studiedEccentricites,studiedFreqs);
+        myResponseMatrixInterp = @(p) returnCSTFitAcrossEccen(p,stimulusDirections,studiedEccentricites,interpFreqs);
+        myResponseMatrixPlot = @(p) returnCSTFitAcrossEccen(p,stimulusDirections,studiedEccentricites,freqsForPlotting);
         myObj = @(p) norm(vectorize(Winterp).*(vectorize(Yinterp) - vectorize(myResponseMatrixInterp(p))));
 
         % Get the response matrix and fVal
@@ -253,7 +253,7 @@ for whichSub = 1:nSubs
     Y = median(Y,4);
     yLow = Y - yIQR/2;
     yHi = Y + yIQR/2;
-    yPlot = returnFitAcrossEccen(p,stimulusDirections,studiedEccentricites,freqsForPlotting);
+    yPlot = returnCSTFitAcrossEccen(p,stimulusDirections,studiedEccentricites,freqsForPlotting);
 
     % Plot fits
     figure

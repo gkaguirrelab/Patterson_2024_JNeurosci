@@ -87,8 +87,9 @@ for ss = 1:length(subjectNames)
         % save a peakFreq map
         newMap = templateImage;
         newMap.cdata = single(zeros(size(fitResults.fVal)));
-        newMap.cdata(goodIdx) = single(peakFreq(goodIdx));
+        newMap.cdata(goodIdx) = log10(single(peakFreq(goodIdx)));
         newMap = ciftiMakePseudoHemi(newMap);
+        newMap.cdata(goodIdx) = 10.^(newMap.cdata(goodIdx));
         fileOut = fullfile(savePath,[subjectNames{ss} '_' stimulusDirections{whichStim} '_peakFreq.dtseries.nii']);
         cifti_write(newMap, fileOut);
 

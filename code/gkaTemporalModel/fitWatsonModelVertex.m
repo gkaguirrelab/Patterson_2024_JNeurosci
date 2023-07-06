@@ -76,7 +76,7 @@ for ss = 1:length(subjectNames)
     stimLabels = results.model.opts{find(strcmp(results.model.opts,'stimLabels'))+1};
 
     % Fit any voxel with an R2 fit above the threshold
-    goodIdx = find(logical( (results.R2 > r2Thresh) .* (vArea == 1) ));
+    goodIdx = find(logical( (results.R2 > r2Thresh) ));
     nGood = length(goodIdx);
 
     % Loop over the valid voxels

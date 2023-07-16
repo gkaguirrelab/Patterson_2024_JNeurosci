@@ -16,17 +16,8 @@ nStims = length(stimulusDirections);
 % Define the localDataDir
 localDataDir = fullfile(tbLocateProjectSilent('mriSinaiAnalysis'),'data');
 
-% Load the retino maps
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_varea.dtseries.nii');
-vArea = cifti_read(tmpPath); vArea = vArea.cdata;
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_eccen.dtseries.nii');
-eccenMap = cifti_read(tmpPath); eccenMap = eccenMap.cdata;
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_angle.dtseries.nii');
-polarMap = cifti_read(tmpPath); polarMap = polarMap.cdata;
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_sigma.dtseries.nii');
-sigmaMap = cifti_read(tmpPath); sigmaMap = sigmaMap.cdata;
-
 % Save a template map variable so we can create new maps below
+tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_sigma.dtseries.nii');
 templateImage = cifti_read(tmpPath);
 
 % This is the threshold for the goodness of fit to the fMRI time-series
@@ -54,13 +45,16 @@ for ss = 1:length(subjectNames)
     filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_fit_results.mat']);
     load(filePath,'fitResults')
 
+    comboVec = nan(3,nVert);
+
     % Loop over stimulus directions and create a map of the peak frequency
     for whichStim = [3 1 2]
 
         % Find those vertices that had a positive response to this stimulus
         % direction
         fValSet = nan(size(results.R2));
-        fValSet(fitResults.eccDeg > 0) = cellfun(@(x) x(whichStim), fitResults.fVal(fitResults.eccDeg > 0));
+        fValIdx = find(cellfun(@(x) ~isempty(x), fitResults.fVal));
+        fValSet(fValIdx) = cellfun(@(x) x(whichStim), fitResults.fVal(fValIdx));
 
         % Identify those voxels with a positive response and an overall R2
         % of greater than the threshold, and an fVal below the threshold
@@ -93,7 +87,21 @@ for ss = 1:length(subjectNames)
         fileOut = fullfile(savePath,[subjectNames{ss} '_' stimulusDirections{whichStim} '_peakFreq.dtseries.nii']);
         cifti_write(newMap, fileOut);
 
+        % Store a vector of Z-transformed peak-frequency values
+        vec = log10(newMap.cdata(goodIdx));
+        vec = vec - mean(vec);
+        vec = vec ./ std(vec);
+        comboVec(whichStim,goodIdx) = vec;
+
     end
+
+    % save a combo peakFreq map
+    newMap = templateImage;
+    newMap.cdata = single(zeros(size(fitResults.fVal)));
+    newMap.cdata = single(mean(comboVec,1,'omitmissing'))';
+    fileOut = fullfile(savePath,[subjectNames{ss} '_comboZpeakFreq.dtseries.nii']);
+    cifti_write(newMap, fileOut);
+
 
 end
 

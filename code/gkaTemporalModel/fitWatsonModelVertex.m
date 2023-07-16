@@ -13,7 +13,7 @@ r2Thresh = 0.1;
 % These variables define the subject names, stimulus directions. The
 % Flywheel analysis IDs are listed for completeness, but not used here.
 % Other software downloads the files from Flywheel.
-analysisIDs = {'6117d4db18adcc19d6e0f820','611d158fa296f805e7a2da75'};
+analysisIDs = { '64a72e7ac71249914655c704','64a72ed7e54b4460ea4bf010' };
 subjectNames = {'HEROgka1','HEROasb1'};
 subjects = {'gka','asb'};
 stimulusDirections = {'LminusM','S','LMS'};
@@ -68,9 +68,6 @@ for ss = 1:length(subjectNames)
     fitResults.Y = cell(nVert,1);
     fitResults.yFitInterp = cell(nVert,1);
     fitResults.peakFreq = cell(nVert,1);
-    fitResults.eccDeg = nan(nVert,1);
-    fitResults.polarAngle = nan(nVert,1);
-    fitResults.area = nan(nVert,1);
 
     % Grab the stimLabels
     stimLabels = results.model.opts{find(strcmp(results.model.opts,'stimLabels'))+1};
@@ -136,9 +133,6 @@ for ss = 1:length(subjectNames)
         parLoop_yFitInterp{gg} = yFitInterp;
         parLoop_peakFreq{gg} = peakFreq;
         parLoop_peakAmp{gg} = peakAmp;
-        parLoop_eccDeg{gg} = eccenMap(thisIdx);
-        parLoop_polarAngle{gg} = polarMap(thisIdx);
-        parLoop_area{gg} = vArea(thisIdx);
 
     end
 
@@ -152,9 +146,6 @@ for ss = 1:length(subjectNames)
     fitResults.yFitInterp(idxSet) = parLoop_yFitInterp;
     fitResults.peakFreq(idxSet) = parLoop_peakFreq;
     fitResults.peakAmp(idxSet) = parLoop_peakAmp;
-    fitResults.eccDeg(idxSet) = cell2mat(parLoop_eccDeg);
-    fitResults.polarAngle(idxSet) = cell2mat(parLoop_polarAngle);
-    fitResults.area(idxSet) = cell2mat(parLoop_area);
 
     % Save the results file for this subject
     filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_fit_results.mat']);

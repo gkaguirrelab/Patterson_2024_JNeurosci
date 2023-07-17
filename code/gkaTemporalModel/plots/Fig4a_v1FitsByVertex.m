@@ -1,7 +1,7 @@
 clear
 close all
 
-% Place to save figures
+% Place to save figures and to find the Watson fit results
 savePath = '~/Desktop/VSS 2023/';
 
 % These variables define the subject names, stimulus directions.
@@ -57,7 +57,7 @@ for ss = 1:length(subjectNames)
     stimLabels = results.model.opts{find(strcmp(results.model.opts,'stimLabels'))+1};
 
     % Initialize or load the fitResults
-    filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_fit_results.mat']);
+    filePath = fullfile(savePath,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_WatsonFit_results.mat']);
     load(filePath,'fitResults')
 
     % Loop over stimulus directions and create a map of the peak frequency

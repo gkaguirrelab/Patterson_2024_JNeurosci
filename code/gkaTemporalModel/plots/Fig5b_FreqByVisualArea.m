@@ -6,7 +6,7 @@ close all
 rng(1); % Fix the random number generator
 verbose = false;
 
-% Place to save figures
+% Place to save figures and to find the Watson fit results
 savePath = '~/Desktop/VSS 2023/';
 
 %% Analysis properties

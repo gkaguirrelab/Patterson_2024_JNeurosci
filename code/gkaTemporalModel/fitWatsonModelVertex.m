@@ -5,6 +5,9 @@ close all
 rng(1); % Fix the random number generator
 verbose = false;
 
+% Place to save the fit results
+savePath = '~/Desktop/VSS 2023/';
+
 %% Analysis properties
 % This is the threshold for the goodness of fit to the fMRI time-series
 % data. We only analyze those voxels with this quality fit or better
@@ -148,7 +151,7 @@ for ss = 1:length(subjectNames)
     fitResults.peakAmp(idxSet) = parLoop_peakAmp;
 
     % Save the results file for this subject
-    filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_fit_results.mat']);
+    filePath = fullfile(savePath,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_WatsonFit_results.mat']);
     save(filePath,'fitResults')
 
 

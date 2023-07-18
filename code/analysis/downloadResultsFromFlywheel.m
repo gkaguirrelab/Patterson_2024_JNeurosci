@@ -7,7 +7,12 @@ localDataDir = fullfile(tbLocateProjectSilent('mriSinaiAnalysis'),'data');
 % analysis IDs
 subjectNames = {'HEROgka1','HEROasb1'};
 shortNames = {'gka','asb'};
-analysisIDs = { '64a72e7ac71249914655c704','64a72ed7e54b4460ea4bf010' };
+
+% This forward model analysis used a smaller cortical mask and the LGN
+analysisIDs = {'6117d4db18adcc19d6e0f820','611d158fa296f805e7a2da75'};
+
+% This forwardModel analysis used the large cortical mask but no LGN
+% analysisIDs = { '64a72e7ac71249914655c704','64a72ed7e54b4460ea4bf010' };
 
 
 % List of the output files to download

@@ -21,7 +21,6 @@ nBoots = 250;
 % These variables define the subject names, stimulus directions. The
 % Flywheel analysis IDs are listed for completeness, but not used here.
 % Other software downloads the files from Flywheel.
-analysisIDs = {'6117d4db18adcc19d6e0f820','611d158fa296f805e7a2da75'};
 subjectNames = {'HEROgka1','HEROasb1'};
 subjects = {'gka','asb'};
 stimulusDirections = {'LminusM','S','LMS'};
@@ -351,3 +350,13 @@ end
 % Save the plot
 plotNamesPDF = 'Fig3b_lgnAndV1_withWatsonModel.pdf';
 saveas(figHandleB,fullfile(savePath,plotNamesPDF));
+
+% Report the amplification of the chromatic channels between LGN and V1,
+% relative to the achromatic
+for whichSub = 1:2
+        denomer = squeeze(peakAmpMedian(whichSub,3,2))./squeeze(peakAmpMedian(whichSub,3,1));
+    for whichStim = 1:2
+        numer = squeeze(peakAmpMedian(whichSub,whichStim,2))./squeeze(peakAmpMedian(whichSub,whichStim,1));
+        fprintf([subjects{whichSub} ' - ' stimulusDirections{whichStim} ': %2.2f \n'],numer/denomer);
+    end
+end

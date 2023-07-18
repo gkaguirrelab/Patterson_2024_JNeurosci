@@ -71,8 +71,8 @@ peakRGCAmp = peakRGCAmp ./ mean(peakRGCAmp(3,:));
 
 % Prepare the figures
 figHandle = figure('Renderer','painters');
-figuresize(400,400,'pt');
-tiledlayout(1,2,'TileSpacing','tight','Padding','tight')
+figuresize(400,200,'pt');
+tiledlayout(1,2,'Padding','tight')
 
 % Loop through subjects and fit each vertex
 for ss = 1:length(subjectNames)
@@ -90,7 +90,7 @@ for ss = 1:length(subjectNames)
     stimLabels = results.model.opts{find(strcmp(results.model.opts,'stimLabels'))+1};
 
     % Initialize or load the fitResults
-    filePath = fullfile(savePath,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_WatsonFit_results.mat']);
+    filePath = fullfile(savePath,[subjectNames{ss} '_WatsonFit_results.mat']);
     load(filePath,'fitResults')
 
     % Loop over stimulus directions and create a map of the peak frequency
@@ -99,7 +99,8 @@ for ss = 1:length(subjectNames)
         % Find those vertices that had a positive response to this stimulus
         % direction
         fValSet = nan(size(results.R2));
-        fValSet(fitResults.eccDeg > 0) = cellfun(@(x) x(whichStim), fitResults.fVal(fitResults.eccDeg > 0));
+        fValIdx = find(cellfun(@(x) ~isempty(x), fitResults.fVal));
+        fValSet(fValIdx) = cellfun(@(x) x(whichStim), fitResults.fVal(fValIdx));
         goodIdx = find(logical( (results.R2 > r2Thresh) .* (fValSet < fValThresh) .* (vArea == 1) ));
 
         % Extract the peak amplitude and frequency for these vertices
@@ -110,7 +111,7 @@ for ss = 1:length(subjectNames)
 
         % Plot Amplitude vs eccentricity for V1
         nexttile(1);
-        x = log10(fitResults.eccDeg(goodIdx));
+        x = log10(eccenMap(goodIdx));
         x(x<0)=x(x<0)/10;
         [x, sortedIdx] = sort(x);
         v = peakAmp(goodIdx);
@@ -175,7 +176,7 @@ for ss = 1:length(subjectNames)
         % Plot freq vs eccentricity for V1
         nexttile(2);
         goodIdx = find(logical( (results.R2 > r2Thresh) .* (fValSet < fValThresh) .* (vArea == 1) ));
-        x = log10(fitResults.eccDeg(goodIdx));
+        x = log10(eccenMap(goodIdx));
         x(x<0)=x(x<0)/10;
         [x, sortedIdx] = sort(x);
         v = peakFreq(goodIdx);

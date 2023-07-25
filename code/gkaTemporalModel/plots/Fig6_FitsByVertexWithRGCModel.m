@@ -160,7 +160,7 @@ for ss = 1:length(subjectNames)
         % Clean up
         a = gca();
         a.YTick = [-2 -1 0 1];
-        a.YTickLabels = {'0.001','0.01','1','10'};
+        a.YTickLabels = {'0.01','0.1','1','10'};
         xTickVals = [1,2,5,10,20,40,80];
         xTickLabels = {'1','2','5','10','20','40','80'};
         a.XTick = log10(xTickVals);

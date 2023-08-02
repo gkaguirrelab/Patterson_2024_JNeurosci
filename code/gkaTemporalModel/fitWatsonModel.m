@@ -1,13 +1,19 @@
-function [p,fVal,yFit,yFitInterp] = fitWatsonModel(Y,W,studiedFreqs,p0A,interpFreqs)
+function [p,fVal,yFit,yFitInterp] = fitWatsonModel(Y,W,studiedFreqs,p0A,interpFreqs,useNonlinConstraint)
 
 % Handle inputs
 if nargin == 3
     p0A = [1.5 5 1.1 1.5];
     interpFreqs = logspace(log10(1),log10(100),501);
+    useNonlinConstraint = true;
 end
 
 if nargin == 4
     interpFreqs = logspace(log10(1),log10(100),501);
+    useNonlinConstraint = true;
+end
+
+if nargin == 5
+    useNonlinConstraint = true;
 end
 
 % fmincon options

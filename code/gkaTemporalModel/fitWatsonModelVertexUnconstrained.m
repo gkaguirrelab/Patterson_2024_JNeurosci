@@ -155,7 +155,7 @@ for ss = 1:length(subjectNames)
     fitResults.peakAmp(idxSet) = parLoop_peakAmp;
 
     % Save the results file for this subject
-    filePath = fullfile(savePath,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_WatsonFitUnconstrained_results.mat']);
+    filePath = fullfile(savePath,[subjectNames{ss} '_WatsonFitUnconstrained_results.mat']);
     save(filePath,'fitResults')
 
 

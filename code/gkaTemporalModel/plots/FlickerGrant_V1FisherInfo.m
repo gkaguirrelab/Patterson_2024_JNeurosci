@@ -59,7 +59,7 @@ for ss = 1:length(subjectNames)
     stimLabels = results.model.opts{find(strcmp(results.model.opts,'stimLabels'))+1};
 
     % Initialize or load the fitResults
-    filePath = fullfile(savePath,[subjectNames{ss} '_WatsonFit_results.mat']);
+    filePath = fullfile(savePath,[subjectNames{ss} '_WatsonFitUnconstrained_results.mat']);
     load(filePath,'fitResults')
 
     % Loop over stimulus directions and create a map of the peak frequency

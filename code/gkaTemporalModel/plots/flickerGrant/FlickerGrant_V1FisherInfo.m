@@ -1,5 +1,4 @@
 clear
-close all
 
 % Place to save figures and to find the Watson fit results
 savePath = '~/Desktop/VSS 2023/';
@@ -40,15 +39,16 @@ r2Thresh = 0.1;
 fValThresh = 2;
 
 
-% Prepare the figures
-figHandle = figure('Renderer','painters');
-figuresize(400,400,'pt');
-tiledlayout(2,2,'TileSpacing','tight','Padding','tight')
 
 % Loop through subjects and fit each vertex
-for ss = 1:length(subjectNames)
+for ss = 2:2%length(subjectNames)
 
-    % Load the results file for this subject
+% Prepare the figures
+figHandle = figure('Renderer','painters');
+figuresize(800,400,'pt');
+tiledlayout(3,2,'TileSpacing','tight','Padding','tight')
+
+% Load the results file for this subject
     filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_mtSinai_results.mat']);
     load(filePath,'results')
 
@@ -73,6 +73,7 @@ for ss = 1:length(subjectNames)
         goodIdx = find(logical( (results.R2 > r2Thresh) .* (fValSet < fValThresh) .* (vArea == 1) ));
 
         % Loop through the good vertices and calculate the total FI
+        nexttile((whichStim-1)*2+1)
         fisherInfo = [];
         for vv = 1:length(goodIdx)
             tuning = fitResults.yFitInterp{goodIdx(vv)};
@@ -83,9 +84,16 @@ for ss = 1:length(subjectNames)
             else
                 fisherInfo = fisherInfo + fi;
             end
+            if vv < 25
+            loglog(interpFreqs(2:end),fi,'-','Color',[0.8,0.8,0.8],'LineWidth',0.5);
+            end
+            if vv == 1
+                hold on
+            end
         end
 
-        semilogx(interpFreqs(2:end),fisherInfo,'-','Color',stimPlotColors{whichStim});
+        nexttile((whichStim-1)*2+2)
+        loglog(interpFreqs(2:end),fisherInfo,'-','Color',stimPlotColors{whichStim});
         hold on
 
     end

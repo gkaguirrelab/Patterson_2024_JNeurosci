@@ -1,5 +1,6 @@
 clear
 
+
 % Place to save figures and to find the Watson fit results
 savePath = '~/Desktop/VSS 2023/';
 
@@ -34,21 +35,17 @@ templateImage = cifti_read(tmpPath);
 % data. We only display those voxels with this quality fit or better
 r2Thresh = 0.1;
 
-% This is the threshold for the goodness of fit of the Watson model to the
-% TTF in each vertex. We only display those voxels with this fVal or lower
-fValThresh = 2;
-
-
+plotOrder = [2,3,1];
 
 % Loop through subjects and fit each vertex
 for ss = 2:2%length(subjectNames)
 
-% Prepare the figures
-figHandle = figure('Renderer','painters');
-figuresize(800,400,'pt');
-tiledlayout(3,2,'TileSpacing','tight','Padding','tight')
+    % Prepare the figures
+    figHandle = figure('Renderer','painters');
+    figuresize(600,200,'pt');
+    tiledlayout(1,3,'Padding','tight')
 
-% Load the results file for this subject
+    % Load the results file for this subject
     filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_mtSinai_results.mat']);
     load(filePath,'results')
 
@@ -63,43 +60,62 @@ tiledlayout(3,2,'TileSpacing','tight','Padding','tight')
     load(filePath,'fitResults')
 
     % Loop over stimulus directions and create a map of the peak frequency
-    for whichStim = [3 1 2]
+    for whichStim = 1:3
 
         % Find those vertices that had a positive response to this stimulus
         % direction
-        fValSet = nan(size(results.R2));
-        fValIdx = find(cellfun(@(x) ~isempty(x), fitResults.fVal));
-        fValSet(fValIdx) = cellfun(@(x) x(whichStim), fitResults.fVal(fValIdx));
-        goodIdx = find(logical( (results.R2 > r2Thresh) .* (fValSet < fValThresh) .* (vArea == 1) ));
+        goodIdx = find(logical( (results.R2 > r2Thresh) .* (vArea > 0) .* (vArea < 4) ));
+
+        maxVal = 0;
 
         % Loop through the good vertices and calculate the total FI
-        nexttile((whichStim-1)*2+1)
+        nexttile(plotOrder(whichStim))
         fisherInfo = [];
         for vv = 1:length(goodIdx)
             tuning = fitResults.yFitInterp{goodIdx(vv)};
-            tuning = squeeze(tuning(whichStim,:));
+            tuning = squeeze(tuning(whichStim,:))*100;
             fi = ((diff(tuning).^2)./tuning(2:end));
             if isempty(fisherInfo)
                 fisherInfo = fi;
             else
                 fisherInfo = fisherInfo + fi;
             end
-            if vv < 25
-            loglog(interpFreqs(2:end),fi,'-','Color',[0.8,0.8,0.8],'LineWidth',0.5);
-            end
-            if vv == 1
+            if rand() < 0.05
+                semilogx(interpFreqs(2:end),fi,'-','Color',[0.7,0.7,0.7],'LineWidth',0.4);
+                maxVal = max([maxVal,max(fi)]);
                 hold on
             end
         end
+        ylim([0 0.3]);
+        if plotOrder(whichStim) == 1
+            ylabel('Fisher info')
+        end
+        a = gca();
+        a.TickDir = 'out';
+        box off
+        a.XTickLabel = {'1','10','100'};
 
-        nexttile((whichStim-1)*2+2)
-        loglog(interpFreqs(2:end),fisherInfo,'-','Color',stimPlotColors{whichStim});
-        hold on
+        if plotOrder(whichStim) > 1
+            a.YTick = [];
+        end
+
+        yyaxis right
+        semilogx(interpFreqs(2:end),fisherInfo,'-','Color',stimPlotColors{whichStim},'LineWidth',2);
+        if plotOrder(whichStim) == 3
+            ylabel('Total Fisher info')
+        end
+        if plotOrder(whichStim) < 3
+            a.YTick = [];
+        end
+
+        ylim([0 300]);
+        box off
+        if plotOrder(whichStim) == 2; xlabel('Frequency [Hz]'); end
 
     end
 
 end
 
-%plotNamesPDF = 'ampAndFreqByVertexEccen.pdf';
-%saveas(figHandle,fullfile(savePath,plotNamesPDF));
+plotNamesPDF = 'fisherInfoV1-3.pdf';
+saveas(figHandle,fullfile(savePath,plotNamesPDF));
 

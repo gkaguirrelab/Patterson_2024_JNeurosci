@@ -13,8 +13,6 @@ stimAlphas = [0.05 0.05 0.1];
 nSubs = length(subjects);
 nStims = length(stimulusDirections);
 
-interpFreqs = logspace(log10(1),log10(100),501);
-
 % Define the localDataDir
 localDataDir = fullfile(tbLocateProjectSilent('mriSinaiAnalysis'),'data');
 
@@ -38,7 +36,7 @@ r2Thresh = 0.1;
 plotOrder = [2,3,1];
 
 % Loop through subjects and fit each vertex
-for ss = 2:2%length(subjectNames)
+for ss = 1:length(subjectNames)
 
     % Prepare the figures
     figHandle = figure('Renderer','painters');
@@ -59,12 +57,17 @@ for ss = 2:2%length(subjectNames)
     filePath = fullfile(savePath,[subjectNames{ss} '_WatsonFitUnconstrained_results.mat']);
     load(filePath,'fitResults')
 
+    lowFreqIdx = 77;
+    hiFreqIdx = 451;
+    interpFreqs = logspace(log10(1),log10(100),501);
+    interpFreqs=interpFreqs(77:451);
+
     % Loop over stimulus directions and create a map of the peak frequency
     for whichStim = 1:3
 
         % Find those vertices that had a positive response to this stimulus
         % direction
-        goodIdx = find(logical( (results.R2 > r2Thresh) .* (vArea > 0) .* (vArea < 4) ));
+        goodIdx = find(logical( (results.R2 > r2Thresh) .* (vArea > 0) .* (vArea < 2) ));
 
         maxVal = 0;
 
@@ -72,23 +75,29 @@ for ss = 2:2%length(subjectNames)
         nexttile(plotOrder(whichStim))
         fisherInfo = [];
         for vv = 1:length(goodIdx)
-            tuning = fitResults.yFitInterp{goodIdx(vv)};
-            tuning = squeeze(tuning(whichStim,:))*100;
-            fi = ((diff(tuning).^2)./tuning(2:end));
+            signal = fitResults.yFitInterp{goodIdx(vv)};
+            noise = fitResults.stdFitInterp{goodIdx(vv)};
+            signal = squeeze(signal(whichStim,:))*100;
+            noise = squeeze(noise(whichStim,:))*100;
+            tuning = signal ./ noise;
+            tuning = tuning(77:451);
+            fi = tuning(2:end);
+            %            fi = ((diff(tuning).^2)./tuning(2:end));
             if isempty(fisherInfo)
                 fisherInfo = fi;
             else
                 fisherInfo = fisherInfo + fi;
             end
             if rand() < 0.05
-                semilogx(interpFreqs(2:end),fi,'-','Color',[0.7,0.7,0.7],'LineWidth',0.4);
+                semilogx(interpFreqs(2:end),log10(fi),'-','Color',[0.7,0.7,0.7],'LineWidth',0.4);
                 maxVal = max([maxVal,max(fi)]);
                 hold on
             end
         end
-        ylim([0 0.3]);
+        xlim([1 100]);
+        ylim([-6 2]);
         if plotOrder(whichStim) == 1
-            ylabel('Fisher info')
+            ylabel('log Fisher information')
         end
         a = gca();
         a.TickDir = 'out';
@@ -100,22 +109,34 @@ for ss = 2:2%length(subjectNames)
         end
 
         yyaxis right
-        semilogx(interpFreqs(2:end),fisherInfo,'-','Color',stimPlotColors{whichStim},'LineWidth',2);
+        semilogx(interpFreqs(2:end),log10(fisherInfo),'-','Color',stimPlotColors{whichStim},'LineWidth',3);
         if plotOrder(whichStim) == 3
-            ylabel('Total Fisher info')
+            ylabel('log total Fisher information')
         end
+
+        [~, maxIdx] = max(fisherInfo);
+        vec = fisherInfo; vec(1:maxIdx) = nan;
+        fiElbow = log10(max(fisherInfo)) - 0.2; 
+        [~,elbowIdx] = find(log10(vec) < fiElbow,1,"first");
+        x = interpFreqs(elbowIdx+1);
+        y = log10(fisherInfo(elbowIdx));
+        semilogx(x,y,'|','Color',stimPlotColors{whichStim},'MarkerSize',15);
+        text(10.^(log10(x)-0.1),y+0.4,sprintf('%d Hz',round(x)));
+
+        a.YTick = 1:4;
         if plotOrder(whichStim) < 3
             a.YTick = [];
         end
 
-        ylim([0 300]);
+        ylim([1 4]);
         box off
         if plotOrder(whichStim) == 2; xlabel('Frequency [Hz]'); end
 
     end
 
+    plotNamesPDF = [subjectNames{ss} '_fisherInfoV1.pdf'];
+saveas(figHandle,fullfile(savePath,plotNamesPDF));
+
 end
 
-plotNamesPDF = 'fisherInfoV1-3.pdf';
-saveas(figHandle,fullfile(savePath,plotNamesPDF));
 

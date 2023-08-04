@@ -54,8 +54,7 @@ sigmaMap = cifti_read(tmpPath); sigmaMap = sigmaMap.cdata;
 
 
 % The initial guess for the Watson parameter search
-    p0A = [1.5 5 1.1 1.5];
-
+p0A = [1.5 5 1.1 1.5];
 
 %% Loop through subjects and fit each vertex
 for ss = 1:length(subjectNames)
@@ -73,7 +72,9 @@ for ss = 1:length(subjectNames)
     fitResults.fVal = cell(nVert,1);
     fitResults.rSquared = cell(nVert,1);
     fitResults.Y = cell(nVert,1);
+    fitResults.W = cell(nVert,1);
     fitResults.yFitInterp = cell(nVert,1);
+    fitResults.stdFitInterp = cell(nVert,1);
     fitResults.peakFreq = cell(nVert,1);
 
     % Grab the stimLabels
@@ -110,14 +111,20 @@ for ss = 1:length(subjectNames)
         W = 1./std(adjustedVals,0,3,"omitmissing");
         Y = mean(adjustedVals,3,"omitmissing");
 
-        % Define some variables to keep par happy       
+        % Define some variables to keep par happy
         p = []; peakFreq = []; peakAmp = [];
         fVal = []; p = []; yFitInterp = []; rSquared = [];
+        stdFitInterp = []; 
 
         % Fit each stimulus with the Watson TTF
         for dd = 1:nStims
 
-            [p(dd,:),fVal(dd),~,yFitInterp(dd,:)] = fitWatsonModel(Y(dd,:),W(dd,:),studiedFreqs,p0A,interpFreqs,false)
+            % Perform the fit to the y values
+            [p(dd,:),fVal(dd),~,yFitInterp(dd,:)] = fitWatsonModel(Y(dd,:),W(dd,:),studiedFreqs,p0A,interpFreqs,false);
+
+            % Perform a fit to the std values with a double Gaussian model
+            F1=fit (log10(studiedFreqs)', 1./W(dd,:)','spline');
+            stdFitInterp(dd,:) = F1(log10(interpFreqs));
 
             % Determine the proportion variance explained
             maxfVal = norm( W(dd,:) .* ( Y(dd,:) ));
@@ -137,7 +144,9 @@ for ss = 1:length(subjectNames)
         parLoop_fVal{gg} = fVal;
         parLoop_rSquared{gg} = rSquared;
         parLoop_Y{gg} = Y;
+        parLoop_W{gg} = W;
         parLoop_yFitInterp{gg} = yFitInterp;
+        parLoop_stdFitInterp{gg} = stdFitInterp;
         parLoop_peakFreq{gg} = peakFreq;
         parLoop_peakAmp{gg} = peakAmp;
 
@@ -150,7 +159,9 @@ for ss = 1:length(subjectNames)
     fitResults.fVal(idxSet) = parLoop_fVal;
     fitResults.rSquared(idxSet) = parLoop_rSquared;
     fitResults.Y(idxSet) = parLoop_Y;
+    fitResults.W(idxSet) = parLoop_W;
     fitResults.yFitInterp(idxSet) = parLoop_yFitInterp;
+    fitResults.stdFitInterp(idxSet) = parLoop_stdFitInterp;
     fitResults.peakFreq(idxSet) = parLoop_peakFreq;
     fitResults.peakAmp(idxSet) = parLoop_peakAmp;
 

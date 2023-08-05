@@ -12,6 +12,7 @@ stimPlotColors = {'r','b','k'};
 stimAlphas = [0.05 0.05 0.1];
 nSubs = length(subjects);
 nStims = length(stimulusDirections);
+studiedFreqs = [2 4 8 16 32 64];
 
 % Define the localDataDir
 localDataDir = fullfile(tbLocateProjectSilent('mriSinaiAnalysis'),'data');
@@ -40,8 +41,8 @@ for ss = 1:length(subjectNames)
 
     % Prepare the figures
     figHandle = figure('Renderer','painters');
-    figuresize(600,200,'pt');
-    tiledlayout(1,3,'Padding','tight')
+    figuresize(400,200,'pt');
+    tiledlayout(1,3,'TileSpacing','compact','Padding','tight')
 
     % Load the results file for this subject
     filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_mtSinai_results.mat']);
@@ -94,15 +95,15 @@ for ss = 1:length(subjectNames)
                 hold on
             end
         end
-        xlim([1 100]);
         ylim([-6 2]);
         if plotOrder(whichStim) == 1
             ylabel('log Fisher information')
         end
         a = gca();
         a.TickDir = 'out';
+        a.XTick = studiedFreqs;
+        xlim([2 64]);
         box off
-        a.XTickLabel = {'1','10','100'};
 
         if plotOrder(whichStim) > 1
             a.YTick = [];
@@ -121,7 +122,7 @@ for ss = 1:length(subjectNames)
         x = interpFreqs(elbowIdx+1);
         y = log10(fisherInfo(elbowIdx));
         semilogx(x,y,'|','Color',stimPlotColors{whichStim},'MarkerSize',15);
-        text(10.^(log10(x)-0.1),y+0.4,sprintf('%d Hz',round(x)));
+        text(10.^(log10(x)-0.1),3.75,sprintf('%d Hz',round(x)));
 
         a.YTick = 1:4;
         if plotOrder(whichStim) < 3

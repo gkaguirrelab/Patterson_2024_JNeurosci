@@ -29,7 +29,11 @@ p0B = [4 2.5 1.5 1];
 
 % Set up the objective
 myObj = @(p) objectiveFunc(p,Y,W,studiedFreqs);
-myNonlcon = @(p) unimodalConstraint(p,interpFreqs);
+if useNonlinConstraint
+    myNonlcon = @(p) unimodalConstraint(p,interpFreqs);
+else
+    myNonlcon = [];
+end
 
 % Turn off some warnings that can occur during the search
 warningState = warning;

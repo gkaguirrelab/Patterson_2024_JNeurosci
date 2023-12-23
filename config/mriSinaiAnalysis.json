@@ -148,13 +148,14 @@
 		"hook": "",
 		"importance": "",
 		"localHookTemplate": "",
-		"name": "bads",
+		"name": "combiLEDToolbox",
 		"pathPlacement": "append",
 		"subfolder": "",
 		"toolboxRoot": "",
-		"type": "git",
+		"type": "include",
 		"update": "",
-		"url": "https:\/\/github.com\/acerbilab\/bads.git"
+		"url": ""
 	}
+    
 ]
 

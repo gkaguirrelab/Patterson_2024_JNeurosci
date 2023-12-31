@@ -2,7 +2,7 @@ clear
 close all
 
 % Place to save figures
-savePath = '~/Desktop/VSS 2023/';
+savePath = '~/Desktop/Patterson_2024_flickerPaper/';
 
 % These variables define the subject names, stimulus directions.
 subjectNames = {'HEROgka1','HEROasb1'};
@@ -26,7 +26,7 @@ for ss = 1:length(subjectNames)
     % How many vertices total?
     nVert = length(results.fVal);
 
-    % save a peakAmp map
+    % save a map of the R2 fit value
     newMap = templateImage;
     newMap.cdata = results.R2;
     newMap = ciftiMakePseudoHemi(newMap);

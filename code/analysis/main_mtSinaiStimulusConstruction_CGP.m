@@ -39,6 +39,7 @@ stimLabels = '(stimLabels),{';
 dirLabels = {'LMS','LminusM','S'};
 condLabels = {'f0Hz','f2Hz','f4Hz','f8Hz','f16Hz','f32Hz','f64Hz','attention'};
 freqVals = [0,2,4,8,16,32,64];
+dirOrder = [2 3 1];
 dirVals = {'LightFlux','LminusM_wide','S_wide'};
 nConds = length(condLabels);
 nRows = nConds*length(stimFileList);
@@ -47,12 +48,13 @@ for ii=1:length(stimFileList)
     load(fullfile(stimFileList(ii).folder,stimFileList(ii).name),'results');
     dirOrderSet{ii} = results.thisDir;
 end
-for gg = [2 3 1]
+for dd = 1:length(dirOrder)
+    gg = dirOrder(dd);
     stimFileIdx = find(strcmp(dirOrderSet,dirVals{gg}));
     for ii=1:length(stimFileIdx)
         load(fullfile(stimFileList(stimFileIdx(ii)).folder,stimFileList(stimFileIdx(ii)).name),'results');
         stimMat = zeros(nRows,nTimeSamples);
-        offset = (ii-1)*nConds;
+        offset = (ii-1)*nConds+(dd-1)*nConds*12;
         freqEvents = [results.trialEvents.stimFreqHz];
         for tt = 1:length(freqEvents)
             rowIdx = (tt-1)*timeDivs+1;
@@ -84,6 +86,6 @@ fprintf(stimLabels);
 fprintf('{ '); for ii=1:6; fprintf(sprintf('[%d:%d,%d:%d,%d:%d,%d:%d,%d:%d,%d:%d],',[(ii-1)*336+1,ii*336,(ii+5)*336+1,(ii+6)*336], [(ii-1+12)*336+1,(ii+12)*336,(ii+5+12)*336+1,(ii+6+12)*336], [(ii-1+24)*336+1,(ii+24)*336,(ii+5+24)*336+1,(ii+6+24)*336] ));end; fprintf(' }\n');
 
 % Save the results
-save('stimulus_HEROcgp1_all.mat', 'stimulus','stimTime')
+save('stimulus_HERO_cgp1_allxAcq.mat', 'stimulus','stimTime')
 
 end

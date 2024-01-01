@@ -5,7 +5,7 @@ clear
 close all
 
 % Place to save figures
-savePath = '~/Desktop/Patterson_2024_flickerPaper/';
+savePath = '~/Desktop/Patterson_2024_EccentricityFlicker/';
 
 % Define the localDataDir
 localDataDir = fullfile(tbLocateProjectSilent('mriSinaiAnalysis'),'data');

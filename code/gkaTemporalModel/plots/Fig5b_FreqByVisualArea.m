@@ -7,7 +7,7 @@ rng(1); % Fix the random number generator
 verbose = false;
 
 % Place to save figures and to find the Watson fit results
-savePath = '~/Desktop/VSS 2023/';
+savePath = '~/Desktop/Patterson_2024_EccentricityFlicker/';
 
 %% Analysis properties
 % This is the threshold for the goodness of fit to the fMRI time-series

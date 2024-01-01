@@ -2,7 +2,7 @@ clear
 close all
 
 % Place to save figures and to find the Watson fit results
-savePath = '~/Desktop/VSS 2023/';
+savePath = '~/Desktop/Patterson_2024_EccentricityFlicker/';
 
 % These variables define the subject names, stimulus directions.
 subjectNames = {'HEROgka1','HEROasb1'};

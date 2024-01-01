@@ -2,7 +2,7 @@ clear
 close all
 
 % Place to save figures and to find the Watson fit results
-savePath = '~/Desktop/VSS 2023/';
+savePath = '~/Desktop/Patterson_2024_EccentricityFlicker/';
 
 % These variables define the subject names, stimulus directions.
 subjectNames = {'HEROgka1','HEROasb1'};
@@ -42,7 +42,7 @@ for ss = 1:length(subjectNames)
     stimLabels = results.model.opts{find(strcmp(results.model.opts,'stimLabels'))+1};
 
     % Load the fitResults
-    filePath = fullfile(savePath,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_WatsonFit_results.mat']);
+    filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_WatsonFit_results.mat']);
     load(filePath,'fitResults')
 
     comboVec = nan(3,nVert);

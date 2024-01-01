@@ -10,7 +10,7 @@ rng(1); % Fix the random number generator
 verbose = false;
 
 % Place to save figures
-savePath = '~/Desktop/VSS 2023/';
+savePath = '~/Desktop/Patterson_2024_EccentricityFlicker/';
 
 %% Analysis properties
 % This is the threshold for the goodness of fit to the fMRI time-series
@@ -76,7 +76,7 @@ for ss = 1:nSubs
     stimLabels = results.model.opts{find(strcmp(results.model.opts,'stimLabels'))+1};
 
     % Loop over bootstraps
-    parfor bb = 1:nBoots
+    for bb = 1:nBoots
 
         % Get a sampling (with replacement) of the 12 acquisitions
         bootIdx = datasample(1:nAcqs,nAcqs);

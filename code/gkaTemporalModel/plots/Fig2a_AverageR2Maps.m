@@ -2,7 +2,7 @@ clear
 close all
 
 % Place to save figures
-savePath = '~/Desktop/Patterson_2024_flickerPaper/';
+savePath = '~/Desktop/Patterson_2024_EccentricityFlicker/';
 
 % These variables define the subject names, stimulus directions.
 subjectNames = {'HEROgka1','HEROasb1'};

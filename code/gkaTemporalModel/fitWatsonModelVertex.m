@@ -5,18 +5,15 @@ close all
 rng(1); % Fix the random number generator
 verbose = false;
 
-% Place to save the fit results
-savePath = '~/Desktop/VSS 2023/';
+% Define the localDataDir
+localDataDir = fullfile(tbLocateProjectSilent('mriSinaiAnalysis'),'data');
 
 %% Analysis properties
 % This is the threshold for the goodness of fit to the fMRI time-series
 % data. We only analyze those voxels with this quality fit or better
 r2Thresh = 0.1;
 
-% These variables define the subject names, stimulus directions. The
-% Flywheel analysis IDs are listed for completeness, but not used here.
-% Other software downloads the files from Flywheel.
-analysisIDs = { '64a72e7ac71249914655c704','64a72ed7e54b4460ea4bf010' };
+% These variables define the subject names and stimulus directions.
 subjectNames = {'HEROgka1','HEROasb1'};
 subjects = {'gka','asb'};
 stimulusDirections = {'LminusM','S','LMS'};
@@ -32,27 +29,6 @@ studiedFreqs = [2 4 8 16 32 64];
 nFreqs = length(studiedFreqs);
 interpFreqs = logspace(log10(1),log10(100),501);
 
-
-%% Download Mt Sinai results
-% This script downloads the "results" files Flywheel and
-% extracts BOLD fMRI response amplitudes for each of the stimulus temporal
-% frequencies. The response for each acquisition is retained to support
-% subsequent boot-strap resampling of the data.
-
-% Define the localSaveDir
-localDataDir = fullfile(tbLocateProjectSilent('mriSinaiAnalysis'),'data');
-
-% Load the retino maps
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_varea.dtseries.nii');
-vArea = cifti_read(tmpPath); vArea = vArea.cdata;
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_eccen.dtseries.nii');
-eccenMap = cifti_read(tmpPath); eccenMap = eccenMap.cdata;
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_angle.dtseries.nii');
-polarMap = cifti_read(tmpPath); polarMap = polarMap.cdata;
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_sigma.dtseries.nii');
-sigmaMap = cifti_read(tmpPath); sigmaMap = sigmaMap.cdata;
-
-
 %% Loop through subjects and fit each vertex
 for ss = 1:length(subjectNames)
 
@@ -65,12 +41,13 @@ for ss = 1:length(subjectNames)
 
     % Initialize the fit results
     fitResults = [];
-    fitResults.p = cell(nVert,1);
-    fitResults.fVal = cell(nVert,1);
-    fitResults.rSquared = cell(nVert,1);
-    fitResults.Y = cell(nVert,1);
-    fitResults.yFitInterp = cell(nVert,1);
-    fitResults.peakFreq = cell(nVert,1);
+    % fitResults.p = cell(nVert,1);
+    % fitResults.fVal = cell(nVert,1);
+    % fitResults.rSquared = cell(nVert,1);
+    % fitResults.Y = cell(nVert,1);
+    % fitResults.yFitInterp = cell(nVert,1);
+    % fitResults.peakFreq = cell(nVert,1);
+    % fitResults.peakAmp = cell(nVert,1);
 
     % Grab the stimLabels
     stimLabels = results.model.opts{find(strcmp(results.model.opts,'stimLabels'))+1};
@@ -80,6 +57,7 @@ for ss = 1:length(subjectNames)
     nGood = length(goodIdx);
 
     % Loop over the valid voxels
+    nGood = 3;
     parfor gg = 1:nGood
 
         % The idx of the goodIdx set that we will process
@@ -141,19 +119,19 @@ for ss = 1:length(subjectNames)
 
     % Move the par loop results into the fit structure
     idxSet = cell2mat(parLoop_idx);
-
-    fitResults.p(idxSet) = parLoop_p;
-    fitResults.fVal(idxSet) = parLoop_fVal;
-    fitResults.rSquared(idxSet) = parLoop_rSquared;
-    fitResults.Y(idxSet) = parLoop_Y;
-    fitResults.yFitInterp(idxSet) = parLoop_yFitInterp;
-    fitResults.peakFreq(idxSet) = parLoop_peakFreq;
-    fitResults.peakAmp(idxSet) = parLoop_peakAmp;
+    
+    fitResults.idxSet = idxSet;
+    fitResults.p = parLoop_p;
+    fitResults.fVal = parLoop_fVal;
+    fitResults.rSquared = parLoop_rSquared;
+    fitResults.Y = parLoop_Y;
+    fitResults.yFitInterp = parLoop_yFitInterp;
+    fitResults.peakFreq = parLoop_peakFreq;
+    fitResults.peakAmp = parLoop_peakAmp;
 
     % Save the results file for this subject
-    filePath = fullfile(savePath,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_WatsonFit_results.mat']);
+    filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_WatsonFit_resultsTEST.mat']);
     save(filePath,'fitResults')
-
 
 end
 

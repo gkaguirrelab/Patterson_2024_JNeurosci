@@ -12,7 +12,7 @@ localDataDir = fullfile(tbLocateProjectSilent('mriSinaiAnalysis'),'data');
 
 % These variables define the subject names, stimulus directions, and the
 % analysis IDs
-subjectNames = {'HEROgka1','HEROasb1'};
+subjectNames = {'HEROgka1','HEROasb1','HEROcgp1'};
 shortNames = {'gka','asb'};
 directions = {'LminusM','S','LMS'};
 freqs = [0,2,4,8,16,32,64];

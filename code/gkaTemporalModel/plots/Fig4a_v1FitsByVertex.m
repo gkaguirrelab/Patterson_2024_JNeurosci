@@ -16,19 +16,6 @@ nStims = length(stimulusDirections);
 % Define the localDataDir
 localDataDir = fullfile(tbLocateProjectSilent('mriSinaiAnalysis'),'data');
 
-% Load the retino maps
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_varea.dtseries.nii');
-vArea = cifti_read(tmpPath); vArea = vArea.cdata;
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_eccen.dtseries.nii');
-eccenMap = cifti_read(tmpPath); eccenMap = eccenMap.cdata;
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_angle.dtseries.nii');
-polarMap = cifti_read(tmpPath); polarMap = polarMap.cdata;
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_sigma.dtseries.nii');
-sigmaMap = cifti_read(tmpPath); sigmaMap = sigmaMap.cdata;
-
-% Save a template map variable so we can create new maps below
-templateImage = cifti_read(tmpPath);
-
 % This is the threshold for the goodness of fit to the fMRI time-series
 % data. We only display those voxels with this quality fit or better
 r2Thresh = 0.1;
@@ -36,7 +23,6 @@ r2Thresh = 0.1;
 % This is the threshold for the goodness of fit of the Watson model to the
 % TTF in each vertex. We only display those voxels with this fVal or lower
 fValThresh = 2;
-
 
 % Prepare the figures
 figHandle = figure('Renderer','painters');
@@ -56,8 +42,16 @@ for ss = 1:length(subjectNames)
     % Grab the stimLabels
     stimLabels = results.model.opts{find(strcmp(results.model.opts,'stimLabels'))+1};
 
+    % Load the retino maps for this subject
+    tmpPath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_benson.dscalar.nii']);
+    vArea = cifti_read(tmpPath); vArea = vArea.cdata;
+    tmpPath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_eccen.dscalar.nii']);
+    eccenMap = cifti_read(tmpPath); eccenMap = eccenMap.cdata;
+    tmpPath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_angle.dscalar.nii']);
+    polarMap = cifti_read(tmpPath); polarMap = polarMap.cdata;
+
     % Initialize or load the fitResults
-    filePath = fullfile(savePath,[subjectNames{ss} '_WatsonFit_results.mat']);
+    filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_WatsonFit_results.mat']);
     load(filePath,'fitResults')
 
     % Loop over stimulus directions and create a map of the peak frequency
@@ -164,7 +158,6 @@ for ss = 1:length(subjectNames)
         box off
 
         title(subjects{ss});
-
 
     end
 

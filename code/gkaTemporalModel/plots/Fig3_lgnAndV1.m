@@ -50,7 +50,7 @@ nROIs = length(roiSet);
 % Define the localDataDir
 localDataDir = fullfile(tbLocateProjectSilent('mriSinaiAnalysis'),'data');
 
-% Load the retino maps
+% % Load the retino maps
 tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_varea.dtseries.nii');
 vArea = cifti_read(tmpPath); vArea = vArea.cdata;
 tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_eccen.dtseries.nii');
@@ -76,7 +76,7 @@ for ss = 1:nSubs
     stimLabels = results.model.opts{find(strcmp(results.model.opts,'stimLabels'))+1};
 
     % Loop over bootstraps
-    for bb = 1:nBoots
+    parfor bb = 1:nBoots
 
         % Get a sampling (with replacement) of the 12 acquisitions
         bootIdx = datasample(1:nAcqs,nAcqs);
@@ -89,9 +89,14 @@ for ss = 1:nSubs
 
             switch roiSet{rr}
                 case 'LGN'
-                    goodIdx = find(logical( (results.R2 > r2Thresh) .* (LGNROI == 1)));
+                    filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_lgn.dtseries.nii']);
+                    filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_benson.dscalar.nii']);
+                    roiVol = cifti_read(filePath); roiVol = roiVol.cdata;
+                    goodIdx = find(logical( (results.R2 > r2Thresh) .* (roiVol == 1)));
                 case 'V1'
-                    goodIdx = find(logical( (results.R2 > r2Thresh) .* (vArea == 1)));
+                    filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_benson.dscalar.nii']);
+                    roiVol = cifti_read(filePath); roiVol = roiVol.cdata;
+                    goodIdx = find(logical( (results.R2 > r2Thresh) .* (roiVol == 1)));
             end
             nGood(rr) = length(goodIdx);
 

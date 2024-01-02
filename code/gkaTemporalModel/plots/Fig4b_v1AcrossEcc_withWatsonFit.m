@@ -16,10 +16,7 @@ savePath = '~/Desktop/Patterson_2024_EccentricityFlicker/';
 r2Thresh = 0.1;
 nBoots = 250;
 
-% These variables define the subject names, stimulus directions. The
-% Flywheel analysis IDs are listed for completeness, but not used here.
-% Other software downloads the files from Flywheel.
-analysisIDs = {'6117d4db18adcc19d6e0f820','611d158fa296f805e7a2da75'};
+% These variables define the subject names, stimulus directions.
 subjectNames = {'HEROgka1','HEROasb1'};
 subjects = {'gka','asb'};
 stimulusDirections = {'LminusM','S','LMS'};
@@ -52,26 +49,8 @@ lineColor={'k','r','b'};
 faceAlpha = 0.4; % Transparency of the shaded error region
 shift_ttf = [0 3 6 9 11 13]; % shifts each ttf down so they can be presented tightly on the same figure
 
-
-%% Download Mt Sinai results
-% This script downloads the "results" files Flywheel and
-% extracts BOLD fMRI response amplitudes for each of the stimulus temporal
-% frequencies. The response for each acquisition is retained to support
-% subsequent boot-strap resampling of the data.
-
 % Define the localDataDir
 localDataDir = fullfile(tbLocateProjectSilent('mriSinaiAnalysis'),'data');
-
-% Load the retino maps
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_varea.dtseries.nii');
-vArea = cifti_read(tmpPath); vArea = vArea.cdata;
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_eccen.dtseries.nii');
-eccenMap = cifti_read(tmpPath); eccenMap = eccenMap.cdata;
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_angle.dtseries.nii');
-polarMap = cifti_read(tmpPath); polarMap = polarMap.cdata;
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_sigma.dtseries.nii');
-sigmaMap = cifti_read(tmpPath); sigmaMap = sigmaMap.cdata;
-
 
 % Loop over subjects
 for ss = 1:length(subjects)
@@ -82,6 +61,14 @@ for ss = 1:length(subjects)
 
     % Grab the stimLabels
     stimLabels = results.model.opts{find(strcmp(results.model.opts,'stimLabels'))+1};
+
+    % Load the retino maps for this subject
+    tmpPath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_benson.dscalar.nii']);
+    vArea = cifti_read(tmpPath); vArea = vArea.cdata;
+    tmpPath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_eccen.dscalar.nii']);
+    eccenMap = cifti_read(tmpPath); eccenMap = eccenMap.cdata;
+    tmpPath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_angle.dscalar.nii']);
+    polarMap = cifti_read(tmpPath); polarMap = polarMap.cdata;
 
     % Prepare the figure
     figHandles = figure('Renderer','painters');

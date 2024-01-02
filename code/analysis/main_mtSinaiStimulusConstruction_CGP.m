@@ -74,7 +74,7 @@ for dd = 1:length(dirOrder)
             for tt = 1:length(freqEvents)
                 rowIdx = (tt-1)*timeDivs+1;
                 freqIdx = find(freqVals==freqEvents(tt));
-                stimMat(offset+freqIdx,rowIdx:rowIdx+timeDivs) = 1;
+                stimMat(offset+freqIdx,rowIdx:rowIdx+timeDivs-1) = 1;
             end
             stimMat(offset+1,337:end) = 1;
             attentionEventTimes = [results.attentionEvents.eventTimeSecs];

@@ -10,15 +10,13 @@ savePath = '~/Desktop/Patterson_2024_EccentricityFlicker/';
 % Define the localDataDir
 localDataDir = fullfile(tbLocateProjectSilent('mriSinaiAnalysis'),'data');
 
-% These variables define the subject names, stimulus directions, and the
-% analysis IDs
+% These variables define the subject names and stimulus directions
 subjectNames = {'HEROgka1','HEROasb1','HEROcgp1'};
 shortNames = {'gka','asb'};
 directions = {'LminusM','S','LMS'};
 freqs = [0,2,4,8,16,32,64];
 analysisLabels = {'L-M','S','LF'};
 plotColors = {'r','b','k'};
-analysisIDs = { '61d32407d1304b39ec5427dc','61d3242146c9dab1751bd55f' };
 
 % Loop through the subjects
 for ss = 1:length(subjectNames)

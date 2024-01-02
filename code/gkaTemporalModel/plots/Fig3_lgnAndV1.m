@@ -89,6 +89,7 @@ for ss = 1:nSubs
 
             switch roiSet{rr}
                 case 'LGN'
+                    %% DELETE THE V1 ENTRY HERE
                     filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_lgn.dtseries.nii']);
                     filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_benson.dscalar.nii']);
                     roiVol = cifti_read(filePath); roiVol = roiVol.cdata;

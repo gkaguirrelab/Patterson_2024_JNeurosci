@@ -46,7 +46,6 @@ seqVals = {'A','B'};
 dirVals = {'LightFlux','LminusM_wide','S_wide'};
 nConds = length(condLabels);
 nRows = nConds*length(stimFileList);
-offset = 0;
 for ii=1:length(stimFileList)
     load(fullfile(stimFileList(ii).folder,stimFileList(ii).name),'results');
     dirOrderSet{ii} = results.thisDir;

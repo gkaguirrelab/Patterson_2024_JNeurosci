@@ -24,7 +24,8 @@ nBoots = 50;
 subjectNames = {'HEROgka1','HEROasb1','HEROcgp1'};
 subjects = {'gka','asb','cgp'};
 subMarkers = {'^','square','o'};
-subLines = {'-',':','--'};
+subMarkerSize = [9,11,8];
+subLines = {'-','--',':'};
 stimulusDirections = {'LminusM','S','LMS'};
 nSubs = length(subjects);
 nStims = length(stimulusDirections);
@@ -294,11 +295,11 @@ for vv = 1:2
             pHand(whichSub,whichStim) = plot(stimOrder(whichStim),valLGN, ...
                 subMarkers{whichSub},'Color',lineColor{stimOrder(whichStim)},...
                 'MarkerFaceColor',lineColor{stimOrder(whichStim)},...
-                'MarkerSize',6,'MarkerEdgeColor','w','LineWidth',1);
+                'MarkerSize',subMarkerSize(whichSub),'MarkerEdgeColor','w','LineWidth',1.5);
             plot(stimOrder(whichStim)+roiShift,valV1,...
                 subMarkers{whichSub},'Color',lineColor{stimOrder(whichStim)},...
                 'MarkerFaceColor',lineColor{stimOrder(whichStim)},...
-                'MarkerSize',6,'MarkerEdgeColor','w','LineWidth',1);
+                'MarkerSize',subMarkerSize(whichSub),'MarkerEdgeColor','w','LineWidth',1.5);
 
             % Connect the symbols
             plot([stimOrder(whichStim) stimOrder(whichStim)+roiShift],[valLGN,valV1],...

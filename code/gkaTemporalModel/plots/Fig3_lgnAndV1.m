@@ -15,14 +15,16 @@ savePath = '~/Desktop/Patterson_2024_EccentricityFlicker/';
 %% Analysis properties
 % This is the threshold for the goodness of fit to the fMRI time-series
 % data. We only analyze those voxels with this quality fit or better
-r2Thresh = 0.1;
-nBoots = 250;
+r2Thresh = 0.05;
+nBoots = 50;
 
 % These variables define the subject names, stimulus directions. The
 % Flywheel analysis IDs are listed for completeness, but not used here.
 % Other software downloads the files from Flywheel.
-subjectNames = {'HEROgka1','HEROasb1'};
-subjects = {'gka','asb'};
+subjectNames = {'HEROgka1','HEROasb1','HEROcgp1'};
+subjects = {'gka','asb','cgp'};
+subMarkers = {'^','square','o'};
+subLines = {'-',':','--'};
 stimulusDirections = {'LminusM','S','LMS'};
 nSubs = length(subjects);
 nStims = length(stimulusDirections);
@@ -50,30 +52,8 @@ nROIs = length(roiSet);
 % Define the localDataDir
 localDataDir = fullfile(tbLocateProjectSilent('mriSinaiAnalysis'),'data');
 
-% % Load the retino maps
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_varea.dtseries.nii');
-vArea = cifti_read(tmpPath); vArea = vArea.cdata;
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_eccen.dtseries.nii');
-eccenMap = cifti_read(tmpPath); eccenMap = eccenMap.cdata;
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_angle.dtseries.nii');
-polarMap = cifti_read(tmpPath); polarMap = polarMap.cdata;
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_sigma.dtseries.nii');
-sigmaMap = cifti_read(tmpPath); sigmaMap = sigmaMap.cdata;
-
-% Load the LGN ROI
-tmpPath = fullfile(localDataDir,'retinoFiles','LGN_bilateral.dtseries.nii');
-LGNROI = cifti_read(tmpPath); LGNROI = LGNROI.cdata;
-
-
 % Loop through subjects
 for ss = 1:nSubs
-
-    % Load the results file for this subject
-    filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_mtSinai_results.mat']);
-    load(filePath,'results')
-
-    % Grab the stimLabels
-    stimLabels = results.model.opts{find(strcmp(results.model.opts,'stimLabels'))+1};
 
     % Loop over bootstraps
     parfor bb = 1:nBoots
@@ -84,22 +64,33 @@ for ss = 1:nSubs
         % Define some variables for parpool happiness
         nGood = []; peakFreq = []; peakAmp = []; goodIdx = []; Yset = [];
 
+        % Define the results struct to keep parpool happy
+        results = struct();
+
         % Loop over the ROIs
         for rr = 1:length(roiSet)
 
+            % Load the results and ROI files for this subject
             switch roiSet{rr}
                 case 'LGN'
-                    %% DELETE THE V1 ENTRY HERE
+                    filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_LGN_mtSinai_results.mat']);
+                    tmpLoad = load(filePath);
+                    results = tmpLoad.results;
                     filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_lgn.dtseries.nii']);
-                    filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_benson.dscalar.nii']);
                     roiVol = cifti_read(filePath); roiVol = roiVol.cdata;
                     goodIdx = find(logical( (results.R2 > r2Thresh) .* (roiVol == 1)));
                 case 'V1'
+                    filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_mtSinai_results.mat']);
+                    tmpLoad = load(filePath);
+                    results = tmpLoad.results;
                     filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_benson.dscalar.nii']);
                     roiVol = cifti_read(filePath); roiVol = roiVol.cdata;
                     goodIdx = find(logical( (results.R2 > r2Thresh) .* (roiVol == 1)));
             end
             nGood(rr) = length(goodIdx);
+
+            % Grab the stimLabels
+            stimLabels = results.model.opts{find(strcmp(results.model.opts,'stimLabels'))+1};
 
             % Loop over the stimuli
             for whichStim = 1:nStims
@@ -180,10 +171,10 @@ shift_ttf = [1 5.5 8]; % shifts each ttf down so they can be presented tightly o
 % Prepare the TTF figure
 figHandleA = figure('Renderer','painters');
 figuresize(460,600,'pt');
-tiledlayout(1,4,'TileSpacing','tight','Padding','tight')
+tiledlayout(1,nSubs*2,'TileSpacing','tight','Padding','tight')
 
 % Loop over subjects
-for whichSub = 1:length(subjects)
+for whichSub = 1:nSubs
 
     % Loop over ROIS
     for rr = 1:nROIs
@@ -266,90 +257,73 @@ saveas(figHandleA,fullfile(savePath,plotNamesPDF));
 
 
 
-
-
 %% Plot the peak Amplitude and Frequency
 
-
-% Prepare the peak freq figure
 figHandleB = figure('Renderer','painters');
 figuresize(460,600,'pt');
-tiledlayout(2,2,'TileSpacing','tight','Padding','tight')
+tiledlayout(2,1,'TileSpacing','tight','Padding','tight')
 roiShift = 0.25;
-% Loop over subjects
-for whichSub = 1:length(subjects)
 
-    % Select the plot of the correct stimulus direction
+for vv = 1:2
     nexttile();
+    for whichSub = 1:nSubs
+        for whichStim = 1:nStims
 
-    for whichStim = 1:nStims
+            % Get the vals
+            switch vv
+                case 1
+                    valLGN = squeeze(peakAmpMedian(whichSub,whichStim,1));
+                    valLGNIQR = squeeze(peakAmpIQR(whichSub,whichStim,1));
+                    valV1 = squeeze(peakAmpMedian(whichSub,whichStim,2));
+                    valV1IQR = squeeze(peakAmpIQR(whichSub,whichStim,2));
+                case 2
+                    valLGN = squeeze(peakFreqMedian(whichSub,whichStim,1));
+                    valLGNIQR = squeeze(peakFreqIQR(whichSub,whichStim,1));
+                    valV1 = squeeze(peakFreqMedian(whichSub,whichStim,2));
+                    valV1IQR = squeeze(peakFreqIQR(whichSub,whichStim,2));
+            end
 
-        val = squeeze(peakAmpMedian(whichSub,whichStim,1));
-        valIQR = squeeze(peakAmpIQR(whichSub,whichStim,1));
+            % Plot the IQR bars
+            plot([stimOrder(whichStim) stimOrder(whichStim)],[valLGN-valLGNIQR/2,valLGN+valLGNIQR/2],...
+                '-','Color',plotColor{stimOrder(whichStim)},'LineWidth',2);
+            hold on
+            plot([stimOrder(whichStim)+roiShift stimOrder(whichStim)+roiShift],[valV1-valV1IQR/2,valV1+valV1IQR/2],...
+                '-','Color',plotColor{stimOrder(whichStim)},'LineWidth',2);
 
-        % Loop over stimuli and plot
-        plot([stimOrder(whichStim) stimOrder(whichStim)],[val-valIQR/2,val+valIQR/2],'-','Color',plotColor{stimOrder(whichStim)});
-        hold on
-        plot(stimOrder(whichStim),val,'o','Color',plotColor{stimOrder(whichStim)});
+            % Add the plot symbols
+            pHand(whichSub,whichStim) = plot(stimOrder(whichStim),valLGN, ...
+                subMarkers{whichSub},'Color',lineColor{stimOrder(whichStim)},...
+                'MarkerFaceColor',lineColor{stimOrder(whichStim)},...
+                'MarkerSize',6,'MarkerEdgeColor','w','LineWidth',1);
+            plot(stimOrder(whichStim)+roiShift,valV1,...
+                subMarkers{whichSub},'Color',lineColor{stimOrder(whichStim)},...
+                'MarkerFaceColor',lineColor{stimOrder(whichStim)},...
+                'MarkerSize',6,'MarkerEdgeColor','w','LineWidth',1);
 
-        val = squeeze(peakAmpMedian(whichSub,whichStim,2));
-        valIQR = squeeze(peakAmpIQR(whichSub,whichStim,2));
+            % Connect the symbols
+            plot([stimOrder(whichStim) stimOrder(whichStim)+roiShift],[valLGN,valV1],...
+                subLines{whichSub},'Color',lineColor{stimOrder(whichStim)},'LineWidth',1);
 
-        % Loop over stimuli and plot
-        plot([stimOrder(whichStim)+roiShift stimOrder(whichStim)+roiShift],[val-valIQR/2,val+valIQR/2],'-','Color',plotColor{stimOrder(whichStim)});
-        hold on
-        plot(stimOrder(whichStim)+roiShift,val,'^','Color',plotColor{stimOrder(whichStim)});
-
+        end
     end
 
-    ylim([0 6])
-    ylabel('BOLD response [Pct change]');
-    xlim([0.5 3.5]);
+    % Clean up
+    switch vv
+        case 1
+            ylim([0 6])
+            ylabel('BOLD response [Pct change]');
+            xlim([0.5 3.5]);
+        case 2
+            ylim([0 30])
+            ylabel('Peak frequency [Hz]');
+            xlim([0.5 3.5]);
+    end
     a = gca;
     a.XTick = [1 1.25 2 2.25 3 3.25];
     a.XTickLabelRotation = 90;
-    a.XTickLabel = {'lgn','v1','lgn','v1','lgn','v1'};
-
-    title(subjects{whichSub});
-
-end
-
-% Loop over subjects
-for whichSub = 1:length(subjects)
-
-    % Select the plot of the correct stimulus direction
-    nexttile();
-
-    for whichStim = 1:nStims
-
-        val = squeeze(peakFreqMedian(whichSub,whichStim,1));
-        valIQR = squeeze(peakFreqIQR(whichSub,whichStim,1));
-
-        % Loop over stimuli and plot
-        plot([stimOrder(whichStim) stimOrder(whichStim)],[val-valIQR/2,val+valIQR/2],'-','Color',plotColor{stimOrder(whichStim)});
-        hold on
-        plot(stimOrder(whichStim),val,'o','Color',plotColor{stimOrder(whichStim)});
-
-        val = squeeze(peakFreqMedian(whichSub,whichStim,2));
-        valIQR = squeeze(peakFreqIQR(whichSub,whichStim,2));
-
-        % Loop over stimuli and plot
-        plot([stimOrder(whichStim)+roiShift stimOrder(whichStim)+roiShift],[val-valIQR/2,val+valIQR/2],'-','Color',plotColor{stimOrder(whichStim)});
-        hold on
-        plot(stimOrder(whichStim)+roiShift,val,'^','Color',plotColor{stimOrder(whichStim)});
-
-    end
-
-    ylim([0 30])
-    ylabel('Peak frequency [Hz]');
-    xlim([0.5 3.5]);
-
-    a = gca;
-    a.XTick = [1 1.25 2 2.25 3 3.25];
-    a.XTickLabelRotation = 90;
-    a.XTickLabel = {'lgn','v1','lgn','v1','lgn','v1'};
-
-    title(subjects{whichSub});
+    a.XTickLabel = {'LGN','V1','LGN','V1','LGN','V1'};
+    legend(pHand(:,3),subjects)
+    box off
 
 end
 
@@ -359,8 +333,8 @@ saveas(figHandleB,fullfile(savePath,plotNamesPDF));
 
 % Report the amplification of the chromatic channels between LGN and V1,
 % relative to the achromatic
-for whichSub = 1:2
-        denomer = squeeze(peakAmpMedian(whichSub,3,2))./squeeze(peakAmpMedian(whichSub,3,1));
+for whichSub = 1:nSubs
+    denomer = squeeze(peakAmpMedian(whichSub,3,2))./squeeze(peakAmpMedian(whichSub,3,1));
     for whichStim = 1:2
         numer = squeeze(peakAmpMedian(whichSub,whichStim,2))./squeeze(peakAmpMedian(whichSub,whichStim,1));
         fprintf([subjects{whichSub} ' - ' stimulusDirections{whichStim} ': %2.2f \n'],numer/denomer);

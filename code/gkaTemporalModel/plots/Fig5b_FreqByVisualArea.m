@@ -13,12 +13,9 @@ savePath = '~/Desktop/Patterson_2024_EccentricityFlicker/';
 % This is the threshold for the goodness of fit to the fMRI time-series
 % data. We only analyze those voxels with this quality fit or better
 r2Thresh = 0.1;
-nBoots = 250;
+nBoots = 10;
 
-% These variables define the subject names, stimulus directions. The
-% Flywheel analysis IDs are listed for completeness, but not used here.
-% Other software downloads the files from Flywheel.
-analysisIDs = {'6117d4db18adcc19d6e0f820','611d158fa296f805e7a2da75'};
+% These variables define the subject names, stimulus directions.
 subjectNames = {'HEROgka1','HEROasb1'};
 subjects = {'gka','asb'};
 stimulusDirections = {'LminusM','S','LMS'};
@@ -36,35 +33,11 @@ interpFreqs = logspace(log10(1),log10(100),501);
 nAcqs = 12;
 
 % Define some ROI sets
-roiSet = {'V1','V2/V3','hV4','MT'};
+roiSet = {'V1','V2/V3','hV4/VO1,2','MT'};
 nROIs = length(roiSet);
-
-%% Download Mt Sinai results
-% This script downloads the "results" files Flywheel and
-% extracts BOLD fMRI response amplitudes for each of the stimulus temporal
-% frequencies. The response for each acquisition is retained to support
-% subsequent boot-strap resampling of the data.
 
 % Define the localDataDir
 localDataDir = fullfile(tbLocateProjectSilent('mriSinaiAnalysis'),'data');
-
-% Load the retino maps
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_varea.dtseries.nii');
-vArea = cifti_read(tmpPath); vArea = vArea.cdata;
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_eccen.dtseries.nii');
-eccenMap = cifti_read(tmpPath); eccenMap = eccenMap.cdata;
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_angle.dtseries.nii');
-polarMap = cifti_read(tmpPath); polarMap = polarMap.cdata;
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_sigma.dtseries.nii');
-sigmaMap = cifti_read(tmpPath); sigmaMap = sigmaMap.cdata;
-
-% Load the LGN ROI
-tmpPath = fullfile(localDataDir,'retinoFiles','LGN_bilateral.dtseries.nii');
-LGNROI = cifti_read(tmpPath); LGNROI = LGNROI.cdata;
-
-% Load the MT ROI
-tmpPath = fullfile(localDataDir,'retinoFiles','MT.dtseries.nii');
-MTROI = cifti_read(tmpPath); MTROI = MTROI.cdata;
 
 % Prepare the figure
 figHandle = figure('Renderer','painters');
@@ -90,8 +63,20 @@ for ss = 1:length(subjectNames)
     % Grab the stimLabels
     stimLabels = results.model.opts{find(strcmp(results.model.opts,'stimLabels'))+1};
 
+    % Get the "Benson" visual areas for this subject
+    tmpPath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_benson.dscalar.nii']);
+    vAreas = cifti_read(tmpPath); vAreas = vAreas.cdata;
+
+    % Get the "Wang" visual areas for this subject
+    tmpPath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_wang.dscalar.nii']);
+    vWang = cifti_read(tmpPath); vWang = vWang.cdata;
+
+    % Get the area MT ROI
+    tmpPath = fullfile(localDataDir,'MT.dtseries.nii');
+    mtROI = cifti_read(tmpPath); mtROI = mtROI.cdata;
+
     % Loop over bootstraps
-    parfor bb = 1:nBoots
+    for bb = 1:nBoots
 
         % Get a sampling (with replacement) of the 12 acquisitions
         bootIdx = datasample(1:nAcqs,nAcqs);
@@ -99,19 +84,18 @@ for ss = 1:length(subjectNames)
         % Define some variables for parpool happiness
         nGood = []; peakFreq = []; peakAmp = []; goodIdx = [];
 
+        % Loop over the ROIs
         for rr = 1:length(roiSet)
 
             switch roiSet{rr}
-                case 'LGN'
-                    goodIdx = find(logical( (results.R2 > r2Thresh) .* (LGNROI == 1)));
                 case 'V1'
-                    goodIdx = find(logical( (results.R2 > r2Thresh) .* (vArea == 1)));
+                    goodIdx = find(logical( (results.R2 > r2Thresh) .* (vAreas == 1)));
                 case 'V2/V3'
-                    goodIdx = find(logical( (results.R2 > r2Thresh) .* (vArea >= 2) .* (vArea <= 3) ));
-                case 'hV4'
-                    goodIdx = find(logical( (results.R2 > r2Thresh) .* (vArea == 4) ));
+                    goodIdx = find(logical( (results.R2 > r2Thresh) .* (vAreas >= 2) .* (vAreas <= 3) ));
+                case 'hV4/VO1,2'
+                    goodIdx = find(logical( (results.R2 > r2Thresh) .* (vWang == 7) ));
                 case 'MT'
-                    goodIdx = find(logical( (results.R2 > r2Thresh) .* (MTROI == 1)));
+                    goodIdx = find(logical( (results.R2 > r2Thresh) .* (mtROI == 1)));
             end
             nGood(rr) = length(goodIdx);
 
@@ -179,7 +163,7 @@ for ss = 1:length(subjectNames)
         x = (1:nROIs) + (stimOrder(whichStim)-2)/6;
         for rr=1:length(x)
             plot([x(rr) x(rr)],[vec(rr)-veciqr(rr)/2, vec(rr)+veciqr(rr)/2],'-','Color',plotColor{stimOrder(whichStim)});
-        hold on
+            hold on
         end
         plot(x,vec,subMarkers{ss},'Color',plotColor{stimOrder(whichStim)});
         plot(x,vec,':','Color',plotColor{stimOrder(whichStim)});

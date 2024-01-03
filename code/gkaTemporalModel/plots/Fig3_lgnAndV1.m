@@ -18,9 +18,7 @@ savePath = '~/Desktop/Patterson_2024_EccentricityFlicker/';
 r2Thresh = 0.05;
 nBoots = 50;
 
-% These variables define the subject names, stimulus directions. The
-% Flywheel analysis IDs are listed for completeness, but not used here.
-% Other software downloads the files from Flywheel.
+% These variables define the subject names, stimulus directions.
 subjectNames = {'HEROgka1','HEROasb1','HEROcgp1'};
 subjects = {'gka','asb','cgp'};
 subMarkers = {'^','square','o'};
@@ -167,24 +165,24 @@ stimOrder = [2 3 1];
 plotColor={[0.75 0.75 0.75],[0.85 0.55 0.55],[0.75 0.75 1]};
 lineColor={'k','r','b'};
 faceAlpha = 0.4; % Transparency of the shaded error region
-shift_ttf = [1 5.5 8]; % shifts each ttf down so they can be presented tightly on the same figure
+shift_ttf_by_Sub = {[0 2.5],[0 4.5],[0 2]}; % shifts each ttf down so they can be presented tightly on the same figure
 
 % Prepare the TTF figure
 figHandleA = figure('Renderer','painters');
-figuresize(460,600,'pt');
-tiledlayout(1,nSubs*2,'TileSpacing','tight','Padding','tight')
+figuresize(300,600,'pt');
+tiledlayout(nSubs,nStims,'TileSpacing','tight','Padding','tight')
 
 % Loop over subjects
 for whichSub = 1:nSubs
 
-    % Loop over ROIS
-    for rr = 1:nROIs
+    % Loop over stimuli and plot
+    for whichStim = 1:nStims
 
         % Select the plot of the correct stimulus direction
-        nexttile((whichSub-1)*nROIs+rr);
+        nexttile((whichSub-1)*nStims+stimOrder(whichStim));
 
-        % Loop over stimuli and plot
-        for whichStim = 1:nStims
+        % Loop over ROIS
+        for rr = 1:nROIs
 
             % Assemble the data
             thisY = squeeze(YMedian(whichSub,whichStim,rr,:))';
@@ -196,39 +194,37 @@ for whichSub = 1:nSubs
             [~,~,~,yFitInterp] = fitWatsonModel(thisY,1./thisIQR,studiedFreqs);
 
             % Add reference lines
-            if whichStim == 2
-                plot(log10([1 1]),[0 2]-shift_ttf(stimOrder(whichStim)),'-k');
-            else
-                plot(log10([1 1]),[0 4]-shift_ttf(stimOrder(whichStim)),'-k');
-            end
+            plot(log10([1 1]),[0 1]-shift_ttf_by_Sub{whichSub}(rr),'-k');
             hold on
-            plot(log10([1 100]),[0 0]-shift_ttf(stimOrder(whichStim)),'-k');
+            plot(log10([1 4]),[0 0]-shift_ttf_by_Sub{whichSub}(rr),':k');
 
             % Add a patch for the error
             patch(...
                 [log10(studiedFreqs),fliplr(log10(studiedFreqs))],...
-                [ lowY-shift_ttf(stimOrder(whichStim)), fliplr(highY)-shift_ttf(stimOrder(whichStim)) ],...
+                [ lowY-shift_ttf_by_Sub{whichSub}(rr), fliplr(highY)-shift_ttf_by_Sub{whichSub}(rr) ],...
                 plotColor{whichStim},'EdgeColor','none','FaceColor',plotColor{stimOrder(whichStim)},'FaceAlpha',faceAlpha);
 
             % Add the model fit
-            plot(log10(interpFreqs),yFitInterp-shift_ttf(stimOrder(whichStim)),...
+            plot(log10(interpFreqs),yFitInterp-shift_ttf_by_Sub{whichSub}(rr),...
                 ['-' lineColor{stimOrder(whichStim)}],...
                 'LineWidth',2);
 
             % Add the data symbols, using reversed markers for values below
             % zero
             idx = thisY > 0;
-            plot(log10(studiedFreqs(idx)),thisY(idx)-shift_ttf(stimOrder(whichStim)),...
+            plot(log10(studiedFreqs(idx)),thisY(idx)-shift_ttf_by_Sub{whichSub}(rr),...
                 'o','MarkerFaceColor',lineColor{stimOrder(whichStim)},...
                 'MarkerSize',6,'MarkerEdgeColor','w','LineWidth',1);
             idx = thisY < 0;
-            plot(log10(studiedFreqs(idx)),thisY(idx)-shift_ttf(stimOrder(whichStim)),...
+            plot(log10(studiedFreqs(idx)),thisY(idx)-shift_ttf_by_Sub{whichSub}(rr),...
                 'o','MarkerFaceColor','w',...
                 'MarkerSize',6,'MarkerEdgeColor',lineColor{stimOrder(whichStim)},'LineWidth',1);
 
+            
+
             % Clean up
             xlim(log10([0.5 150]))
-            ylim([-8.5 5]);
+            ylim([-6 4]);
             xlabel('Frequency [Hz]')
             a=gca;
             a.YTick = [0,2,4,6];
@@ -239,14 +235,16 @@ for whichSub = 1:nSubs
             a.XMinorTick = 'off';
             a.YAxis.Visible = 'off';
             box off
-            if whichSub~=1 || rr~=1
+            if stimOrder(whichStim)==1 && rr==2
+                a.XAxis.Visible = 'on';
+            else
                 a.XAxis.Visible = 'off';
             end
-            title([subjects{whichSub} ' - ' roiSet{rr}]);
+            title([subjects{whichSub} ' - ' stimulusDirections{whichStim}]);
 
         end
 
-        plot(log10([16 16]),[-8 5],'--k');
+        plot(log10([16 16]),[-6 4],'--k');
 
     end
 
@@ -321,7 +319,7 @@ for vv = 1:2
     end
     a = gca;
     a.XTick = [1 1.25 2 2.25 3 3.25];
-    a.XTickLabelRotation = 90;
+    a.XTickLabelRotation = 45;
     a.XTickLabel = {'LGN','V1','LGN','V1','LGN','V1'};
     legend(pHand(:,3),subjects)
     box off

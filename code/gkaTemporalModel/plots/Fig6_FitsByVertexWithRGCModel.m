@@ -16,19 +16,6 @@ nStims = length(stimulusDirections);
 % Define the localDataDir
 localDataDir = fullfile(tbLocateProjectSilent('mriSinaiAnalysis'),'data');
 
-% Load the retino maps
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_varea.dtseries.nii');
-vArea = cifti_read(tmpPath); vArea = vArea.cdata;
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_eccen.dtseries.nii');
-eccenMap = cifti_read(tmpPath); eccenMap = eccenMap.cdata;
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_angle.dtseries.nii');
-polarMap = cifti_read(tmpPath); polarMap = polarMap.cdata;
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_sigma.dtseries.nii');
-sigmaMap = cifti_read(tmpPath); sigmaMap = sigmaMap.cdata;
-
-% Save a template map variable so we can create new maps below
-templateImage = cifti_read(tmpPath);
-
 % This is the threshold for the goodness of fit to the fMRI time-series
 % data. We only display those voxels with this quality fit or better
 r2Thresh = 0.1;
@@ -77,6 +64,7 @@ tiledlayout(1,2,'Padding','tight')
 % Loop through subjects and fit each vertex
 for ss = 1:length(subjectNames)
 
+    % Clear this variable
     ampNorm = [];
 
     % Load the results file for this subject
@@ -89,11 +77,19 @@ for ss = 1:length(subjectNames)
     % Grab the stimLabels
     stimLabels = results.model.opts{find(strcmp(results.model.opts,'stimLabels'))+1};
 
-    % Initialize or load the fitResults
+    % Load the fitResults
     filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_WatsonFit_results.mat']);
     load(filePath,'fitResults')
 
-    % Loop over stimulus directions and create a map of the peak frequency
+    % Load the visual areas for this subject
+    filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_benson.dscalar.nii']);
+    vArea = cifti_read(filePath); vArea = vArea.cdata;
+
+    % Load the eccentricity map for this subject
+    filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_eccen.dscalar.nii']);
+    eccenMap = cifti_read(filePath); eccenMap = eccenMap.cdata;
+
+    % Loop over stimulus directions
     for whichStim = [3 1 2]
 
         % Find those vertices that had a positive response to this stimulus

@@ -13,7 +13,7 @@ nSubs = length(subjects);
 localDataDir = fullfile(tbLocateProjectSilent('mriSinaiAnalysis'),'data');
 
 % Save a template map variable so we can create new maps below
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_eccen.dtseries.nii');
+tmpPath = fullfile(localDataDir,'MT.dtseries.nii');
 templateImage = cifti_read(tmpPath);
 
 % Loop through subjects

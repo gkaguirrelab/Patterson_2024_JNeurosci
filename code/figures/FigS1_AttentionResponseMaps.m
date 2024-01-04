@@ -22,7 +22,9 @@ templateImage = cifti_read(tmpPath);
 
 % This is the threshold for the goodness of fit to the fMRI time-series
 % data. We only display those voxels with this quality fit or better
-r2Thresh = 0.0;
+r2Thresh = 0.1;
+
+figure
 
 % Loop through subjects
 for ss = 1:length(subjectNames)
@@ -41,14 +43,41 @@ for ss = 1:length(subjectNames)
     attenIdx = find(contains(stimLabels,'attention'));
 
     % Get the z-score of the attention effect for these voxels
-    p=results.params(goodIdx,attenIdx);
-    z=mean(p,2)./std(p,[],2);
+    p=results.params(:,attenIdx);
+    ztemp=mean(p,2)./std(p,[],2);
+    ztemp(isnan(ztemp))=0;
+    z(ss,:)=ztemp;
 
     % save the z attention map
     newMap = templateImage;
-    newMap.cdata = single(zeros(size(results.fVal)));
-    newMap.cdata(goodIdx) = single(z);
+    newMap.cdata = single(squeeze(z(ss,:)))';
     newMap = ciftiMakePseudoHemi(newMap);
     fileOut = fullfile(savePath,[subjectNames{ss} '_attentionZmap.dtseries.nii']);
     cifti_write(newMap, fileOut);
+
+    % Make a plot of the attention event effect as a function of
+    % eccentricity. Load the V1 region and eccentricity for this subject
+    filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_benson.dscalar.nii']);
+    roiVol = cifti_read(filePath); roiVol = roiVol.cdata;
+    filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_eccen.dscalar.nii']);
+    eccenVol = cifti_read(filePath); eccenVol = eccenVol.cdata;
+
+    % Get the good idx
+    goodIdx = find(logical( (results.R2 > r2Thresh) .* (roiVol == 1)));
+
+    % Scatter plot of eccentricity vs. z score of attention effect
+    subplot(1,3,ss)
+    scatter(log10(eccenVol(goodIdx)),z(ss,goodIdx));
+
 end
+
+% save an across-subject average attention map
+newMap = templateImage;
+newMap.cdata = single(zeros(size(results.fVal)));
+z(z==0) = nan;
+zAvg = mean(z,'omitnan');
+zAvg(isnan(zAvg))=0;
+newMap.cdata = single(zAvg)';
+newMap = ciftiMakePseudoHemi(newMap);
+fileOut = fullfile(savePath,['AvgSubject_attentionZmap.dtseries.nii']);
+cifti_write(newMap, fileOut);

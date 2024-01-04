@@ -1,45 +1,38 @@
-function decodeTemporalFreq()
 
-%% Download Mt Sinai results
-% This script downloads the "results" files Flywheel and
-% extracts BOLD fMRI response amplitudes for each of the stimulus temporal
-% frequencies. The response for each acquisition is retained to support
-% subsequent boot-strap resampling of the data.
 
-% Define the localSaveDir
-localDataDir = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data');
+%% Housekeeping
+clear
+close all
+rng(1); % Fix the random number generator
+verbose = false;
 
-% These variables define the subject names, stimulus directions. The
-% Flywheel analysis IDs are listed for completeness, but not used here.
-% Other software downloads the files from Flywheel.
-analysisIDs = {'6117d4db18adcc19d6e0f820','611d158fa296f805e7a2da75'};
-subjectNames = {'HEROgka1','HEROasb1'};
-shortNames = {'gka','asb'};
-stimulusDirections = {'LminusM','S','LMS'};
-allFreqs = [0,2,4,8,16,32,64];
-nFreqs = length(allFreqs);
+% Place to save figures
+savePath = '~/Desktop/Patterson_2024_EccentricityFlicker/';
 
-% Load the retino maps
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_varea.dtseries.nii');
-vArea = cifti_read(tmpPath); vArea = vArea.cdata;
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_eccen.dtseries.nii');
-eccenMap = cifti_read(tmpPath); eccenMap = eccenMap.cdata;
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_angle.dtseries.nii');
-polarMap = cifti_read(tmpPath); polarMap = polarMap.cdata;
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_sigma.dtseries.nii');
-sigmaMap = cifti_read(tmpPath); sigmaMap = sigmaMap.cdata;
+% Define the localDataDir
+localDataDir = fullfile(tbLocateProjectSilent('mriSinaiAnalysis'),'data');
 
-% Load the LGN ROI.
-tmpPath = fullfile(localDataDir,'retinoFiles','LGN_bilateral.dtseries.nii');
-LGNROI = cifti_read(tmpPath); LGNROI = LGNROI.cdata;
-
+%% Analysis properties
 % This is the threshold for the goodness of fit to the fMRI time-series
 % data. We only analyze those voxels with this quality fit or better
-r2Thresh = 0.1;
+r2Thresh = 0.05;
+nBoots = 50;
+
+% These variables define the subject names, stimulus directions.
+subjectNames = {'HEROgka1','HEROasb1','HEROcgp1'};
+subjects = {'gka','asb','cgp'};
+subMarkers = {'^','square','o'};
+subMarkerSize = [9,11,8];
+subLines = {'-','--',':'};
+stimulusDirections = {'LminusM','S','LMS'};
+nSubs = length(subjects);
+nStims = length(stimulusDirections);
+allFreqs = [0,2,4,8,16,32,64];
+studiedFreqs = [2 4 8 16 32 64];
+nFreqs = length(allFreqs);
 
 % The eccentricity bins that we will use to divide V1
 eccenDivs = [0 90./(2.^(5:-1:0))];
-
 for ii=1:length(eccenDivs)-1
     eccenBins{ii}=[eccenDivs(ii),eccenDivs(ii+1)];
 end
@@ -63,17 +56,19 @@ for ss = 1:2
     % Grab the stimLabels
     stimLabels = results.model.opts{find(strcmp(results.model.opts,'stimLabels'))+1};
 
+    % Load the ROI files for this subject
+    filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_benson.dscalar.nii']);
+    vArea = cifti_read(filePath); vArea = vArea.cdata;
+
     % Loop over areaLabels
     for aa = 1:2
 
-        figHandle = figure('Name',[shortNames{ss} ' - ' areaLabels{aa}]);
+        figHandle = figure('Name',[subjects{ss} ' - ' areaLabels{aa}]);
         t = tiledlayout(2,3);
         t.TileSpacing = 'compact';
         t.Padding = 'compact';
 
         switch areaLabels{aa}
-            case 'lgn'
-                areaIdx = LGNROI;
             case 'v1'
                 areaIdx = (vArea==1);
             case 'v2v3'
@@ -193,7 +188,6 @@ for ss = 1:2
 
 end % Subjects
 
-end % function
 
 
 %% LOCAL FUNCTION

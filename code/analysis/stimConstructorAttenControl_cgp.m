@@ -1,9 +1,10 @@
-function main_mtSinaiStimulusConstruction_CGP()
+function stimConstructorAttenControl_cgp()
 % This function constructs stimuli for mtSinai forwardModel Flywheel runs.
 % Modified to work for the data collected in 2023 for HEROcgp1
 %
-% Syntax:
-%  mtSinaiStimulusConstruction()
+% Further modified to separately model those trials that did or did not
+% contain an attention event. This is an analysis requested by R2 of the J
+% Neuroscience paper.
 %
 % Description:
 %   This function constructs stimuli for mtSinai forwardModel Flywheel runs
@@ -37,7 +38,7 @@ stimulus = {};
 stimTime = {};
 stimLabels = '(stimLabels),{';
 dirLabels = {'LMS','LminusM','S'};
-condLabels = {'f0Hz','f2Hz','f4Hz','f8Hz','f16Hz','f32Hz','f64Hz','attention'};
+condLabels = {'f0Hz','f2Hz','f4Hz','f8Hz','f16Hz','f32Hz','f64Hz','Af0Hz','Af2Hz','Af4Hz','Af8Hz','Af16Hz','Af32Hz','Af64Hz','attention'};
 seqA = [5 2 4 5 7 2 5 4 2 7 3 6 5 1 2 3 7 6 1 7 1 3 5 6 4 1 1 1];
 seqB = [1 6 6 2 1 5 3 2 2 6 7 4 6 3 3 4 4 3 1 1 4 7 7 5 5 1 1 1];
 freqVals = [0,2,4,8,16,32,64];
@@ -70,13 +71,19 @@ for dd = 1:length(dirOrder)
             stimMat = zeros(nRows,nTimeSamples);
             offset = (ii-1)*nConds+(ss-1)*nConds*6+(dd-1)*nConds*12;
             freqEvents = [results.trialEvents.stimFreqHz];
+            attentionEventTimes = [results.attentionEvents.eventTimeSecs];
             for tt = 1:length(freqEvents)
+                % Determine if an attention event took place during this
+                % trial
+                trialStart = (tt-1)*trialDur;
+                trialEnd = tt*trialDur;
+                attenFlag = any(~isnan(discretize(attentionEventTimes,[trialStart trialEnd])));
                 rowIdx = (tt-1)*timeDivs+1;
-                freqIdx = find(freqVals==freqEvents(tt));
-                stimMat(offset+freqIdx,rowIdx:rowIdx+timeDivs-1) = 1;
+                colIdx = find(freqVals==freqEvents(tt));
+                colIdx = colIdx + attenFlag*length(freqVals);
+                stimMat(offset+colIdx,rowIdx:rowIdx+timeDivs-1) = 1;
             end
             stimMat(offset+1,337:end) = 1;
-            attentionEventTimes = [results.attentionEvents.eventTimeSecs];
             for tt = 1:length(attentionEventTimes)
                 rowIdx = round(attentionEventTimes*attentionEventTimeScale/deltaT);
                 stimMat(offset+nConds,rowIdx) = 1;
@@ -101,6 +108,6 @@ fprintf(stimLabels);
 fprintf('{ '); for ii=1:6; fprintf(sprintf('[%d:%d,%d:%d,%d:%d,%d:%d,%d:%d,%d:%d],',[(ii-1)*336+1,ii*336,(ii+5)*336+1,(ii+6)*336], [(ii-1+12)*336+1,(ii+12)*336,(ii+5+12)*336+1,(ii+6+12)*336], [(ii-1+24)*336+1,(ii+24)*336,(ii+5+24)*336+1,(ii+6+24)*336] ));end; fprintf(' }\n');
 
 % Save the results
-save('stimulus_HERO_cgp1_allxAcq.mat', 'stimulus','stimTime')
+save('stimulus_HERO_cgp1_allxAcq_attention.mat', 'stimulus','stimTime')
 
 end

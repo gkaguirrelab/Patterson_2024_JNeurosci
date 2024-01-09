@@ -48,7 +48,7 @@ cmap = [ linspace(0,1,255);[linspace(0,0.5,127) linspace(0.5,0,128)];[linspace(0
 colOrder = [2 3 1];
 
 % Loop through subjects
-for ss = 1:2
+for ss = 1:nSubs
 
     % Load the results file for this subject
     filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_mtSinai_results.mat']);

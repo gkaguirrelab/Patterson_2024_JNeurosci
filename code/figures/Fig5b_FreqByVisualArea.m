@@ -12,8 +12,8 @@ savePath = '~/Desktop/Patterson_2024_EccentricityFlicker/';
 %% Analysis properties
 % This is the threshold for the goodness of fit to the fMRI time-series
 % data. We only analyze those voxels with this quality fit or better
-r2Thresh = 0.2;
-nBoots = 1;
+r2Thresh = 0.1;
+nBoots = 100;
 
 % These variables define the subject names, stimulus directions.
 subjectNames = {'HEROgka1','HEROasb1','HEROcgp1'};
@@ -33,7 +33,7 @@ interpFreqs = logspace(log10(1),log10(100),501);
 nAcqs = 12;
 
 % Define some ROI sets
-roiSet = {'V1','V2/V3','hV4','MT','LO1','IPS0'};
+roiSet = {'V1','V2/V3','hV4','MT'};
 nROIs = length(roiSet);
 
 % Define the localDataDir
@@ -78,7 +78,7 @@ for ss = 1:length(subjectNames)
     mtROI = cifti_read(tmpPath); mtROI = mtROI.cdata;
 
     % Loop over bootstraps
-    for bb = 1:nBoots
+    parfor bb = 1:nBoots
 
         % Get a sampling (with replacement) of the 12 acquisitions
         bootIdx = datasample(1:nAcqs,nAcqs);

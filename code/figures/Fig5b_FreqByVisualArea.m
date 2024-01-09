@@ -12,12 +12,12 @@ savePath = '~/Desktop/Patterson_2024_EccentricityFlicker/';
 %% Analysis properties
 % This is the threshold for the goodness of fit to the fMRI time-series
 % data. We only analyze those voxels with this quality fit or better
-r2Thresh = 0.1;
-nBoots = 10;
+r2Thresh = 0.2;
+nBoots = 1;
 
 % These variables define the subject names, stimulus directions.
-subjectNames = {'HEROgka1','HEROasb1'};
-subjects = {'gka','asb'};
+subjectNames = {'HEROgka1','HEROasb1','HEROcgp1'};
+subjects = {'gka','asb','cgp'};
 stimulusDirections = {'LminusM','S','LMS'};
 nSubs = length(subjects);
 nStims = length(stimulusDirections);
@@ -33,7 +33,7 @@ interpFreqs = logspace(log10(1),log10(100),501);
 nAcqs = 12;
 
 % Define some ROI sets
-roiSet = {'V1','V2/V3','hV4/VO1,2','MT'};
+roiSet = {'V1','V2/V3','hV4','MT','LO1','IPS0'};
 nROIs = length(roiSet);
 
 % Define the localDataDir
@@ -42,7 +42,7 @@ localDataDir = fullfile(tbLocateProjectSilent('mriSinaiAnalysis'),'data');
 % Prepare the figure
 figHandle = figure('Renderer','painters');
 figuresize(600,400,'pt');
-tiledlayout(1,2,'TileSpacing','tight','Padding','tight')
+%tiledlayout(1,2,'TileSpacing','tight','Padding','tight')
 
 % Params that allows the plots to appear in the order LMS, L-M, S
 stimOrder = [2 3 1];
@@ -50,7 +50,9 @@ stimOrder = [2 3 1];
 % The colors used for the plots
 plotColor={[0.75 0.75 0.75],[0.85 0.55 0.55],[0.75 0.75 1]};
 lineColor={'k','r','b'};
-subMarkers = {'^','square'};
+subMarkers = {'^','square','o'};
+subLines = {'-','--',':'};
+dirPlotShift = 0.15;
 
 
 %% Loop through subjects and fit each vertex
@@ -92,10 +94,14 @@ for ss = 1:length(subjectNames)
                     goodIdx = find(logical( (results.R2 > r2Thresh) .* (vAreas == 1)));
                 case 'V2/V3'
                     goodIdx = find(logical( (results.R2 > r2Thresh) .* (vAreas >= 2) .* (vAreas <= 3) ));
-                case 'hV4/VO1,2'
+                case 'hV4'
                     goodIdx = find(logical( (results.R2 > r2Thresh) .* (vWang == 7) ));
                 case 'MT'
                     goodIdx = find(logical( (results.R2 > r2Thresh) .* (mtROI == 1)));
+                case 'LO1'
+                    goodIdx = find(logical( (results.R2 > r2Thresh) .* (vWang == 15) ));
+                case 'IPS0'
+                    goodIdx = find(logical( (results.R2 > r2Thresh) .* (vWang == 18) ));
             end
             nGood(rr) = length(goodIdx);
 
@@ -154,19 +160,17 @@ for ss = 1:length(subjectNames)
     peakAmpIQR(ss,:,:) = iqr(peakAmp,3);
     peakAmpMedian(ss,:,:) = median(peakAmp,3);
 
-    % Plot the results
-    nexttile()
-
     for whichStim  = 1:nStims
         vec = squeeze(peakFreqMedian(ss,whichStim,:))';
         veciqr = squeeze(peakFreqIQR(ss,whichStim,:))';
         x = (1:nROIs) + (stimOrder(whichStim)-2)/6;
+        x = x + (whichStim-2)*dirPlotShift;
         for rr=1:length(x)
             plot([x(rr) x(rr)],[vec(rr)-veciqr(rr)/2, vec(rr)+veciqr(rr)/2],'-','Color',plotColor{stimOrder(whichStim)});
             hold on
         end
         plot(x,vec,subMarkers{ss},'Color',plotColor{stimOrder(whichStim)});
-        plot(x,vec,':','Color',plotColor{stimOrder(whichStim)});
+        plot(x,vec,subLines{ss},'Color',plotColor{stimOrder(whichStim)},'LineWidth',1.5);
     end
 
     a = gca();

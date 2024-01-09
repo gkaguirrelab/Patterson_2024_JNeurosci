@@ -17,8 +17,8 @@ r2Thresh = 0.1;
 nBoots = 250;
 
 % These variables define the subject names, stimulus directions.
-subjectNames = {'HEROgka1','HEROasb1'};
-subjects = {'gka','asb'};
+subjectNames = {'HEROgka1','HEROasb1','HEROcgp1'};
+subjects = {'gka','asb','cgp'};
 stimulusDirections = {'LminusM','S','LMS'};
 nSubs = length(subjects);
 nStims = length(stimulusDirections);

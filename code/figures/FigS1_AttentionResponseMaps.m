@@ -5,8 +5,8 @@ close all
 savePath = '~/Desktop/Patterson_2024_EccentricityFlicker/';
 
 % These variables define the subject names, stimulus directions.
-subjectNames = {'HEROgka1','HEROasb1'};
-subjects = {'gka','asb'};
+subjectNames = {'HEROgka1','HEROasb1','HEROcgp1'};
+subjects = {'gka','asb','cgp'};
 stimulusDirections = {'LminusM','S','LMS'};
 stimPlotColors = {'r','b','k'};
 stimAlphas = [0.05 0.05 0.1];
@@ -41,10 +41,13 @@ for ss = 1:length(subjectNames)
 
     % Get the indices of the covariates that model attention events
     attenIdx = find(contains(stimLabels,'attention'));
+    lmsIdx = find(contains(stimLabels,'LMS'));
 
     % Get the z-score of the attention effect for these voxels
-    p=results.params(:,attenIdx);
-    ztemp=mean(p,2)./std(p,[],2);
+    pAtten=results.params(:,attenIdx);
+    pLMS=results.params(:,lmsIdx);
+    ztemp=mean(pAtten,2)./std(pAtten,[],2);
+%    ztemp=mean(pLMS,2)./std(pLMS,[],2);
     ztemp(isnan(ztemp))=0;
     z(ss,:)=ztemp;
 
@@ -63,11 +66,21 @@ for ss = 1:length(subjectNames)
     eccenVol = cifti_read(filePath); eccenVol = eccenVol.cdata;
 
     % Get the good idx
-    goodIdx = find(logical( (results.R2 > r2Thresh) .* (roiVol == 1)));
+    goodIdx = find(logical( (results.R2 > r2Thresh) .* (roiVol == 1)) .* (eccenVol > 0));
 
     % Scatter plot of eccentricity vs. z score of attention effect
-    subplot(1,3,ss)
-    scatter(log10(eccenVol(goodIdx)),z(ss,goodIdx));
+    subplot(3,1,ss)
+    x = log10(eccenVol(goodIdx));
+    y = z(ss,goodIdx)';
+    scatter(x,y,1,'k','.');
+    hold on
+    p = polyfit(x,y,1); 
+    f = polyval(p,x); 
+    plot(x,f,'-r') 
+    xlim([0 2])
+    xlabel('log10 Eccentricity');
+    ylabel({'Attention response','[z score]'});
+    title(sprintf([subjects{ss} ', slope = %2.2f'],p(1)));
 
 end
 

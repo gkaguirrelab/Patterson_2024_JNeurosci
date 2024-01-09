@@ -36,9 +36,10 @@ eccenDivs = [0 90./(2.^(5:-1:0))];
 for ii=1:length(eccenDivs)-1
     eccenBins{ii}=[eccenDivs(ii),eccenDivs(ii+1)];
 end
+eccenBins = {[0 11.25],[11.25 45]};
 
 % The brain areas
-areaLabels = {'v1','v2v3'};
+areaLabels = {'v1'};
 
 % Color map
 cmap = [ linspace(0,1,255);[linspace(0,0.5,127) linspace(0.5,0,128)];[linspace(0,0.5,127) linspace(0.5,0,128)]]';
@@ -59,26 +60,19 @@ for ss = 1:2
     % Load the ROI files for this subject
     filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_benson.dscalar.nii']);
     vArea = cifti_read(filePath); vArea = vArea.cdata;
+    filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_eccen.dscalar.nii']);
+    eccenVol = cifti_read(filePath); eccenVol = eccenVol.cdata;
 
     % Loop over areaLabels
-    for aa = 1:2
+    for ee = 1:length(eccenBins)
 
-        figHandle = figure('Name',[subjects{ss} ' - ' areaLabels{aa}]);
+        figHandle = figure('Name',[subjects{ss} ' - eccenBin: ' num2str(ee)]);
         t = tiledlayout(2,3);
         t.TileSpacing = 'compact';
         t.Padding = 'compact';
 
-        switch areaLabels{aa}
-            case 'v1'
-                areaIdx = (vArea==1);
-            case 'v2v3'
-                areaIdx = or(vArea==2,vArea==3);
-        end
-
-        inRangeIdx = areaIdx;
-
         % Filter the indices for goodness
-        goodIdx = logical( (results.R2 > r2Thresh) .* inRangeIdx );
+        goodIdx = logical( (results.R2 > r2Thresh) .* (vArea==1) .* (eccenVol>=eccenBins{ee}(1)) .* (eccenVol<=eccenBins{ee}(2)) );
 
         % Loop over stimulus directions
         for dd = 1:length(stimulusDirections)
@@ -114,7 +108,6 @@ for ss = 1:2
                 myMat = myMat - mean(myMat,2);
                 voxelByAcq(dd,:,rr,:) = myMat;
             end
-
 
             % Find all pairwise correlations between frequencies, getting
             % the average and SD across possible combinations of

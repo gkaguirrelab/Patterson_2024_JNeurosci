@@ -5,8 +5,8 @@ close all
 savePath = '~/Desktop/Patterson_2024_EccentricityFlicker/';
 
 % These variables define the subject names, stimulus directions.
-subjectNames = {'HEROgka1','HEROasb1'};
-subjects = {'gka','asb'};
+subjectNames = {'HEROgka1','HEROasb1','HEROcgp1'};
+subjects = {'gka','asb','cgp'};
 stimulusDirections = {'LminusM','S','LMS'};
 stimPlotColors = {'r','b','k'};
 stimAlphas = [0.05 0.05 0.1];
@@ -102,6 +102,14 @@ for ss = 1:length(subjectNames)
     fileOut = fullfile(savePath,[subjectNames{ss} '_comboZpeakFreq.dtseries.nii']);
     cifti_write(newMap, fileOut);
 
+    comboVecBySub(ss,:) = mean(comboVec,1,'omitmissing')';
 
 end
+
+% Create an across-subject average map
+newMap = templateImage;
+newMap.cdata = single(zeros(size(fitResults.fVal)));
+newMap.cdata = single(median(comboVecBySub,1,'omitmissing'))';
+fileOut = fullfile(savePath,['AvgSubject_comboZpeakFreq.dtseries.nii']);
+cifti_write(newMap, fileOut);
 

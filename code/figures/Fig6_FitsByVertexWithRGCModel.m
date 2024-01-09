@@ -5,11 +5,11 @@ close all
 savePath = '~/Desktop/Patterson_2024_EccentricityFlicker/';
 
 % These variables define the subject names, stimulus directions.
-subjectNames = {'HEROgka1','HEROasb1'};
-subjects = {'gka','asb'};
+subjectNames = {'HEROgka1','HEROasb1','HEROcgp1'};
+subjects = {'gka','asb','cgp'};
 stimulusDirections = {'LminusM','S','LMS'};
 stimPlotColors = {'r','b','k'};
-subMarkers = {'^','square'};
+subMarkers = {'^','square','o'};
 nSubs = length(subjects);
 nStims = length(stimulusDirections);
 

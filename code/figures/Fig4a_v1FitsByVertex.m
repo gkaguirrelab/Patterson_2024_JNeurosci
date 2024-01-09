@@ -1,12 +1,16 @@
 clear
 close all
 
+% A variable that controls the smoothing line
+spapsValAmp = -100;
+spapsValFrq = -10;
+
 % Place to save figures and to find the Watson fit results
 savePath = '~/Desktop/Patterson_2024_EccentricityFlicker/';
 
 % These variables define the subject names, stimulus directions.
-subjectNames = {'HEROgka1','HEROasb1'};
-subjects = {'gka','asb'};
+subjectNames = {'HEROgka1','HEROasb1','HEROcgp1'};
+subjects = {'gka','asb','cgp'};
 stimulusDirections = {'LminusM','S','LMS'};
 stimPlotColors = {'r','b','k'};
 stimAlphas = [0.05 0.05 0.1];
@@ -26,8 +30,8 @@ fValThresh = 2;
 
 % Prepare the figures
 figHandle = figure('Renderer','painters');
-figuresize(400,400,'pt');
-tiledlayout(2,2,'TileSpacing','tight','Padding','tight')
+figuresize(400,600,'pt');
+tiledlayout(nSubs,2,'TileSpacing','tight','Padding','tight')
 
 % Loop through subjects and fit each vertex
 for ss = 1:length(subjectNames)
@@ -91,9 +95,10 @@ for ss = 1:length(subjectNames)
         binCenters = edges(1:end-1)+diff(edges)/2;
         for ii = 1:nBins
             binV(ii) = median(v(binIdx==ii));
+            binW(ii) = 1/iqr(v(binIdx==ii));
         end
-        % plot(binCenters,binV,'*','Color',stimPlotColors{whichStim});
-        sp = spaps(binCenters,binV,-750);
+        plot(binCenters,binV,'o','Color',stimPlotColors{whichStim});
+        sp = spaps(binCenters,binV,spapsValAmp,binW);
         xq = binCenters(1):0.01:1.8;
         vq = fnval(sp,xq);
         plot(xq,vq,['-' stimPlotColors{whichStim}],'LineWidth',1.5)
@@ -137,8 +142,10 @@ for ss = 1:length(subjectNames)
         binCenters = edges(1:end-1)+diff(edges)/2;
         for ii = 1:nBins
             binV(ii) = median(v(binIdx==ii));
+            binW(ii) = 1/iqr(v(binIdx==ii));
         end
-        sp = spaps(binCenters,binV,-750);
+        plot(binCenters,binV,'o','Color',stimPlotColors{whichStim});
+        sp = spaps(binCenters,binV,spapsValFrq,binW);
         xq = binCenters(1):0.01:1.8;
         vq = fnval(sp,xq);
         plot(xq,vq,['-' stimPlotColors{whichStim}],'LineWidth',1.5)

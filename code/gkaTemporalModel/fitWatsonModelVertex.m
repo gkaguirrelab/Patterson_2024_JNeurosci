@@ -14,8 +14,8 @@ localDataDir = fullfile(tbLocateProjectSilent('mriSinaiAnalysis'),'data');
 r2Thresh = 0.1;
 
 % These variables define the subject names and stimulus directions.
-subjectNames = {'HEROgka1','HEROasb1'};
-subjects = {'gka','asb'};
+subjectNames = {'HEROgka1','HEROasb1','HEROcgp1'};
+subjects = {'gka','asb','cgp'};
 stimulusDirections = {'LminusM','S','LMS'};
 nSubs = length(subjects);
 nStims = length(stimulusDirections);
@@ -33,7 +33,7 @@ interpFreqs = logspace(log10(1),log10(100),501);
 for ss = 1:length(subjectNames)
 
     % Load the results file for this subject
-    filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_mtSinai_results.mat']);
+    filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_mtSinai_results.mat'])
     load(filePath,'results')
 
     % How many vertices total?
@@ -41,13 +41,11 @@ for ss = 1:length(subjectNames)
 
     % Initialize the fit results
     fitResults = [];
-    % fitResults.p = cell(nVert,1);
-    % fitResults.fVal = cell(nVert,1);
-    % fitResults.rSquared = cell(nVert,1);
-    % fitResults.Y = cell(nVert,1);
-    % fitResults.yFitInterp = cell(nVert,1);
-    % fitResults.peakFreq = cell(nVert,1);
-    % fitResults.peakAmp = cell(nVert,1);
+    fitResults.p = cell(nVert,1);
+    fitResults.fVal = cell(nVert,1);
+    fitResults.rSquared = cell(nVert,1);
+    fitResults.peakFreq = cell(nVert,1);
+    fitResults.peakAmp = cell(nVert,1);
 
     % Grab the stimLabels
     stimLabels = results.model.opts{find(strcmp(results.model.opts,'stimLabels'))+1};
@@ -57,7 +55,6 @@ for ss = 1:length(subjectNames)
     nGood = length(goodIdx);
 
     % Loop over the valid voxels
-    nGood = 3;
     parfor gg = 1:nGood
 
         % The idx of the goodIdx set that we will process
@@ -110,8 +107,6 @@ for ss = 1:length(subjectNames)
         parLoop_p{gg} = p;
         parLoop_fVal{gg} = fVal;
         parLoop_rSquared{gg} = rSquared;
-        parLoop_Y{gg} = Y;
-        parLoop_yFitInterp{gg} = yFitInterp;
         parLoop_peakFreq{gg} = peakFreq;
         parLoop_peakAmp{gg} = peakAmp;
 
@@ -121,16 +116,14 @@ for ss = 1:length(subjectNames)
     idxSet = cell2mat(parLoop_idx);
     
     fitResults.idxSet = idxSet;
-    fitResults.p = parLoop_p;
-    fitResults.fVal = parLoop_fVal;
-    fitResults.rSquared = parLoop_rSquared;
-    fitResults.Y = parLoop_Y;
-    fitResults.yFitInterp = parLoop_yFitInterp;
-    fitResults.peakFreq = parLoop_peakFreq;
-    fitResults.peakAmp = parLoop_peakAmp;
+    fitResults.p(idxSet) = parLoop_p;
+    fitResults.fVal(idxSet) = parLoop_fVal;
+    fitResults.rSquared(idxSet) = parLoop_rSquared;
+    fitResults.peakFreq(idxSet) = parLoop_peakFreq;
+    fitResults.peakAmp(idxSet) = parLoop_peakAmp;
 
     % Save the results file for this subject
-    filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_WatsonFit_resultsTEST.mat']);
+    filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_WatsonFit_results.mat']);
     save(filePath,'fitResults')
 
 end

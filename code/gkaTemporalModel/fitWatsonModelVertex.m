@@ -88,7 +88,7 @@ for ss = 1:length(subjectNames)
         % Fit each stimulus with the Watson TTF
         for dd = 1:nStims
 
-            [p(dd,:),fVal(dd),~,yFitInterp(dd,:)] = fitWatsonModel(Y(dd,:),W(dd,:),studiedFreqs)
+            [p(dd,:),fVal(dd),~,yFitInterp(dd,:)] = fitWatsonModel(Y(dd,:),W(dd,:),studiedFreqs);
 
             % Determine the proportion variance explained
             maxfVal = norm( W(dd,:) .* ( Y(dd,:) ));

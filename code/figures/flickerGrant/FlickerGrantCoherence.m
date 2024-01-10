@@ -1,12 +1,13 @@
 clear
 
+%% NEED TO FIX THIS BY LOOPING THROUGH VERTICES AND GENERATING THE YFIT INTERP FOR THE WATSON FIT PARAMS
 
 % Place to save figures and to find the Watson fit results
-savePath = '~/Desktop/VSS 2023/';
+savePath = '~/Desktop/Patterson_2024_EccentricityFlicker/';
 
 % These variables define the subject names, stimulus directions.
-subjectNames = {'HEROgka1','HEROasb1'};
-subjects = {'gka','asb'};
+subjectNames = {'HEROgka1','HEROasb1','HEROcgp1'};
+subjects = {'gka','asb','cgp'};
 stimulusDirections = {'LminusM','S','LMS'};
 stimPlotColors = {'r','b','k'};
 stimAlphas = [0.05 0.05 0.1];
@@ -16,19 +17,6 @@ studiedFreqs = [2 4 8 16 32 64];
 
 % Define the localDataDir
 localDataDir = fullfile(tbLocateProjectSilent('mriSinaiAnalysis'),'data');
-
-% Load the retino maps
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_varea.dtseries.nii');
-vArea = cifti_read(tmpPath); vArea = vArea.cdata;
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_eccen.dtseries.nii');
-eccenMap = cifti_read(tmpPath); eccenMap = eccenMap.cdata;
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_angle.dtseries.nii');
-polarMap = cifti_read(tmpPath); polarMap = polarMap.cdata;
-tmpPath = fullfile(localDataDir,'retinoFiles','TOME_3021_inferred_sigma.dtseries.nii');
-sigmaMap = cifti_read(tmpPath); sigmaMap = sigmaMap.cdata;
-
-% Save a template map variable so we can create new maps below
-templateImage = cifti_read(tmpPath);
 
 % This is the threshold for the goodness of fit to the fMRI time-series
 % data. We only display those voxels with this quality fit or better
@@ -54,8 +42,22 @@ for ss = 1:length(subjectNames)
     % Grab the stimLabels
     stimLabels = results.model.opts{find(strcmp(results.model.opts,'stimLabels'))+1};
 
+    % Load the retino maps for this subject
+    tmpPath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_benson.dscalar.nii']);
+    vArea = cifti_read(tmpPath); vArea = vArea.cdata;
+    tmpPath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_eccen.dscalar.nii']);
+    eccenMap = cifti_read(tmpPath); eccenMap = eccenMap.cdata;
+    tmpPath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_angle.dscalar.nii']);
+    polarMap = cifti_read(tmpPath); polarMap = polarMap.cdata;
+
+    % How many vertices total?
+    nVert = length(results.fVal);
+
+    % Grab the stimLabels
+    stimLabels = results.model.opts{find(strcmp(results.model.opts,'stimLabels'))+1};
+
     % Initialize or load the fitResults
-    filePath = fullfile(savePath,[subjectNames{ss} '_WatsonFitUnconstrained_results.mat']);
+    filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_WatsonFit_results.mat']);
     load(filePath,'fitResults')
 
     lowFreqIdx = 77;
@@ -117,7 +119,7 @@ for ss = 1:length(subjectNames)
 
         [~, maxIdx] = max(fisherInfo);
         vec = fisherInfo; vec(1:maxIdx) = nan;
-        fiElbow = log10(max(fisherInfo)) - 0.2; 
+        fiElbow = log10(max(fisherInfo)) - 0.2;
         [~,elbowIdx] = find(log10(vec) < fiElbow,1,"first");
         x = interpFreqs(elbowIdx+1);
         y = log10(fisherInfo(elbowIdx));
@@ -136,7 +138,7 @@ for ss = 1:length(subjectNames)
     end
 
     plotNamesPDF = [subjectNames{ss} '_fisherInfoV1.pdf'];
-saveas(figHandle,fullfile(savePath,plotNamesPDF));
+    saveas(figHandle,fullfile(savePath,plotNamesPDF));
 
 end
 

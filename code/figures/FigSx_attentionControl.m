@@ -33,10 +33,13 @@ stimOrder = [2 3 1];
 lineStyles ={'-','--'};
 interpFreqs = logspace(log10(1),log10(100),501);
 
+figHandle = figure('Renderer','painters');
+figuresize(600,300,'pt');
+
 % Loop through the subjects
 for ss = 1:length(subjectNames)
 
-    figure
+    subplot(1,3,ss)
 
     for aa = 1:2
 
@@ -58,10 +61,7 @@ for ss = 1:length(subjectNames)
         stimLabels = results.model.opts{find(strcmp(results.model.opts,'stimLabels'))+1};
 
         % Loop over the stimuli
-        for whichStim = 1:nDirections
-
-            subplot(1,3,stimOrder(whichStim))
-
+        for whichStim = 3:3
 
             % Loop through the stimuli and frequencies and obtain the
             % data for the trials that contained attention events and
@@ -70,6 +70,10 @@ for ss = 1:length(subjectNames)
             adjustedVals = [];
 
             for ff = 1:length(allFreqs)
+                % By searching for stimulus labels that begin with "f", we
+                % exclude those trials that contained an attention event
+                % under case 2 (when we have loaded the "attention control"
+                % result set.
                 subString = sprintf(['f%dHz_' stimulusDirections{whichStim}],allFreqs(ff));
                 idx = find(startsWith(stimLabels,subString));
                 params = results.params(goodIdx,idx);
@@ -111,21 +115,21 @@ for ss = 1:length(subjectNames)
 
                 hold on
 
+                % Add the data symbols, using reversed markers for values below
+                % zero
+                idx = Y > 0;
+                plot(log10(studiedFreqs(idx)),Y(idx),...
+                    'o','MarkerFaceColor',lineColor{stimOrder(whichStim)},...
+                    'MarkerSize',6,'MarkerEdgeColor','w','LineWidth',1);
+                idx = Y < 0;
+                plot(log10(studiedFreqs(idx)),Y(idx),...
+                    'o','MarkerFaceColor','w',...
+                    'MarkerSize',6,'MarkerEdgeColor',lineColor{stimOrder(whichStim)},'LineWidth',1);
+
             end
 
-            % Add the data symbols, using reversed markers for values below
-            % zero
-            idx = Y > 0;
-            plot(log10(studiedFreqs(idx)),Y(idx),...
-                'o','MarkerFaceColor',lineColor{stimOrder(whichStim)},...
-                'MarkerSize',6,'MarkerEdgeColor','w','LineWidth',1);
-            idx = Y < 0;
-            plot(log10(studiedFreqs(idx)),Y(idx),...
-                'o','MarkerFaceColor','w',...
-                'MarkerSize',6,'MarkerEdgeColor',lineColor{stimOrder(whichStim)},'LineWidth',1);
-
             % Add the model fit
-            plot(log10(interpFreqs),yFitInterp,...
+            ph(aa) = plot(log10(interpFreqs),yFitInterp,...
                 [lineStyles{aa} lineColor{stimOrder(whichStim)}],...
                 'LineWidth',2);
 
@@ -133,8 +137,28 @@ for ss = 1:length(subjectNames)
 
     end % stimuli
 
+    title(subjectNames{ss})
+    ylim([0 5]);
+    a=gca;
+    a.YTick = [0,5];
+    a.YTickLabel = {'0','5'};
+    a.XTick = log10([2,4,8,16,32,64]);
+    a.XTickLabel = {'2','4','8','16','32','64'};
+    a.XTickLabelRotation = 0;
+    a.XMinorTick = 'off';
+
+
+    if ss==1
+        legend(ph,{'all trials','exclude attention'})
+    end
+
 end
 
+
+% Save the figure
+set(figHandle,'color','none');
+fileName = fullfile(savePath,'LMS_V1_TTF_withAndwithoutAttentionTrials.pdf');
+print(fileName,'-dpdf')
 
 
 %% Local Functions

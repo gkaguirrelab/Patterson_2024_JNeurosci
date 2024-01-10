@@ -38,6 +38,12 @@ for ss = 1:length(subjectNames)
     % How many vertices total?
     nVert = length(results.fVal);
 
+    if ss==1
+        % Variables to hold the data across subjects
+vecByStimBySub = nan(nStims,nSubs,nVert);
+comboVec = nan(nSubs,nVert);
+    end
+
     % Grab the stimLabels
     stimLabels = results.model.opts{find(strcmp(results.model.opts,'stimLabels'))+1};
 
@@ -45,7 +51,6 @@ for ss = 1:length(subjectNames)
     filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_WatsonFit_results.mat']);
     load(filePath,'fitResults')
 
-    comboVec = nan(3,nVert);
 
     % Loop over stimulus directions and create a map of the peak frequency
     for whichStim = [3 1 2]
@@ -87,6 +92,8 @@ for ss = 1:length(subjectNames)
         fileOut = fullfile(savePath,[subjectNames{ss} '_' stimulusDirections{whichStim} '_peakFreq.dtseries.nii']);
         cifti_write(newMap, fileOut);
 
+        vecByStimBySub(whichStim,ss,goodIdx) = log10(peakFreq(goodIdx));
+
         % Store a vector of Z-transformed peak-frequency values
         vec = log10(newMap.cdata(goodIdx));
         vec = vec - mean(vec);
@@ -104,6 +111,17 @@ for ss = 1:length(subjectNames)
 
     comboVecBySub(ss,:) = mean(comboVec,1,'omitmissing')';
 
+end
+
+% Write out an across-subject average peak-frequency map for each stimulus
+for whichStim = [3 1 2]
+    newMap = templateImage;
+    newMap.cdata = single(nan(size(fitResults.fVal)));
+    newVec = single(10.^mean(squeeze(vecByStimBySub(whichStim,:,:)),1,'omitmissing'))';
+    newVec(isnan(newVec))=0;
+    newMap.cdata = single(newVec);
+    fileOut = fullfile(savePath,['AvgSubject_' stimulusDirections{whichStim} '_peakFreq.dtseries.nii']);
+    cifti_write(newMap, fileOut);
 end
 
 % Create an across-subject average map

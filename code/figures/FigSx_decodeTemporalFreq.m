@@ -36,7 +36,6 @@ eccenDivs = [0 90./(2.^(5:-1:0))];
 for ii=1:length(eccenDivs)-1
     eccenBins{ii}=[eccenDivs(ii),eccenDivs(ii+1)];
 end
-eccenBins = {[0 11.25],[11.25 45]};
 
 % The brain areas
 areaLabels = {'v1'};

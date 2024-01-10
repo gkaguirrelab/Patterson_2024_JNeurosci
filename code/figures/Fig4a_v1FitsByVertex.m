@@ -34,7 +34,7 @@ figuresize(400,600,'pt');
 tiledlayout(nSubs,2,'TileSpacing','tight','Padding','tight')
 
 % Loop through subjects and fit each vertex
-for ss = 1:length(subjectNames)
+for ss = 3:length(subjectNames)
 
     % Load the results file for this subject
     filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_mtSinai_results.mat']);
@@ -58,7 +58,7 @@ for ss = 1:length(subjectNames)
     filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_WatsonFit_results.mat']);
     load(filePath,'fitResults')
 
-    % Loop over stimulus directions and create a map of the peak frequency
+    % Loop over stimulus directions
     for whichStim = [3 1 2]
 
         % Find those vertices that had a positive response to this stimulus

@@ -34,7 +34,7 @@ figuresize(400,600,'pt');
 tiledlayout(nSubs,2,'TileSpacing','tight','Padding','tight')
 
 % Loop through subjects and fit each vertex
-for ss = 3:length(subjectNames)
+for ss = 1:length(subjectNames)
 
     % Load the results file for this subject
     filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_mtSinai_results.mat']);

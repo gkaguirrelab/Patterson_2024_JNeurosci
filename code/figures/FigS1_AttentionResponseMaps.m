@@ -24,7 +24,8 @@ templateImage = cifti_read(tmpPath);
 % data. We only display those voxels with this quality fit or better
 r2Thresh = 0.1;
 
-figure
+figHandle = figure('Renderer','painters');
+figuresize(300,600,'pt');
 
 % Loop through subjects
 for ss = 1:length(subjectNames)
@@ -47,7 +48,6 @@ for ss = 1:length(subjectNames)
     pAtten=results.params(:,attenIdx);
     pLMS=results.params(:,lmsIdx);
     ztemp=mean(pAtten,2)./std(pAtten,[],2);
-%    ztemp=mean(pLMS,2)./std(pLMS,[],2);
     ztemp(isnan(ztemp))=0;
     z(ss,:)=ztemp;
 
@@ -58,8 +58,7 @@ for ss = 1:length(subjectNames)
     fileOut = fullfile(savePath,[subjectNames{ss} '_attentionZmap.dtseries.nii']);
     cifti_write(newMap, fileOut);
 
-    % Make a plot of the attention event effect as a function of
-    % eccentricity. Load the V1 region and eccentricity for this subject
+    % Load the V1 region and eccentricity for this subject
     filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_benson.dscalar.nii']);
     roiVol = cifti_read(filePath); roiVol = roiVol.cdata;
     filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_eccen.dscalar.nii']);
@@ -84,12 +83,16 @@ for ss = 1:length(subjectNames)
 
 end
 
+% Save the eccentricity vs z-score figure
+set(figHandle,'color','none');
+fileName = fullfile(savePath,'EccentricityVsAttentionZEffect.pdf');
+print(fileName,'-dpdf')
+
 % save an across-subject average attention map
 newMap = templateImage;
-newMap.cdata = single(zeros(size(results.fVal)));
+newMap.cdata = single(nan(size(results.fVal)));
 z(z==0) = nan;
 zAvg = mean(z,'omitnan');
-zAvg(isnan(zAvg))=0;
 newMap.cdata = single(zAvg)';
 newMap = ciftiMakePseudoHemi(newMap);
 fileOut = fullfile(savePath,['AvgSubject_attentionZmap.dtseries.nii']);

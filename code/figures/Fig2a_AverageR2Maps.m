@@ -1,6 +1,10 @@
 clear
 close all
 
+% This is the threshold for the goodness of fit to the fMRI time-series
+% data. We only display those voxels with this quality fit or better
+r2Thresh = 0.1;
+
 % Place to save figures
 savePath = '~/Desktop/Patterson_2024_EccentricityFlicker/';
 
@@ -26,9 +30,13 @@ for ss = 1:length(subjectNames)
     % How many vertices total?
     nVert = length(results.fVal);
 
+    % Get the vector of R2 values and nan values below the threshold
+    vec = results.R2;
+    vec(vec<r2Thresh) = nan;
+
     % save a map of the R2 fit value
     newMap = templateImage;
-    newMap.cdata = results.R2;
+    newMap.cdata = single(vec);
     newMap = ciftiMakePseudoHemi(newMap);
     fileOut = fullfile(savePath,[subjectNames{ss} '_pseudoHemR2.dtseries.nii']);
     cifti_write(newMap, fileOut);

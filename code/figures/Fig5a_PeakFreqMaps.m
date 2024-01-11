@@ -40,8 +40,8 @@ for ss = 1:length(subjectNames)
 
     if ss==1
         % Variables to hold the data across subjects
-vecByStimBySub = nan(nStims,nSubs,nVert);
-comboVec = nan(nSubs,nVert);
+        vecByStimBySub = nan(nStims,nSubs,nVert);
+        comboVec = nan(nSubs,nVert);
     end
 
     % Grab the stimLabels
@@ -77,7 +77,7 @@ comboVec = nan(nSubs,nVert);
 
         % save a peakAmp map
         newMap = templateImage;
-        newMap.cdata = single(zeros(size(fitResults.fVal)));
+        newMap.cdata = single(nan(size(fitResults.fVal)));
         newMap.cdata(goodIdx) = single(peakAmp(goodIdx));
         newMap = ciftiMakePseudoHemi(newMap);
         fileOut = fullfile(savePath,[subjectNames{ss} '_' stimulusDirections{whichStim} '_peakAmp.dtseries.nii']);
@@ -85,7 +85,7 @@ comboVec = nan(nSubs,nVert);
 
         % save a peakFreq map
         newMap = templateImage;
-        newMap.cdata = single(zeros(size(fitResults.fVal)));
+        newMap.cdata = single(nan(size(fitResults.fVal)));
         newMap.cdata(goodIdx) = log10(single(peakFreq(goodIdx)));
         newMap = ciftiMakePseudoHemi(newMap);
         newMap.cdata(goodIdx) = 10.^(newMap.cdata(goodIdx));
@@ -104,7 +104,7 @@ comboVec = nan(nSubs,nVert);
 
     % save a combo peakFreq map
     newMap = templateImage;
-    newMap.cdata = single(zeros(size(fitResults.fVal)));
+    newMap.cdata = single(nan(size(fitResults.fVal)));
     newMap.cdata = single(mean(comboVec,1,'omitmissing'))';
     fileOut = fullfile(savePath,[subjectNames{ss} '_comboZpeakFreq.dtseries.nii']);
     cifti_write(newMap, fileOut);
@@ -126,7 +126,7 @@ end
 
 % Create an across-subject average map
 newMap = templateImage;
-newMap.cdata = single(zeros(size(fitResults.fVal)));
+newMap.cdata = single(nan(size(fitResults.fVal)));
 newMap.cdata = single(median(comboVecBySub,1,'omitmissing'))';
 fileOut = fullfile(savePath,['AvgSubject_comboZpeakFreq.dtseries.nii']);
 cifti_write(newMap, fileOut);

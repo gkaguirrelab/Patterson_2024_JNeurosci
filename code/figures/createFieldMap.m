@@ -9,7 +9,7 @@ if isempty(vals)
     return
 end
 
-eccenMax = 90;
+eccenMax = 64;
 mapRes = 100;
 
 X = mapRes/2 - ( (mapRes/2).* eccenVals .* cosd( polarVals ) ./ eccenMax);

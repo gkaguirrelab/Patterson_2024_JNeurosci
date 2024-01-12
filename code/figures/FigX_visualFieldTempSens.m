@@ -12,7 +12,7 @@ stimPlotColors = {'r','b','k'};
 stimAlphas = [0.05 0.05 0.1];
 nSubs = length(subjects);
 nStims = length(stimulusDirections);
-rangeValSet = {[0 20],[0 20],[5 25]};
+rangeValSet = {[5 25],[5 25],[5 25]};
 
 % Define the localDataDir
 localDataDir = fullfile(tbLocateProjectSilent('mriSinaiAnalysis'),'data');

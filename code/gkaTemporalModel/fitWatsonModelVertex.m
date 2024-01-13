@@ -41,6 +41,8 @@ for ss = 1:length(subjectNames)
 
     % Initialize the fit results
     fitResults = [];
+    fitResults.Y = cell(nVert,1);
+    fitResults.W = cell(nVert,1);
     fitResults.p = cell(nVert,1);
     fitResults.fVal = cell(nVert,1);
     fitResults.rSquared = cell(nVert,1);
@@ -85,9 +87,10 @@ for ss = 1:length(subjectNames)
         p = []; peakFreq = []; peakAmp = [];
         fVal = []; p = []; yFitInterp = []; rSquared = [];
 
-        % Fit each stimulus with the Watson TTF
+        % Loop over stimulus directions
         for dd = 1:nStims
 
+            % Fit each stimulus with the Watson TTF
             [p(dd,:),fVal(dd),~,yFitInterp(dd,:)] = fitWatsonModel(Y(dd,:),W(dd,:),studiedFreqs);
 
             % Determine the proportion variance explained
@@ -104,6 +107,8 @@ for ss = 1:length(subjectNames)
 
         % Place the par loop results into a results file
         parLoop_idx{gg} = thisIdx;
+        parLoop_Y{gg} = Y;
+        parLoop_W{gg} = W;
         parLoop_p{gg} = p;
         parLoop_fVal{gg} = fVal;
         parLoop_rSquared{gg} = rSquared;
@@ -116,6 +121,8 @@ for ss = 1:length(subjectNames)
     idxSet = cell2mat(parLoop_idx);
     
     fitResults.idxSet = idxSet;
+    fitResults.Y(idxSet) = parLoop_Y;
+    fitResults.W(idxSet) = parLoop_W;
     fitResults.p(idxSet) = parLoop_p;
     fitResults.fVal(idxSet) = parLoop_fVal;
     fitResults.rSquared(idxSet) = parLoop_rSquared;

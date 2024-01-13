@@ -63,7 +63,7 @@ for ss = 1:length(subjectNames)
     lowFreqIdx = 77;
     hiFreqIdx = 451;
     interpFreqs = logspace(log10(1),log10(100),501);
-    interpFreqs=interpFreqs(77:451);
+    interpFreqsPlot=interpFreqs(77:451);
 
     % Loop over stimulus directions and create a map of the peak frequency
     for whichStim = 1:3
@@ -78,6 +78,15 @@ for ss = 1:length(subjectNames)
         nexttile(plotOrder(whichStim))
         fisherInfo = [];
         for vv = 1:length(goodIdx)
+
+            % Get the interpolated TTF fit from the Watson parameters
+            p = fitResults.p{goodIdx(vv)};
+            yFitInterp = watsonTemporalModel(p,interpFreqs);
+
+            % Perform a fit to the std values with a double Gaussian model
+            F1=fit (log10(studiedFreqs)', 1./W(dd,:)','spline');
+            stdFitInterp(dd,:) = F1(log10(interpFreqs));
+
             signal = fitResults.yFitInterp{goodIdx(vv)};
             noise = fitResults.stdFitInterp{goodIdx(vv)};
             signal = squeeze(signal(whichStim,:))*100;
@@ -92,7 +101,7 @@ for ss = 1:length(subjectNames)
                 fisherInfo = fisherInfo + fi;
             end
             if rand() < 0.05
-                semilogx(interpFreqs(2:end),log10(fi),'-','Color',[0.7,0.7,0.7],'LineWidth',0.4);
+                semilogx(interpFreqsPlot(2:end),log10(fi),'-','Color',[0.7,0.7,0.7],'LineWidth',0.4);
                 maxVal = max([maxVal,max(fi)]);
                 hold on
             end
@@ -112,7 +121,7 @@ for ss = 1:length(subjectNames)
         end
 
         yyaxis right
-        semilogx(interpFreqs(2:end),log10(fisherInfo),'-','Color',stimPlotColors{whichStim},'LineWidth',3);
+        semilogx(interpFreqsPlot(2:end),log10(fisherInfo),'-','Color',stimPlotColors{whichStim},'LineWidth',3);
         if plotOrder(whichStim) == 3
             ylabel('log total Fisher information')
         end
@@ -121,7 +130,7 @@ for ss = 1:length(subjectNames)
         vec = fisherInfo; vec(1:maxIdx) = nan;
         fiElbow = log10(max(fisherInfo)) - 0.2;
         [~,elbowIdx] = find(log10(vec) < fiElbow,1,"first");
-        x = interpFreqs(elbowIdx+1);
+        x = interpFreqsPlot(elbowIdx+1);
         y = log10(fisherInfo(elbowIdx));
         semilogx(x,y,'|','Color',stimPlotColors{whichStim},'MarkerSize',15);
         text(10.^(log10(x)-0.1),3.75,sprintf('%d Hz',round(x)));

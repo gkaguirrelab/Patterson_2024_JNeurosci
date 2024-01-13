@@ -18,7 +18,7 @@ analysisIDs = { '61d32407d1304b39ec5427dc','61d3242146c9dab1751bd55f' };
 fw = flywheel.Flywheel(getpref('flywheelMRSupport','flywheelAPIKey'));
 
 % Get the localSaveDir pref
-localSaveDir = getpref('mriSinaiAnalysis','localSaveDir');
+localSaveDir = getpref('Patterson_2024_JNeurosci','localSaveDir');
 
 % Define where we want to save these figures
 resultsSaveDir = fullfile(localSaveDir,'Fig 2 - time series analysis');

@@ -10,7 +10,7 @@ verbose = false;
 savePath = '~/Desktop/Patterson_2024_EccentricityFlicker/';
 
 % Define the localDataDir
-localDataDir = fullfile(tbLocateProjectSilent('mriSinaiAnalysis'),'data');
+localDataDir = fullfile(tbLocateProjectSilent('Patterson_2024_JNeurosci'),'data');
 
 %% Analysis properties
 % This is the threshold for the goodness of fit to the fMRI time-series

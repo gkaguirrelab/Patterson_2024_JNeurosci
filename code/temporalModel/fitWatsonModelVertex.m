@@ -6,7 +6,7 @@ rng(1); % Fix the random number generator
 verbose = false;
 
 % Define the localDataDir
-localDataDir = fullfile(tbLocateProjectSilent('mriSinaiAnalysis'),'data');
+localDataDir = fullfile(tbLocateProjectSilent('Patterson_2024_JNeurosci'),'data');
 
 %% Analysis properties
 % This is the threshold for the goodness of fit to the fMRI time-series

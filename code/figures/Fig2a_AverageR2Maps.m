@@ -14,7 +14,7 @@ subjects = {'gka','asb','cgp'};
 nSubs = length(subjects);
 
 % Define the localDataDir
-localDataDir = fullfile(tbLocateProjectSilent('mriSinaiAnalysis'),'data');
+localDataDir = fullfile(tbLocateProjectSilent('Patterson_2024_JNeurosci'),'data');
 
 % Save a template map variable so we can create new maps below
 tmpPath = fullfile(localDataDir,'MT.dtseries.nii');

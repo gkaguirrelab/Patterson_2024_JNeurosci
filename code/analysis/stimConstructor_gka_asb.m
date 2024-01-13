@@ -19,7 +19,7 @@ function main_mtSinaiStimulusConstruction()
 %
 
 % Get the username
-userName = getpref('mriSinaiAnalysis', 'userName');
+userName = getpref('Patterson_2024_JNeurosci', 'userName');
 
 % Get the flywheel key
 flywheelAPIkey = getpref('flywheelMRSupport', 'flywheelAPIKey');

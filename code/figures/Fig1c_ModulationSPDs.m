@@ -4,7 +4,7 @@
 
 
 % Get the localSaveDir pref
-localSaveDir = getpref('mriSinaiAnalysis','localSaveDir');
+localSaveDir = getpref('Patterson_2024_JNeurosci','localSaveDir');
 
 % Labels for directions
 modDirections = {'Light flux','L-M','S'};

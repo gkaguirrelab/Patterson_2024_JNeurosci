@@ -1,7 +1,7 @@
 %% downloadResultsFromFlywheel
 
 % Define the localDataDir
-localDataDir = fullfile(tbLocateProjectSilent('mriSinaiAnalysis'),'data');
+localDataDir = fullfile(tbLocateProjectSilent('Patterson_2024_JNeurosci'),'data');
 
 % These variables define the subject names, stimulus directions, and the
 % analysis IDs

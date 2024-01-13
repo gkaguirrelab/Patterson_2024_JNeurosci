@@ -1,10 +1,10 @@
-function mriSinaiAnalysisLocalHook
-% mriSinaiAnalysisLocalHook
+function Patterson_2024_JNeurosciLocalHook
+% Patterson_2024_JNeurosciLocalHook
 %
 % For use with the ToolboxToolbox.  If you copy this into your
 % ToolboxToolbox localToolboxHooks directory (by default,
 % ~/localToolboxHooks) and delete "LocalHooksTemplate" from the filename,
-% this will get run when you execute tbUse({'mriSinaiAnalysisConfig'}) to set up for
+% this will get run when you execute tbUse({'Patterson_2024_JNeurosciConfig'}) to set up for
 % this project.  You then edit your local copy to match your local machine.
 %
 % The main thing that this does is define Matlab preferences that specify input and output
@@ -15,7 +15,7 @@ function mriSinaiAnalysisLocalHook
 
  
 %% Define project
-projectName = 'mriSinaiAnalysis';
+projectName = 'Patterson_2024_JNeurosci';
  
 
 %% Clear out old preferences
@@ -45,20 +45,6 @@ setpref(projectName,'dropboxBaseDir',dropboxBaseDir);
 
 % Set pref to username
 setpref(projectName,'userName',userName);
-
-%% Paths to directory where we are writing the paper
-
-% Set paths for this user
-switch userName
-    case 'aguirre'
-        localSaveDir = fullfile(dropboxBaseDir,'_Papers/Patterson_2021_EccentricityFlicker/matlabFigures');
-    case 'patterson'
-        % Need your path here
-    otherwise
-        error('add your userName to the switch statement')
-end
-setpref(projectName,'localSaveDir',localSaveDir);
-
 
 
 %% Specify and save project location

@@ -8,7 +8,7 @@ close all
 savePath = '~/Desktop/Patterson_2024_EccentricityFlicker/';
 
 % Define the localDataDir
-localDataDir = fullfile(tbLocateProjectSilent('mriSinaiAnalysis'),'data');
+localDataDir = fullfile(tbLocateProjectSilent('Patterson_2024_JNeurosci'),'data');
 
 % These variables define the subject names and stimulus directions
 subjectNames = {'HEROgka1','HEROasb1','HEROcgp1'};

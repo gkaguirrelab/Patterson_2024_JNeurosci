@@ -50,7 +50,7 @@ faceAlpha = 0.4; % Transparency of the shaded error region
 shift_ttf = [0 3 6 9 11 13]; % shifts each ttf down so they can be presented tightly on the same figure
 
 % Define the localDataDir
-localDataDir = fullfile(tbLocateProjectSilent('mriSinaiAnalysis'),'data');
+localDataDir = fullfile(tbLocateProjectSilent('Patterson_2024_JNeurosci'),'data');
 
 % Loop over subjects
 for ss = 1:length(subjects)

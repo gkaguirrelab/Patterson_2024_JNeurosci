@@ -7,7 +7,7 @@ function mriData = loadMRIResponseData()
 % subsequent boot-strap resampling of the data.
 
 % Define the localSaveDir
-localDataDir = fullfile(fileparts(fileparts(fileparts(mfilename('fullpath')))),'data');
+localDataDir = fullfile(tbLocateProjectSilent('Patterson_2024_JNeurosci'),'data');
 
 % These variables define the subject names, stimulus directions. The
 % Flywheel analysis IDs are listed for completeness, but not used here.

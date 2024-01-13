@@ -16,7 +16,7 @@ savePath = '~/Desktop/Patterson_2024_EccentricityFlicker/';
 % This is the threshold for the goodness of fit to the fMRI time-series
 % data. We only analyze those voxels with this quality fit or better
 r2Thresh = 0.05;
-nBoots = 50;
+nBoots = 250;
 
 % These variables define the subject names, stimulus directions.
 subjectNames = {'HEROgka1','HEROasb1','HEROcgp1'};
@@ -49,7 +49,7 @@ nROIs = length(roiSet);
 % subsequent boot-strap resampling of the data.
 
 % Define the localDataDir
-localDataDir = fullfile(tbLocateProjectSilent('mriSinaiAnalysis'),'data');
+localDataDir = fullfile(tbLocateProjectSilent('Patterson_2024_JNeurosci'),'data');
 
 % Loop through subjects
 for ss = 1:nSubs

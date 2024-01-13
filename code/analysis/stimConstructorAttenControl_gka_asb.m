@@ -19,7 +19,7 @@ function stimConstructorAttenControl_gka_asb()
 %
 
 % Get the username
-userName = getpref('mriSinaiAnalysis', 'userName');
+userName = getpref('Patterson_2024_JNeurosci', 'userName');
 
 % Get the stimulus file from Mela Data
 stimStructCellArray = loadStimStructCellArray(userName);

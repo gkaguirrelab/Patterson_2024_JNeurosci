@@ -1,6 +1,8 @@
-clear
 
-%% NEED TO FIX THIS BY LOOPING THROUGH VERTICES AND GENERATING THE YFIT INTERP FOR THE WATSON FIT PARAMS
+%% Housekeeping
+clear
+close all
+rng(1); % Fix the random number generator
 
 % Place to save figures and to find the Watson fit results
 savePath = '~/Desktop/Patterson_2024_EccentricityFlicker/';
@@ -14,6 +16,12 @@ stimAlphas = [0.05 0.05 0.1];
 nSubs = length(subjects);
 nStims = length(stimulusDirections);
 studiedFreqs = [2 4 8 16 32 64];
+
+% Properties of the set of interpolated frequencies
+    lowFreqIdx = 77;
+    hiFreqIdx = 451;
+    interpFreqs = logspace(log10(1),log10(100),501);
+    interpFreqsPlot=interpFreqs(lowFreqIdx:hiFreqIdx);
 
 % Define the localDataDir
 localDataDir = fullfile(tbLocateProjectSilent('mriSinaiAnalysis'),'data');
@@ -60,11 +68,6 @@ for ss = 1:length(subjectNames)
     filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_WatsonFit_results.mat']);
     load(filePath,'fitResults')
 
-    lowFreqIdx = 77;
-    hiFreqIdx = 451;
-    interpFreqs = logspace(log10(1),log10(100),501);
-    interpFreqsPlot=interpFreqs(77:451);
-
     % Loop over stimulus directions and create a map of the peak frequency
     for whichStim = 1:3
 
@@ -80,19 +83,18 @@ for ss = 1:length(subjectNames)
         for vv = 1:length(goodIdx)
 
             % Get the interpolated TTF fit from the Watson parameters
-            p = fitResults.p{goodIdx(vv)};
-            yFitInterp = watsonTemporalModel(p,interpFreqs);
+            p = fitResults.p{goodIdx(vv)}(whichStim,:);
+            signal = watsonTemporalModel(p,interpFreqsPlot);
 
             % Perform a fit to the std values with a double Gaussian model
-            F1=fit (log10(studiedFreqs)', 1./W(dd,:)','spline');
-            stdFitInterp(dd,:) = F1(log10(interpFreqs));
+            W = fitResults.W{goodIdx(vv)}(whichStim,:);
+            F1 = fit(log10(studiedFreqs)', 1./W','spline');
+            noise = F1(log10(interpFreqsPlot))';
 
-            signal = fitResults.yFitInterp{goodIdx(vv)};
-            noise = fitResults.stdFitInterp{goodIdx(vv)};
-            signal = squeeze(signal(whichStim,:))*100;
-            noise = squeeze(noise(whichStim,:))*100;
+            % Standardize the vectors and derive FI
+            signal = signal*100;
+            noise = noise*100;
             tuning = signal ./ noise;
-            tuning = tuning(77:451);
             fi = tuning(2:end);
             %            fi = ((diff(tuning).^2)./tuning(2:end));
             if isempty(fisherInfo)

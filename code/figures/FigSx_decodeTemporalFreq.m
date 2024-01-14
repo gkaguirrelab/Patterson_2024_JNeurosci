@@ -48,6 +48,13 @@ cmap = [ linspace(0,1,255);[linspace(0,0.5,127) linspace(0.5,0,128)];[linspace(0
 % Set the column order in the plot
 colOrder = [2 3 1];
 
+% Create a figure
+        figHandle = figure();
+figuresize(600,600,'pt');
+        t = tiledlayout(3,3);
+        t.TileSpacing = 'compact';
+        t.Padding = 'compact';
+
 % Loop through subjects
 for ss = 1:nSubs
 
@@ -66,11 +73,6 @@ for ss = 1:nSubs
 
     % Loop over areaLabels
     for ee = 1:length(eccenBins)
-
-        figHandle = figure('Name',[subjects{ss} ' - eccenBin: ' num2str(ee)]);
-        t = tiledlayout(2,3);
-        t.TileSpacing = 'compact';
-        t.Padding = 'compact';
 
         % Filter the indices for goodness
         goodIdx = logical( (results.R2 > r2Thresh) .* (vArea==1) .* (eccenVol>=eccenBins{ee}(1)) .* (eccenVol<=eccenBins{ee}(2)) );
@@ -140,7 +142,7 @@ for ss = 1:nSubs
             confusionMatrix = confusionMatrix ./ sum(confusionMatrix,2);
 
             % Plot the correlation matrix
-            nexttile(colOrder(dd));
+            nexttile(colOrder(dd)+(ss-1)*nSubs);
             im = squeeze(mean(corrMat));
             im = round(im * 128 + 128);
             image(im);
@@ -154,33 +156,43 @@ for ss = 1:nSubs
             end
             stdMap = squeeze(std(corrMat));
             meanSEM = mean(stdMap(:));
-            title(['Pearson - ' stimulusDirections{dd} sprintf(' sem=%2.2f',meanSEM)]);
+            title([subjects{ss} ' - ' stimulusDirections{dd} sprintf(' sem=%2.2f',meanSEM)]);
             drawnow
 
-            % Plot the confusion matrix
-            nexttile(colOrder(dd)+3);
-            im = confusionMatrix;
-            im = round(im * 128 + 128);
-            image(im);
-            colormap(cmap)
-
-            axis square
-            axis off
-            title(['confusion - ' stimulusDirections{dd}]);
-            drawnow
+            % % Plot the confusion matrix
+            % nexttile(colOrder(dd)+3);
+            % im = confusionMatrix;
+            % im = round(im * 128 + 128);
+            % image(im);
+            % colormap(cmap)
+            % 
+            % axis square
+            % axis off
+            % title(['confusion - ' stimulusDirections{dd}]);
+            % drawnow
 
         end % directions
-
-        nexttile(6)
-        cb = colorbar('southoutside');
-        cb.Ticks = linspace(1,256,5);
-        cb.TickLabels=arrayfun(@(x) {num2str(x)},[-1 -0.5 0 0.5 1]);
-        cb.TickLength = [0 0];
-        box off
 
     end % Areas
 
 end % Subjects
+
+% Save the plot
+plotNamesPDF = 'FigSx_decodeFrequency.pdf';
+saveas(figHandle,fullfile(savePath,plotNamesPDF));
+
+figHandleB = figure();
+figuresize(200,100,'pt');
+colormap(cmap)
+cb = colorbar('Location','south')
+    box off
+    axis off
+cb.Ticks = linspace(1,256,5);
+cb.TickLabels=arrayfun(@(x) {num2str(x)},[-1 -0.5 0 0.5 1]);
+cb.TickLength = [0 0];
+box off
+plotNamesPDF = 'FigSx_decodeFrequencyColorBar.pdf';
+saveas(figHandle,fullfile(savePath,plotNamesPDF));
 
 
 

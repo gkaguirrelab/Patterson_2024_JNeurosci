@@ -1,12 +1,15 @@
-function figHandle = createFieldMap(vals,polarVals,eccenVals,sigmaVals,eccenMax,mirrorFlag)
+function fieldMap = createFieldMap(vals,polarVals,eccenVals,sigmaVals,rangeVals)
 
-if mirrorFlag
-    vals = [vals; vals];
-    polarVals = [polarVals; -polarVals];
-    eccenVals = [eccenVals; eccenVals];
-    sigmaVals = [sigmaVals; sigmaVals];
+if isempty(vals)
+    caxis(rangeVals)
+    myColorMap
+    colorbar('Location','south')
+    box off
+    axis off
+    return
 end
 
+eccenMax = 90;
 mapRes = 100;
 
 X = mapRes/2 - ( (mapRes/2).* eccenVals .* cosd( polarVals ) ./ eccenMax);
@@ -31,9 +34,7 @@ C = eccenMax.*((C - mapRes/2)./(mapRes/2));
 r = sqrt(R.^2+C.^2);
 fieldMap(r>eccenMax)=nan;
 
-figHandle = figure();
 imagesc(fieldMap,'AlphaData',~isnan(fieldMap))
-set(gca,'Color',[0.75 0.75 0.75])
 axis square
 xticks(0:mapRes/4:mapRes)
 xlim([0 mapRes]);
@@ -41,13 +42,11 @@ ylim([0 mapRes]);
 xticklabels(cellfun(@(x) num2str(x),num2cell(-eccenMax:eccenMax/2:eccenMax),'UniformOutput',false))
 yticks(0:mapRes/4:mapRes)
 yticklabels(cellfun(@(x) num2str(x),num2cell(-eccenMax:eccenMax/2:eccenMax),'UniformOutput',false))
-caxis([min(vals) max(vals)])
+caxis(rangeVals)
 myColorMap
-colorbar
+set(gcf,'Color',[1 1 1]); set(gca,'Color',[0.1 0.1 0.1]); set(gcf,'InvertHardCopy','off');
 
 end
-
-
 
 
 function myColorMap()

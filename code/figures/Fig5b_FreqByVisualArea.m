@@ -13,7 +13,8 @@ savePath = '~/Desktop/Patterson_2024_EccentricityFlicker/';
 % This is the threshold for the goodness of fit to the fMRI time-series
 % data. We only analyze those voxels with this quality fit or better
 r2Thresh = 0.1;
-nBoots = 100;
+
+nBoots = 10;
 
 % These variables define the subject names, stimulus directions.
 subjectNames = {'HEROgka1','HEROasb1','HEROcgp1'};
@@ -33,6 +34,7 @@ interpFreqs = logspace(log10(1),log10(100),501);
 nAcqs = 12;
 
 % Define some ROI sets
+roiSet = {'V1','V2/V3','hV4','VO12','LO12','MT','V3ab'};
 roiSet = {'V1','V2/V3','hV4','MT'};
 nROIs = length(roiSet);
 
@@ -95,13 +97,15 @@ for ss = 1:length(subjectNames)
                 case 'V2/V3'
                     goodIdx = find(logical( (results.R2 > r2Thresh) .* (vAreas >= 2) .* (vAreas <= 3) ));
                 case 'hV4'
-                    goodIdx = find(logical( (results.R2 > r2Thresh) .* (vWang == 7) ));
+                    goodIdx = find(logical( (results.R2 > r2Thresh) .* (vAreas == 4) ));
+                case 'VO12'
+                    goodIdx = find(logical( (results.R2 > r2Thresh) .* (vAreas >= 5) .* (vAreas <= 6) ));
                 case 'MT'
                     goodIdx = find(logical( (results.R2 > r2Thresh) .* (mtROI == 1)));
-                case 'LO1'
-                    goodIdx = find(logical( (results.R2 > r2Thresh) .* (vWang == 15) ));
-                case 'IPS0'
-                    goodIdx = find(logical( (results.R2 > r2Thresh) .* (vWang == 18) ));
+                case 'v3ab'
+                    goodIdx = find(logical( (results.R2 > r2Thresh) .* (vAreas >= 11) .* (vAreas <= 12) ));
+                case 'LO12'
+                    goodIdx = find(logical( (results.R2 > r2Thresh) .* (vAreas >= 7) .* (vAreas <= 8) ));
             end
             nGood(rr) = length(goodIdx);
 
@@ -129,7 +133,6 @@ for ss = 1:length(subjectNames)
                 % Get the mean across (bootstrap resampled) acquisitions
                 W = 1./std(adjustedVals(:,bootIdx),0,2)';
                 Y = mean(adjustedVals(:,bootIdx),2)';
-
                 [p,~,~,yFitInterp] = fitWatsonModel(Y,W,studiedFreqs);
 
                 % Determine the peak frequency in the log domain. There's a
@@ -164,7 +167,7 @@ for ss = 1:length(subjectNames)
         vec = squeeze(peakFreqMedian(ss,whichStim,:))';
         veciqr = squeeze(peakFreqIQR(ss,whichStim,:))';
         x = (1:nROIs) + (stimOrder(whichStim)-2)/6;
-        x = x + (whichStim-2)*dirPlotShift;
+        x = x + (ss-2)*dirPlotShift;
         for rr=1:length(x)
             plot([x(rr) x(rr)],[vec(rr)-veciqr(rr)/2, vec(rr)+veciqr(rr)/2],'-','Color',plotColor{stimOrder(whichStim)});
             hold on

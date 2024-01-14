@@ -24,7 +24,7 @@ studiedFreqs = [2 4 8 16 32 64];
     interpFreqsPlot=interpFreqs(lowFreqIdx:hiFreqIdx);
 
 % Define the localDataDir
-localDataDir = fullfile(tbLocateProjectSilent('mriSinaiAnalysis'),'data');
+localDataDir = fullfile(tbLocateProjectSilent('Patterson_2024_JNeurosci'),'data');
 
 % This is the threshold for the goodness of fit to the fMRI time-series
 % data. We only display those voxels with this quality fit or better

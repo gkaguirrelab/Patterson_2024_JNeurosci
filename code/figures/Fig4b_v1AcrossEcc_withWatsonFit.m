@@ -14,6 +14,7 @@ savePath = '~/Desktop/Patterson_2024_EccentricityFlicker/';
 % This is the threshold for the goodness of fit to the fMRI time-series
 % data. We only analyze those voxels with this quality fit or better
 r2Thresh = 0.1;
+
 nBoots = 250;
 
 % These variables define the subject names, stimulus directions.
@@ -70,6 +71,10 @@ for ss = 1:length(subjects)
     tmpPath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_angle.dscalar.nii']);
     polarMap = cifti_read(tmpPath); polarMap = polarMap.cdata;
 
+    % Load the fitResults
+    filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_WatsonFit_results.mat']);
+    load(filePath,'fitResults')
+
     % Prepare the figure
     figHandles = figure('Renderer','painters');
     figuresize(600,400,'pt');
@@ -80,7 +85,8 @@ for ss = 1:length(subjects)
 
         % Find the goodIdx
         eccenRange = eccenBins{rr};
-        goodIdx = find(logical( (results.R2 > r2Thresh) .* (vArea == 1) .* (eccenMap > eccenRange(1)) .* (eccenMap < eccenRange(2))  ));
+        goodIdx = find(logical( (results.R2 > r2Thresh) .* ...
+            (vArea == 1) .* (eccenMap > eccenRange(1)) .* (eccenMap < eccenRange(2))  ));
 
         % Loop through the stimuli
         for whichStim = 1:nStims

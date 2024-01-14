@@ -54,7 +54,7 @@ for ss = 1:length(subjectNames)
     tmpPath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_angle.dscalar.nii']);
     polarMap = cifti_read(tmpPath); polarMap = polarMap.cdata;
 
-    % Initialize or load the fitResults
+    % Load the fitResults
     filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_WatsonFit_results.mat']);
     load(filePath,'fitResults')
 
@@ -116,9 +116,7 @@ for ss = 1:length(subjectNames)
         xlabel('Eccentricity [deg]');
         ylabel('Amplitude [BOLD Pct change]');
         box off
-
         title(subjects{ss});
-
 
         % Plot freq vs eccentricity for V1
         nexttile((ss-1)*2+2);

@@ -19,7 +19,7 @@ localDataDir = fullfile(tbLocateProjectSilent('Patterson_2024_JNeurosci'),'data'
 
 % This is the threshold for the goodness of fit to the fMRI time-series
 % data. We only display those voxels with this quality fit or better
-r2Thresh = 0.1;
+r2Thresh = 0.05;
 
 % This is the threshold for the goodness of fit of the Watson model to the
 % TTF in each vertex. We only display those voxels with this fVal or lower
@@ -27,7 +27,7 @@ fValThresh = 1.5;
 
 % Prepare the figures
 figHandle = figure('Renderer','painters');
-figuresize(400,600,'pt');
+figuresize(600,600,'pt');
 tiledlayout(nSubs,3,'TileSpacing','tight','Padding','tight')
 
 % Loop through subjects and fit each vertex
@@ -67,7 +67,7 @@ for ss = 1:length(subjectNames)
         fValSet(fValIdx) = cellfun(@(x) x(whichStim), fitResults.fVal(fValIdx));
         goodIdx = find(logical( (results.R2 > r2Thresh) .* (fValSet < fValThresh) .* (vArea == 1) ));
 
-        % Assemble thge components for the field map plot.
+        % Assemble the components for the field map plot.
         % Compressive spatial summation in human visual cortex, J Neurophys
         vals = cellfun(@(x) x(whichStim),fitResults.peakFreq(goodIdx));
         polarVals = polarMap(goodIdx);
@@ -75,14 +75,31 @@ for ss = 1:length(subjectNames)
         sigmaVals = sigmaMap(goodIdx);
         rangeVals = rangeValSet{whichStim};
 
+        % Handle eccentricity values for the left and right hemisphere
+        polarVals(goodIdx>32492) = -polarVals(goodIdx>32492);
+
+        % Create the field map
         nexttile;
         createFieldMap(vals,polarVals,eccenVals,sigmaVals,rangeVals);
+
+        % Clean up the plot
         title([subjects{ss} ' - ' stimulusDirections{whichStim}]);
+        axis square
+        if ss~=1 || whichStim ~=3
+            set(gca,'XTick',[])
+            set(gca,'YTick',[])
+        end
 
     end
 
 end
 
-plotNamesPDF = 'foo.pdf';
+plotNamesPDF = 'Fig Sx -- visualFieldTempSens.pdf';
 saveas(figHandle,fullfile(savePath,plotNamesPDF));
+
+figHandleB = figure('Renderer','painters');
+figuresize(200,100,'pt');
+createFieldMap([],[],[],[],rangeVals);
+plotNamesPDF = 'Fig Sx -- visualFieldTempSensColorBar.pdf';
+saveas(figHandleB,fullfile(savePath,plotNamesPDF));
 

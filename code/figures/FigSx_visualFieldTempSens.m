@@ -84,6 +84,7 @@ for ss = 1:length(subjectNames)
 
         % Add a white circle at 16, 32, 64, and 90° eccentricity
         a = gca();
+        set(a,'Color','k')
         m = range(a.XLim);
         for ff = [32,64,90]
         circle(m/2,m/2,((m/2)/90)*ff);
@@ -96,10 +97,8 @@ for ss = 1:length(subjectNames)
         % Clean up the plot
         title([subjects{ss} ' - ' stimulusDirections{whichStim}]);
         axis square
-        if ss~=1 || whichStim ~=3
-            set(gca,'XTick',[])
-            set(gca,'YTick',[])
-        end
+        axis off
+        box off
 
     end
 

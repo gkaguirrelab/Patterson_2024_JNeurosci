@@ -73,12 +73,18 @@ for ss = 1:length(subjectNames)
     y = z(ss,goodIdx)';
     scatter(x,y,1,'k','.');
     hold on
-    p = polyfit(x,y,1); 
-    f = polyval(p,x); 
-    plot(x,f,'-r') 
-    xlim([0 2])
-    xlabel('log10 Eccentricity');
-    ylabel({'Attention response','[z score]'});
+    p = polyfit(x,y,1);
+    f = polyval(p,x);
+    plot(x,f,'-r')
+    xTickVals = [1,2,5,10,20,40,80];
+    xTickLabels = {'1','2','5','10','20','40','80'};
+    a = gca();
+    a.XTick = log10(xTickVals);
+    a.XTickLabels = xTickLabels;
+    xlim([-0.2 2.0]);
+    xlabel('Eccentricity [deg]');
+    ylabel({'Attention response [z]'});
+
     title(sprintf([subjects{ss} ', slope = %2.2f'],p(1)));
 
 end

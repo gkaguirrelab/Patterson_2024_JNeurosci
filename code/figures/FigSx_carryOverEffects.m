@@ -38,11 +38,15 @@ for ss = 1:length(subjectNames)
     end
 end
 
-fit = squeeze(mean(mean(saveFit)));
-residual = squeeze(mean(mean(saveResid)));
+residual = squeeze(mean(saveResid(:,3,:)));
 
 figure
-
-plot(fit,'-r');
-hold on
+subplot(2,1,1)
 plot(residual,'-k');
+subplot(2,1,2)
+    Xa = results.model.inputs{2}{1}(1:7,1:336).*(1:7)';
+    Xb = results.model.inputs{2}{7}(49:55,1:336).*(1:7)';
+    X = [nansum(Xa) nansum(Xb)];
+    plot(X,'.k');
+    yticks(1:8)
+    yticklabels({'0 Hz','2 Hz','4 Hz','8 Hz','16 Hz','32 Hz','64 Hz'});

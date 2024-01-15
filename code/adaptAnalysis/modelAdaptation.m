@@ -17,7 +17,7 @@ analysisLabels = {'L-M','S','LF'};
 plotColors = {'r','b','k'};
 
 % Loop through the subjects
-for ss = 3:length(subjectNames)
+for ss = 1:length(subjectNames)
 
     % Load the results file for this subject
     filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_avgV1_mtSinai_results.mat']);

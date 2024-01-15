@@ -38,6 +38,11 @@ for ss = 1:length(subjectNames)
         modelOpts = [modelOpts(1:9) {modelOpts(10:end)}];
     end
 
+    % Add the stimClassSet we wish to model
+    stimClassSet = {'f2Hz_LMS','f4Hz_LMS','f8Hz_LMS','f16Hz_LMS','f32Hz_LMS','f64Hz_LMS'};
+    modelOpts{end+1}='stimClassSet';
+    modelOpts{end+1}=stimClassSet;
+
     % Call the forwardModel
     adaptResults = forwardModel(data,stimulus,tr,...
         'averageVoxels',true,...

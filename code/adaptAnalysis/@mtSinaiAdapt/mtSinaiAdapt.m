@@ -66,6 +66,10 @@ classdef mtSinaiAdapt < handle
         % the result fields
         stimLabels
 
+        % A cell array of text strings that identify classes of stimLabels
+        % to be modeled with the same exponential decay term
+        stimClassSet
+
         % A particular stimulus label that corresponds to events that we
         % wish to regress out of the time-series prior to averaging across
         % acquisitions.
@@ -146,6 +150,7 @@ classdef mtSinaiAdapt < handle
 
             p.addParameter('stimTime',{},@iscell);
             p.addParameter('stimLabels',{},@iscell);
+            p.addParameter('stimClassSet',{'_LminusS_','_S_','_LMS_'},@iscell);
             p.addParameter('payload',{},@iscell);
             p.addParameter('confoundStimLabel','',@ischar);
             p.addParameter('avgAcqIdx',{},@iscell);
@@ -173,12 +178,17 @@ classdef mtSinaiAdapt < handle
             % be fit with its own gain parameter. Record how many there are
             nStimTypes = size(stimulus{1},1);
 
+            % Create the neural signal predicted by each of the classes of
+            % stimulus events. Each stim class is given a different set of
+            % adaptation params
+            obj.stimClassSet = p.Results.stimClassSet;
+
             % The number of params is the number of stim types, plus the
             % the set of adaptation parameters, plus three
             % for the form of the HRF
             obj.nGainParams = nStimTypes;
             obj.nHRFParams = 3;
-            obj.nAdaptParams = 9;
+            obj.nAdaptParams = length(obj.stimClassSet);
             obj.nParams = obj.nGainParams+obj.nAdaptParams+obj.nHRFParams;
 
             % A fixed property of this tailored model

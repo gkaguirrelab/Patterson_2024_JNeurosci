@@ -82,10 +82,12 @@ for ss = 1:length(subjectNames)
         nexttile;
         createFieldMap(vals,polarVals,eccenVals,sigmaVals,rangeVals);
 
-        % Add a white circle at ±64° eccentricity
+        % Add a white circle at 16, 32, 64, and 90° eccentricity
         a = gca();
         m = range(a.XLim);
-        circle(m/2,m/2,((m/2)/90)*64)
+        for ff = [32,64,90]
+        circle(m/2,m/2,((m/2)/90)*ff);
+        end
 
         % Add axes at 0
         plot([0,m],[m/2,m/2],'-w','LineWidth',1.5);

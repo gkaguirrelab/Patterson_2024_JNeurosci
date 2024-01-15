@@ -30,8 +30,8 @@ fValThresh = 2;
 
 % Prepare the figures
 figHandle = figure('Renderer','painters');
-figuresize(400,600,'pt');
-tiledlayout(nSubs,2,'TileSpacing','tight','Padding','tight')
+figuresize(600,400,'pt');
+tiledlayout(2,nSubs,'TileSpacing','tight','Padding','tight')
 
 % Loop through subjects and fit each vertex
 for ss = 1:length(subjectNames)
@@ -75,7 +75,7 @@ for ss = 1:length(subjectNames)
         peakFreq(goodIdx) = cellfun(@(x) x(whichStim),fitResults.peakFreq(goodIdx));
 
         % Plot Amplitude vs eccentricity for V1
-        nexttile((ss-1)*2+1);
+        nexttile(ss);
         x = log10(eccenMap(goodIdx));
         x(x<0)=x(x<0)/10;
         [x, sortedIdx] = sort(x);
@@ -119,7 +119,7 @@ for ss = 1:length(subjectNames)
         title(subjects{ss});
 
         % Plot freq vs eccentricity for V1
-        nexttile((ss-1)*2+2);
+        nexttile(ss+nSubs);
         goodIdx = find(logical( (results.R2 > r2Thresh) .* (fValSet < fValThresh) .* (vArea == 1) ));
         x = log10(eccenMap(goodIdx));
         x(x<0)=x(x<0)/10;

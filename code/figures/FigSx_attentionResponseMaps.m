@@ -25,7 +25,7 @@ templateImage = cifti_read(tmpPath);
 r2Thresh = 0.1;
 
 figHandle = figure('Renderer','painters');
-figuresize(300,600,'pt');
+figuresize(600,300,'pt');
 
 % Loop through subjects
 for ss = 1:length(subjectNames)
@@ -68,7 +68,7 @@ for ss = 1:length(subjectNames)
     goodIdx = find(logical( (results.R2 > r2Thresh) .* (roiVol == 1)) .* (eccenVol > 0));
 
     % Scatter plot of eccentricity vs. z score of attention effect
-    subplot(3,1,ss)
+    subplot(1,3,ss)
     x = log10(eccenVol(goodIdx));
     y = z(ss,goodIdx)';
     scatter(x,y,1,'k','.');

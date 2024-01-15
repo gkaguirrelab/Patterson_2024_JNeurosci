@@ -31,91 +31,13 @@
 		"hook": "",
 		"importance": "",
 		"localHookTemplate": "",
-		"name": "Psychtoolbox-3",
-		"pathPlacement": "append",
-		"subfolder": "",
-		"toolboxRoot": "",
-		"type": "include",
-		"update": "",
-		"url": ""
-	},
-	{
-		"flavor": "",
-		"hook": "",
-		"importance": "",
-		"localHookTemplate": "",
-		"name": "flywheelMRSupport",
-		"pathPlacement": "append",
-		"subfolder": "",
-		"toolboxRoot": "",
-		"type": "include",
-		"update": "",
-		"url": ""
-	},
-	{
-		"flavor": "",
-		"hook": "",
-		"importance": "",
-		"localHookTemplate": "",
-		"name": "MRklar",
-		"pathPlacement": "append",
-		"subfolder": "",
-		"toolboxRoot": "",
-		"type": "git",
-		"update": "",
-		"url": "https:\/\/github.com\/gkaguirrelab\/MRklar.git"
-	},
- 	{
-		"flavor": "",
-		"hook": "",
-		"importance": "",
-		"localHookTemplate": "",
-		"name": "forwardModelWrapper",
-		"pathPlacement": "append",
-		"subfolder": "",
-		"toolboxRoot": "#",
-		"type": "git",
-		"update": "",
-		"url": "https:\/\/github.com\/gkaguirrelab\/forwardModelWrapper.git"
-	},
-	{
-		"flavor": "",
-		"hook": "",
-		"importance": "",
-		"localHookTemplate": "",
 		"name": "forwardModel",
-		"pathPlacement": "prepend",
-		"subfolder": "",
-		"toolboxRoot": "",
-		"type": "git",
-		"update": "",
-		"url": "https:\/\/github.com\/gkaguirrelab\/forwardModel.git"
-	},
-	{
-		"flavor": "",
-		"hook": "",
-		"importance": "",
-		"localHookTemplate": "",
-		"name": "fw_sdk_matlab",
 		"pathPlacement": "append",
 		"subfolder": "",
 		"toolboxRoot": "",
 		"type": "include",
 		"update": "",
 		"url": ""
-	},
-	{
-		"flavor": "",
-		"hook": "",
-		"importance": "",
-		"localHookTemplate": "",
-		"name": "freesurferMatlab",
-		"pathPlacement": "append",
-		"subfolder": "matlab",
-		"toolboxRoot": "",
-		"type": "git",
-		"update": "",
-		"url": "https:\/\/github.com\/freesurfer\/freesurfer"
 	},
 	{
 		"flavor": "",
@@ -123,7 +45,7 @@
 		"importance": "",
 		"localHookTemplate": "",
 		"name": "ciftiMatlab",
-		"pathPlacement": "prepend",
+		"pathPlacement": "append",
 		"subfolder": "",
 		"toolboxRoot": "",
 		"type": "git",
@@ -142,20 +64,6 @@
 		"type": "include",
 		"update": "",
 	        "url": ""
-	},
-	{
-		"flavor": "",
-		"hook": "",
-		"importance": "",
-		"localHookTemplate": "",
-		"name": "combiLEDToolbox",
-		"pathPlacement": "append",
-		"subfolder": "",
-		"toolboxRoot": "",
-		"type": "include",
-		"update": "",
-		"url": ""
 	}
-    
 ]
 

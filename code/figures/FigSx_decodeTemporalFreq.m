@@ -181,18 +181,19 @@ end % Subjects
 plotNamesPDF = 'FigSx_decodeFrequency.pdf';
 saveas(figHandle,fullfile(savePath,plotNamesPDF));
 
+% Create and save and color bar
 figHandleB = figure();
 figuresize(200,100,'pt');
 colormap(cmap)
-cb = colorbar('Location','south')
-    box off
-    axis off
+cb = colorbar('Location','south');
+box off
+axis off
 cb.Ticks = linspace(1,256,5);
 cb.TickLabels=arrayfun(@(x) {num2str(x)},[-1 -0.5 0 0.5 1]);
 cb.TickLength = [0 0];
 box off
 plotNamesPDF = 'FigSx_decodeFrequencyColorBar.pdf';
-saveas(figHandle,fullfile(savePath,plotNamesPDF));
+saveas(figHandleB,fullfile(savePath,plotNamesPDF));
 
 
 

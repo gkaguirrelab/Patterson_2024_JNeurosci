@@ -6,7 +6,7 @@ close all
 rng(1);
 
 %% Analysis properties
-nBoots = 500;
+nBoots = 250;
 
 % Place to save figures
 savePath = '~/Desktop/Patterson_2024_EccentricityFlicker/';

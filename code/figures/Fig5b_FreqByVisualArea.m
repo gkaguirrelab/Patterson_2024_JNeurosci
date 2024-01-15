@@ -14,7 +14,7 @@ savePath = '~/Desktop/Patterson_2024_EccentricityFlicker/';
 % data. We only analyze those voxels with this quality fit or better
 r2Thresh = 0.1;
 
-nBoots = 10;
+nBoots = 100;
 
 % These variables define the subject names, stimulus directions.
 subjectNames = {'HEROgka1','HEROasb1','HEROcgp1'};
@@ -34,8 +34,7 @@ interpFreqs = logspace(log10(1),log10(100),501);
 nAcqs = 12;
 
 % Define some ROI sets
-roiSet = {'V1','V2/V3','hV4','VO12','LO12','MT','V3ab'};
-roiSet = {'V1','V2/V3','hV4','MT'};
+roiSet = {'V1','V2/V3','hV4','V3ab'};
 nROIs = length(roiSet);
 
 % Define the localDataDir
@@ -43,8 +42,7 @@ localDataDir = fullfile(tbLocateProjectSilent('Patterson_2024_JNeurosci'),'data'
 
 % Prepare the figure
 figHandle = figure('Renderer','painters');
-figuresize(600,400,'pt');
-%tiledlayout(1,2,'TileSpacing','tight','Padding','tight')
+figuresize(600,600,'pt');
 
 % Params that allows the plots to appear in the order LMS, L-M, S
 stimOrder = [2 3 1];
@@ -54,7 +52,7 @@ plotColor={[0.75 0.75 0.75],[0.85 0.55 0.55],[0.75 0.75 1]};
 lineColor={'k','r','b'};
 subMarkers = {'^','square','o'};
 subLines = {'-','--',':'};
-dirPlotShift = 0.15;
+dirPlotShift = 0.1;
 
 
 %% Loop through subjects and fit each vertex
@@ -166,26 +164,36 @@ for ss = 1:length(subjectNames)
     for whichStim  = 1:nStims
         vec = squeeze(peakFreqMedian(ss,whichStim,:))';
         veciqr = squeeze(peakFreqIQR(ss,whichStim,:))';
-        x = (1:nROIs) + (stimOrder(whichStim)-2)/6;
+        x = (1:nROIs);
         x = x + (ss-2)*dirPlotShift;
-        for rr=1:length(x)
-            plot([x(rr) x(rr)],[vec(rr)-veciqr(rr)/2, vec(rr)+veciqr(rr)/2],'-','Color',plotColor{stimOrder(whichStim)});
-            hold on
-        end
-        plot(x,vec,subMarkers{ss},'Color',plotColor{stimOrder(whichStim)});
-        plot(x,vec,subLines{ss},'Color',plotColor{stimOrder(whichStim)},'LineWidth',1.5);
+        plot(x,vec,subMarkers{ss},...
+            'MarkerEdgeColor','none','MarkerFaceColor',plotColor{stimOrder(whichStim)},...
+            'MarkerSize',10)
+        hold on
+
+        % Save the vector for the across-subject plot
+        bigVec(ss,whichStim,:)=vec;
     end
 
     a = gca();
     a.XTick = 1:nROIs;
     a.XTickLabel = roiSet;
 
-    title(subjects{ss});
     ylim([0 40])
     drawnow
 
 end
 
+x = 1:nROIs;
+for whichStim  = 1:nStims
+    y = median(squeeze(bigVec(:,whichStim,:)));
+    pH(whichStim) = plot(x,y,'-','Color',plotColor{stimOrder(whichStim)},'LineWidth',2);
+    plot(x,y,'o',...
+        'MarkerFaceColor','none','MarkerEdgeColor',plotColor{stimOrder(whichStim)},...
+        'MarkerSize',20,'LineWidth',2)
+
+end
+legend(pH,subjects)
 
 % Save the plot
 plotNamesPDF = 'Fig5b_peakFreqByArea.pdf';

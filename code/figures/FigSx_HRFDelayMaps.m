@@ -64,6 +64,7 @@ for ss = 1:length(subjectNames)
     fileOut = fullfile(savePath,[subjectNames{ss} '_hrfDelayMap.dtseries.nii']);
     cifti_write(newMap, fileOut);
 
+
 end
 
 

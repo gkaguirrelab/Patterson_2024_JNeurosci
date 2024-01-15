@@ -34,7 +34,7 @@ interpFreqs = logspace(log10(1),log10(100),501);
 nAcqs = 12;
 
 % Define some ROI sets
-roiSet = {'V1','V2/V3','hV4','V3ab'};
+roiSet = {'V1','V2/V3','hV4','V3a/b'};
 nROIs = length(roiSet);
 
 % Define the localDataDir
@@ -96,14 +96,10 @@ for ss = 1:length(subjectNames)
                     goodIdx = find(logical( (results.R2 > r2Thresh) .* (vAreas >= 2) .* (vAreas <= 3) ));
                 case 'hV4'
                     goodIdx = find(logical( (results.R2 > r2Thresh) .* (vAreas == 4) ));
-                case 'VO12'
-                    goodIdx = find(logical( (results.R2 > r2Thresh) .* (vAreas >= 5) .* (vAreas <= 6) ));
-                case 'MT'
-                    goodIdx = find(logical( (results.R2 > r2Thresh) .* (mtROI == 1)));
-                case 'v3ab'
+                case 'V3a/b'
                     goodIdx = find(logical( (results.R2 > r2Thresh) .* (vAreas >= 11) .* (vAreas <= 12) ));
-                case 'LO12'
-                    goodIdx = find(logical( (results.R2 > r2Thresh) .* (vAreas >= 7) .* (vAreas <= 8) ));
+                otherwise
+                    error('I do not know that region')
             end
             nGood(rr) = length(goodIdx);
 
@@ -170,6 +166,9 @@ for ss = 1:length(subjectNames)
             'MarkerEdgeColor','none','MarkerFaceColor',plotColor{stimOrder(whichStim)},...
             'MarkerSize',10)
         hold on
+        if whichStim == 3
+            plot(x,vec,':','Color',plotColor{stimOrder(whichStim)},'LineWidth',1);
+        end
 
         % Save the vector for the across-subject plot
         bigVec(ss,whichStim,:)=vec;
@@ -179,7 +178,7 @@ for ss = 1:length(subjectNames)
     a.XTick = 1:nROIs;
     a.XTickLabel = roiSet;
 
-    ylim([0 40])
+    ylim([0 50])
     drawnow
 
 end

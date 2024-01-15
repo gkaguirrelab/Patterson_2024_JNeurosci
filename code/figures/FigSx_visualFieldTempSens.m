@@ -82,6 +82,15 @@ for ss = 1:length(subjectNames)
         nexttile;
         createFieldMap(vals,polarVals,eccenVals,sigmaVals,rangeVals);
 
+        % Add a white circle at ±64° eccentricity
+        a = gca();
+        m = range(a.XLim);
+        circle(m/2,m/2,((m/2)/90)*64)
+
+        % Add axes at 0
+        plot([0,m],[m/2,m/2],'-w','LineWidth',1.5);
+        plot([m/2,m/2],[0,m],'-w','LineWidth',1.5);
+
         % Clean up the plot
         title([subjects{ss} ' - ' stimulusDirections{whichStim}]);
         axis square
@@ -103,3 +112,11 @@ createFieldMap([],[],[],[],rangeVals);
 plotNamesPDF = 'Fig Sx -- visualFieldTempSensColorBar.pdf';
 saveas(figHandleB,fullfile(savePath,plotNamesPDF));
 
+
+function h = circle(x,y,r)
+hold on
+th = 0:pi/50:2*pi;
+xunit = r * cos(th) + x;
+yunit = r * sin(th) + y;
+h = plot(xunit, yunit,'-w','LineWidth',1.5);
+end

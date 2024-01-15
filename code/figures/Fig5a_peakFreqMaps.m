@@ -127,7 +127,7 @@ end
 % Create an across-subject average map
 newMap = templateImage;
 newMap.cdata = single(nan(size(fitResults.fVal)));
-newMap.cdata = single(median(comboVecBySub,1,'omitmissing'))';
+newMap.cdata = single(mean(comboVecBySub,1,'omitmissing'))';
 fileOut = fullfile(savePath,['AvgSubject_comboZpeakFreq.dtseries.nii']);
 cifti_write(newMap, fileOut);
 

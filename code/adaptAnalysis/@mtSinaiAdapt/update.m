@@ -32,7 +32,6 @@ stimAcqGroups = obj.stimAcqGroups;
 stimTime = obj.stimTime;
 nParams = obj.nParams;
 
-
 % Sanity check that the non-floating elements of x0 are equal in size to
 % the number of stimulusCols
 if (nParams-length(floatSet)) ~= stimCols

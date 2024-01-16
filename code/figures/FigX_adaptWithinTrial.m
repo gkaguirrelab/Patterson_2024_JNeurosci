@@ -36,7 +36,7 @@ for whichSet = 1:length(stimClassSetLabels)
         % Get the adaptation params
         pp(ss,:) = adaptResults.params(end-8:end-3);
 
-        x = log10(studiedFreqs) + (ss-1)*dirPlotShift;
+        x = log10(studiedFreqs) + (ss-2)*dirPlotShift;
 
         plot(x,pp(ss,:),subMarkers{ss},...
             'MarkerEdgeColor','none','MarkerFaceColor',plotColor{whichSet},...
@@ -44,12 +44,16 @@ for whichSet = 1:length(stimClassSetLabels)
         hold on
 
         % Report the difference in R2 value
-        fprintf([subjectNames{ss} ' - R2 %2.2f, R2 adapt %2.2f\n'],max(results.R2),max(adaptResults.R2));
+        fprintf([subjectNames{ss} ' - R2 %2.3f, R2 adapt %2.3f\n'],max(results.R2),max(adaptResults.R2));
 
     end
 
     % Add median (across subject) values
     y = median(pp);
+    yiqr = iqr(pp);
+    for ff = 1:length(studiedFreqs)
+        plot([log10(studiedFreqs(ff)) log10(studiedFreqs(ff))],[y(ff)-yiqr(ff)/2,y(ff)+yiqr(ff)/2],'-','Color',plotColor{whichSet},'LineWidth',4);
+    end
     pH(whichSet) = plot(log10(studiedFreqs),y,'-','Color',lineColor{whichSet},'LineWidth',2);
     plot(log10(studiedFreqs),y,'o',...
         'MarkerFaceColor','none','MarkerEdgeColor',lineColor{whichSet},...
@@ -64,10 +68,7 @@ a.XTick = log10([2,4,8,16,32,64]);
 a.XTickLabel = {'2','4','8','16','32','64'};
 a.XTickLabelRotation = 0;
 a.XMinorTick = 'off';
-a.YScale = 'log';
-a.YTick = [1 10 100];
-a.YTickLabel = {'1','10','100'};
-a.YMinorTick = 'off';
+ylim([-5 50]);
 ylabel({'Time constant of','within-trial adaptation [secs]'})
 xlabel('Stimulus frequency [Hz]')
 box off

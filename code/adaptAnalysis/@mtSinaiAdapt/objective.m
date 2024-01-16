@@ -27,9 +27,9 @@ fVal = std(signal - obj.forward(x));
 nGainParams = obj.nGainParams;
 nAdaptParams = obj.nAdaptParams;
 tauIdx = nGainParams+1:1:nGainParams+nAdaptParams;
-penalty = sum(x(tauIdx))/1e6;
+penalty = sum(x(tauIdx))/1e5;
 
-fVal = fVal + penalty;
+%fVal = fVal + penalty;
 
 end
 

@@ -38,7 +38,7 @@ trialAcqGroups = cell2mat(arrayfun(@(x) repmat(x,1,stimDelatTsPerTrial),1:size(s
 tauIdx = nGainParams+1:1:nGainParams+nAdaptParams;
 
 % Initialize an empty neural signal, and then loop over the stimulus
-% classes
+% classes for which we have an assigned tau exponential decay parameter.
 neuralSignal = zeros(size(stimulus,1),1);
 for ss = 1:length(stimClassSet)
 
@@ -56,10 +56,11 @@ for ss = 1:length(stimClassSet)
     neuralSignal = neuralSignal + thisSignal;
 end
 
-% Create the model for the confound events and add this
-confoundParamIdx = find(startsWith(obj.stimLabels,obj.confoundStimLabel));
-confoundSignal = stimulus(:,confoundParamIdx)*x(confoundParamIdx)';
-signal = neuralSignal + confoundSignal;
+% Now add in the stimulus components for which we did not have an assigned
+% tau parameter.
+stimParamIdx = find(~contains(obj.stimLabels,horzcat(stimClassSet{:})));
+thisSignal = stimulus(:,stimParamIdx)*x(stimParamIdx)';
+signal = neuralSignal + thisSignal;
 
 end
 

@@ -23,6 +23,14 @@ function fVal = objective(obj, signal, x)
 % Implement an L2 norm
 fVal = std(signal - obj.forward(x));
 
+% Add a tiny bit of shrinkage for the tau params
+nGainParams = obj.nGainParams;
+nAdaptParams = obj.nAdaptParams;
+tauIdx = nGainParams+1:1:nGainParams+nAdaptParams;
+penalty = sum(x(tauIdx))/1e6;
+
+fVal = fVal + penalty;
+
 end
 
 

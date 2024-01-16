@@ -15,10 +15,19 @@ directions = {'LminusM','S','LMS'};
 freqs = [0,2,4,8,16,32,64];
 analysisLabels = {'L-M','S','LF'};
 plotColors = {'r','b','k'};
-stimClassSetSource = {'f2Hz_XXX','f4Hz_XXX','f8Hz_XXX','f16Hz_XXX','f32Hz_XXX','f64Hz_XXX'};
+stimClassSetSources{1} = {...
+    {'f2Hz_LminusS','f2Hz_S'},...
+    {'f4Hz_LminusS','f4Hz_S'},...
+    {'f8Hz_LminusS','f8Hz_S'},...
+    {'f16Hz_LminusS','f16Hz_S'},...
+    {'f32Hz_LminusS','f32Hz_S'},...
+    {'f64Hz_LminusS','f64Hz_S'},...
+    };
+stimClassSetSources{2} = {'f2Hz_LMS','f4Hz_LMS','f8Hz_LMS','f16Hz_LMS','f32Hz_LMS','f64Hz_LMS'};
+stimClassSetLabels = {'chromatic','achromatic'};
 
 % Loop through the subjects
-for whichStim = 1:length(directions)
+for whichSet = 1:length(stimClassSetSources)
     for ss = 1:length(subjectNames)
 
         % Load the results file for this subject
@@ -41,7 +50,7 @@ for whichStim = 1:length(directions)
         end
 
         % Add the stimClassSet we wish to model
-        stimClassSet = strrep(stimClassSetSource,'XXX',directions{whichStim});
+        stimClassSet = stimClassSetSources{whichSet};
         modelOpts{end+1}='stimClassSet';
         modelOpts{end+1}=stimClassSet;
 
@@ -53,7 +62,7 @@ for whichStim = 1:length(directions)
             'modelOpts',modelOpts);
 
         % Save the results
-        fileName = fullfile(savePath,[subjectNames{ss} '_' directions{whichStim} '_AvgV1_adaptMtSinai.mat']);
+        fileName = fullfile(savePath,[subjectNames{ss} '_' stimClassSetLabels{whichSet} '_AvgV1_adaptMtSinai.mat']);
         save(fileName,'adaptResults');
 
     end

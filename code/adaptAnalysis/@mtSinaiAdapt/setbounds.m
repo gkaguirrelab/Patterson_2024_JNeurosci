@@ -37,11 +37,11 @@ ub = nan(1,nParams);
 lb(1:nGainParams) = -Inf;             % gain
 ub(1:nGainParams) = Inf;              % gain
 
-% Tau params are bounded with reasonable physiologic ranges in units of
-% seconds
+% Tau params are in units of seconds. While the ub is Inf, we apply a very
+% light shrinkage in the objective function for tau.
 tauIdx = nGainParams+1:1:nGainParams+nAdaptParams;
-lb(tauIdx) = 2;             % tau
-ub(tauIdx) = 100;           % 
+lb(tauIdx) = 1;             % tau
+ub(tauIdx) = Inf;           % 
 
 % The HRF shape parameters vary by model type
 switch obj.hrfType

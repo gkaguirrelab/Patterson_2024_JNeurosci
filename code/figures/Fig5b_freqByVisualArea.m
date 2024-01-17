@@ -34,7 +34,7 @@ interpFreqs = logspace(log10(1),log10(100),501);
 nAcqs = 12;
 
 % Define some ROI sets
-roiSet = {'V1','V2/V3','hV4','V3a/b'};
+roiSet = {'V1','V2/V3','hV4','V3A/B'};
 nROIs = length(roiSet);
 
 % Define the localDataDir
@@ -42,7 +42,7 @@ localDataDir = fullfile(tbLocateProjectSilent('Patterson_2024_JNeurosci'),'data'
 
 % Prepare the figure
 figHandle = figure('Renderer','painters');
-figuresize(600,600,'pt');
+figuresize(600,300,'pt');
 
 % Params that allows the plots to appear in the order LMS, L-M, S
 stimOrder = [2 3 1];
@@ -96,7 +96,7 @@ for ss = 1:length(subjectNames)
                     goodIdx = find(logical( (results.R2 > r2Thresh) .* (vAreas >= 2) .* (vAreas <= 3) ));
                 case 'hV4'
                     goodIdx = find(logical( (results.R2 > r2Thresh) .* (vAreas == 4) ));
-                case 'V3a/b'
+                case 'V3A/B'
                     goodIdx = find(logical( (results.R2 > r2Thresh) .* (vAreas >= 11) .* (vAreas <= 12) ));
                 otherwise
                     error('I do not know that region')
@@ -166,9 +166,6 @@ for ss = 1:length(subjectNames)
             'MarkerEdgeColor','none','MarkerFaceColor',plotColor{stimOrder(whichStim)},...
             'MarkerSize',10)
         hold on
-        if whichStim == 3
-            plot(x,vec,':','Color',plotColor{stimOrder(whichStim)},'LineWidth',1);
-        end
 
         % Save the vector for the across-subject plot
         bigVec(ss,whichStim,:)=vec;
@@ -186,13 +183,13 @@ end
 x = 1:nROIs;
 for whichStim  = 1:nStims
     y = median(squeeze(bigVec(:,whichStim,:)));
-    pH(whichStim) = plot(x,y,'-','Color',plotColor{stimOrder(whichStim)},'LineWidth',2);
+    pH(whichStim) = plot(x,y,'-','Color',lineColor{stimOrder(whichStim)},'LineWidth',2);
     plot(x,y,'o',...
-        'MarkerFaceColor','none','MarkerEdgeColor',plotColor{stimOrder(whichStim)},...
-        'MarkerSize',20,'LineWidth',2)
+        'MarkerFaceColor','none','MarkerEdgeColor',lineColor{stimOrder(whichStim)},...
+        'MarkerSize',15,'LineWidth',2)
 
 end
-legend(pH,subjects)
+legend(pH,subjects,'Location','northwest');
 
 % Save the plot
 plotNamesPDF = 'Fig5b_peakFreqByArea.pdf';

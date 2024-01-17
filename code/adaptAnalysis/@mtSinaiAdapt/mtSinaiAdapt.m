@@ -228,11 +228,11 @@ classdef mtSinaiAdapt < handle
             end
 
             % Define the fix and float param sets. In this model, The gain
-            % parameters are derived by regression and are thus fixed. The
-            % other parameters (HRF, adaptation properties) float.
-            nFix = obj.nGainParams;
-            obj.fixSet = {1:nFix, 1:nFix};
-            obj.floatSet = {nFix+1:obj.nParams,nFix+1:obj.nParams};
+            % parameters are derived by regression and are thus fixed. In
+            % the first cycle, just the HRF parameters float. In the second
+            % cycle, the HRF and exponential adaptation parameters float.
+            obj.fixSet = {1:obj.nGainParams+obj.nAdaptParams, 1:obj.nGainParams};
+            obj.floatSet = {obj.nGainParams+obj.nAdaptParams+1:obj.nParams,obj.nGainParams+1:obj.nParams};
 
             % Create the stimAcqGroups variable. Concatenate the cells and
             % store in the object.

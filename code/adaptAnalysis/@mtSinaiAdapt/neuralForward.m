@@ -27,7 +27,11 @@ stimDelatTsPerTrial = obj.stimDelatTsPerTrial;
 stimClassSet = obj.stimClassSet;
 
 % Temporal support for a single trial
-stimTimeTrial = 0:stimDeltaT:(stimDelatTsPerTrial-1)*stimDeltaT;
+trialTime = (0:stimDeltaT:(stimDelatTsPerTrial-1)*stimDeltaT)';
+
+% stimTimeTrial replicated to be equal to the length of the total stimulus
+% vector
+stimTrialTime = repmat(trialTime,size(stimulus,1)/stimDelatTsPerTrial,1);
 
 % A vector that provides an index for each separate trial across the entire
 % concatenated time series
@@ -42,15 +46,27 @@ tauIdx = nGainParams+1:1:nGainParams+nAdaptParams;
 neuralSignal = zeros(size(stimulus,1),1);
 for ss = 1:length(stimClassSet)
 
-    % Get the modeled amplitudes for this stimClass
-    stimParamIdx = find(contains(obj.stimLabels,stimClassSet{ss}));
-    thisSignal = stimulus(:,stimParamIdx)*x(stimParamIdx)';
-
     % Create an exponential kernel and apply this to each trial
     tau = x(tauIdx(ss));
-    exponentialKernel = exp(-1/tau*stimTimeTrial);
-    exponentialKernel = (exponentialKernel-mean(exponentialKernel))+1;
-    thisSignal = conv2run(thisSignal,exponentialKernel,trialAcqGroups);
+    exponentialKernel = exp(-1/tau*stimTrialTime);
+
+    % Get the stimulus matrix for this stimClass
+    stimParamIdx = contains(obj.stimLabels,stimClassSet{ss});
+    thisStimulus = stimulus(:,stimParamIdx);
+    
+    % Apply the exponential scaling to each column
+    for cc = 1:size(thisStimulus,2)
+        vec = thisStimulus(:,cc);
+        idx = vec ~=0;
+        vecExp = vec.*exponentialKernel;
+        if any(idx)
+            vecExp = (vecExp / mean(vecExp(idx))) * mean(vec(idx));
+        end    
+        thisStimulus(:,cc)=vecExp;
+    end
+    
+    % Apply the gain parameters
+    thisSignal = thisStimulus*x(stimParamIdx)';
 
     % Add this signal to the neuralSignal
     neuralSignal = neuralSignal + thisSignal;

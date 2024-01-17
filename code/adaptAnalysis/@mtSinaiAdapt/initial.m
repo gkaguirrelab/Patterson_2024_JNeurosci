@@ -32,12 +32,15 @@ nAdaptParams = obj.nAdaptParams;
 % Assign the x0 variable
 x0 = zeros(1,nParams);
 
-% x0 gain
+% Initialize the model with the the 0Hz trials set to zero, and all other
+% gain parameters at the typicalGain
 x0(1:nGainParams) = typicalGain;
+stimParamIdx = startsWith(obj.stimLabels,"f0Hz_");
+x0(stimParamIdx) = 0;
 
 % x0 exponential adaptation (tau in seconds; asymptote in proportion max)
 tauIdx = nGainParams+1:1:nGainParams+nAdaptParams;
-x0(tauIdx) = 12;
+x0(tauIdx) = 100;
 
 % x0 HRF: Flobs population mean amplitudes
 x0(nGainParams+nAdaptParams+1:nParams) = [0.86, 0.09, 0.01];

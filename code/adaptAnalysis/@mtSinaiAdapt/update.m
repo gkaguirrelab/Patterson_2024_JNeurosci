@@ -30,13 +30,9 @@ stimulus = obj.stimulus;
 stimCols = size(stimulus,2);
 stimAcqGroups = obj.stimAcqGroups;
 stimTime = obj.stimTime;
-nParams = obj.nParams;
 
-% Sanity check that the non-floating elements of x0 are equal in size to
-% the number of stimulusCols
-if (nParams-length(floatSet)) ~= stimCols
-    error('forwardModel:update','Only the hrf and adaptation parameters are allowed to float');
-end
+% Update x0 with the passed x values
+x0(floatSet) = x;
 
 % Create the HRF
 hrf = obj.flobsbasis*x(end-2:end)';
@@ -50,7 +46,8 @@ X = zeros(size(obj.dataTime,1),stimCols);
 for ss = 1:size(stimulus,2)
     
     % Zero all parameters except for this column of the stimulus matrix
-    subx = [zeros(1,size(stimulus,2)), x];
+    subx = x0;
+    subx(1:obj.nGainParams) = 0;
     subx(ss) = 1;
 
     % Get the neural signal for this column, at the stimulus temporal
@@ -80,6 +77,6 @@ end
 b = X\signal;
 
 % Assemble the updated x0
-x0 = [b' x];
+x0(1:obj.nGainParams) = b';
 
 end

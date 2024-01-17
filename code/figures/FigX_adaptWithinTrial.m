@@ -19,7 +19,34 @@ dirPlotShift = 0.03;
 studiedFreqs = [2,4,8,16,32,64];
 
 figHandle = figure();
-figuresize(600,300,'pt');
+figuresize(600,600,'pt');
+tiledlayout(2,4,'TileSpacing','tight','Padding','tight')
+
+% Illlustrate neural and bold responses with different tau params
+stimDeltaT = 0.1;
+stimTimeTrial = (-3:stimDeltaT:30-stimDeltaT)';
+stimProfile = [zeros(1,3/stimDeltaT),ones(1,12/stimDeltaT),zeros(1,18/stimDeltaT)]';
+tauVals = [5,10,20,40];
+hrf = returnFlobsVectors(stimDeltaT)*[0.86, 0.09, 0.01]';
+hrf = hrf/sum(abs(hrf));
+
+
+for tt = 1:length(tauVals)
+    nexttile()
+    thisSignal = exp(-1/tauVals(tt)*stimTimeTrial).*stimProfile;
+    thisSignal =  thisSignal / mean(thisSignal(thisSignal~=0));
+    fit = conv2run(thisSignal,hrf,ones(size(stimProfile)));
+    plot(stimProfile,'-k');
+    hold on
+    plot(thisSignal,'-r');
+    plot(fit,'-g');
+    ylim([-0.1 2.75])
+    a=gca();
+    a.YTick = [0,1];
+    title(num2str(tauVals(tt)));
+    box off
+end
+
 
 % Loop through subjects
 for whichSet = 1:length(stimClassSetLabels)

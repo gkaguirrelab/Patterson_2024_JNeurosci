@@ -19,7 +19,7 @@ dirPlotShift = 0.03;
 studiedFreqs = [2,4,8,16,32,64];
 
 figHandle = figure();
-figuresize(400,200,'pt');
+figuresize(600,300,'pt');
 
 % Loop through subjects
 for whichSet = 1:length(stimClassSetLabels)
@@ -54,10 +54,10 @@ for whichSet = 1:length(stimClassSetLabels)
     for ff = 1:length(studiedFreqs)
         plot([log10(studiedFreqs(ff)) log10(studiedFreqs(ff))],[y(ff)-yiqr(ff)/2,y(ff)+yiqr(ff)/2],'-','Color',plotColor{whichSet},'LineWidth',4);
     end
-    pH(whichSet) = plot(log10(studiedFreqs),y,'-','Color',lineColor{whichSet},'LineWidth',2);
+    pH(whichSet) = plot(log10(studiedFreqs),y,'-','Color',lineColor{whichSet},'LineWidth',1.5);
     plot(log10(studiedFreqs),y,'o',...
         'MarkerFaceColor','none','MarkerEdgeColor',lineColor{whichSet},...
-        'MarkerSize',20,'LineWidth',2)
+        'MarkerSize',15,'LineWidth',1.5)
 
 end
 
@@ -68,10 +68,14 @@ a.XTick = log10([2,4,8,16,32,64]);
 a.XTickLabel = {'2','4','8','16','32','64'};
 a.XTickLabelRotation = 0;
 a.XMinorTick = 'off';
+a.YTick = [0 10 20 30 40];
 ylim([-5 50]);
 ylabel({'Time constant of','within-trial adaptation [secs]'})
 xlabel('Stimulus frequency [Hz]')
 box off
 
-
+% Save the figure
+set(figHandle,'color','none');
+fileName = fullfile(savePath,'WithinTrialAdaptation.pdf');
+saveas(figHandle,fileName);
 

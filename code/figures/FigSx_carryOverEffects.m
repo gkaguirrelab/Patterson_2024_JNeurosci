@@ -12,41 +12,48 @@ localDataDir = fullfile(tbLocateProjectSilent('Patterson_2024_JNeurosci'),'data'
 
 % These variables define the subject names and stimulus directions
 subjectNames = {'HEROgka1','HEROasb1','HEROcgp1'};
-shortNames = {'gka','asb','cgp'};
+subjects = {'gka','asb','cgp'};
 directions = {'LminusM','S','LMS'};
 freqs = [0,2,4,8,16,32,64];
 analysisLabels = {'L-M','S','LF'};
 plotColors = {'r','b','k'};
 
+% Color map
+cmap = [ linspace(0,1,255);[linspace(0,0.5,127) linspace(0.5,0,128)];[linspace(0,0.5,127) linspace(0.5,0,128)]]';
+
 % Loop through the subjects
 for ss = 1:length(subjectNames)
 
     % Load the results file for this subject
-    filePath = fullfile(localDataDir,[subjectNames{ss} '_resultsFiles'],[subjectNames{ss} '_avgV1_mtSinai_results.mat']);
-    load(filePath,'results')
+    filePath = fullfile(savePath,[subjectNames{ss} '_avgV1_carryOverMtSinai.mat']);
+    load(filePath,'carryOverResults')
 
-    % Properties of the stimuli
-    stimLabels = results.model.opts{6};
+    % reshape the carry-over beta values into a matrix
+    paramStartIdx = find(startsWith(carryOverResults.model.opts{4},'co_f0->f0_'));
+    for dd = 1:3
+        coParams = carryOverResults.params(paramStartIdx(dd):paramStartIdx(dd)+48);
+        coLabels = carryOverResults.model.opts{4}(paramStartIdx(dd):paramStartIdx(dd)+48);
+        for ii=1:49
+            [rr,cc] = ind2sub([7 7],ii);
+            coMatrix{ss,dd}(rr,cc)=coParams(ii);
+        end
+    end
 
-    % Plot the average time series and model fit
-    for whichStim=1:3
-        data = results.data.avgSignal(1+(whichStim-1)*672:672+(whichStim-1)*672);
-        fit = results.data.avgModelFit(1+(whichStim-1)*672:672+(whichStim-1)*672);
-        residual = data - fit;
-        saveResid(ss,whichStim,:) = residual;
-        saveFit(ss,whichStim,:) = fit;
+    % Plot the matrices
+    figHandle = figure();
+    figuresize(600,300,'pt');
+    t = tiledlayout(1,3);
+    t.TileSpacing = 'compact';
+    t.Padding = 'compact';
+
+    for dd=1:3
+        nexttile(dd);
+        im = coMatrix{ss,dd};
+        imagesc(im);
+        colormap(cmap)
+        axis square
+        title([subjects{ss} ' - ' directions{dd} ]);
+        drawnow
+
     end
 end
-
-residual = squeeze(mean(saveResid(:,3,:)));
-
-figure
-subplot(2,1,1)
-plot(residual,'-k');
-subplot(2,1,2)
-    Xa = results.model.inputs{2}{1}(1:7,1:336).*(1:7)';
-    Xb = results.model.inputs{2}{7}(49:55,1:336).*(1:7)';
-    X = [nansum(Xa) nansum(Xb)];
-    plot(X,'.k');
-    yticks(1:8)
-    yticklabels({'0 Hz','2 Hz','4 Hz','8 Hz','16 Hz','32 Hz','64 Hz'});

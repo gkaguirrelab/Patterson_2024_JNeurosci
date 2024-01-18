@@ -49,11 +49,11 @@ cmap = [ linspace(0,1,255);[linspace(0,0.5,127) linspace(0.5,0,128)];[linspace(0
 colOrder = [2 3 1];
 
 % Create a figure
-        figHandle = figure();
+figHandle = figure();
 figuresize(600,600,'pt');
-        t = tiledlayout(3,3);
-        t.TileSpacing = 'compact';
-        t.Padding = 'compact';
+t = tiledlayout(3,3);
+t.TileSpacing = 'compact';
+t.Padding = 'compact';
 
 % Loop through subjects
 for ss = 1:nSubs
@@ -165,7 +165,7 @@ for ss = 1:nSubs
             % im = round(im * 128 + 128);
             % image(im);
             % colormap(cmap)
-            % 
+            %
             % axis square
             % axis off
             % title(['confusion - ' stimulusDirections{dd}]);

@@ -131,8 +131,8 @@ for ss = 1:length(subjectNames)
 end
 
 figHandleA = figure();
-figuresize(600,400,'pt');
-t = tiledlayout(2,3);
+figuresize(400,600,'pt');
+t = tiledlayout(3,2);
 t.TileSpacing = 'compact';
 t.Padding = 'compact';
 
@@ -146,14 +146,14 @@ t.Padding = 'compact';
 for dd=2:-1:1
     for ss = 1:3
         figure(figHandleA)
-        nexttile;
+        nexttile((ss-1)*2+dd);
         im = round(coMatrix{ss,dd}*2*128+128);
         image(im);
         colormap(cmap)
         axis square
         title([subjects{ss} ' - ' directions{dd} ]);
         drawnow
-        if ss == 1
+        if dd == 1
             plotCleanUp(allFreqs);
         else
             axis off
@@ -207,6 +207,7 @@ a.XAxis.TickLength = [0 0];
 a.YAxis.TickLength = [0 0];
 xlabel('current stimulus [Hz]');
 ylabel('prior stimulus [Hz]');
+box off
 end
 
 

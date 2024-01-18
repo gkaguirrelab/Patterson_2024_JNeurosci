@@ -42,7 +42,7 @@ localDataDir = fullfile(tbLocateProjectSilent('Patterson_2024_JNeurosci'),'data'
 
 % Prepare the figure
 figHandle = figure('Renderer','painters');
-figuresize(600,300,'pt');
+figuresize(400,300,'pt');
 
 % Params that allows the plots to appear in the order LMS, L-M, S
 stimOrder = [2 3 1];
@@ -176,6 +176,7 @@ for ss = 1:length(subjectNames)
     a.XTickLabel = roiSet;
 
     ylim([0 50])
+    a.YTick = [0 25 50];
     drawnow
 
 end

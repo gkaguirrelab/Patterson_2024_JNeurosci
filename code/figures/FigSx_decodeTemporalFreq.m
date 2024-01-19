@@ -144,6 +144,7 @@ for ss = 1:nSubs
             % Plot the correlation matrix
             nexttile(colOrder(dd)+(ss-1)*nSubs);
             im = squeeze(mean(corrMat));
+            allMats(ss,dd,:,:) = im;
             im = round(im * 128 + 128);
             image(im);
             colormap(cmap)
@@ -180,6 +181,37 @@ end % Subjects
 % Save the plot
 plotNamesPDF = 'FigSx_decodeFrequency.pdf';
 saveas(figHandle,fullfile(savePath,plotNamesPDF));
+
+% Create an average-subject plot
+figHandleC = figure();
+figuresize(400,200,'pt');
+t = tiledlayout(1,2);
+t.TileSpacing = 'compact';
+t.Padding = 'compact';
+setNames = {'achromatic (LMS)','chromatic (L–M and S)'};
+for dd=1:2
+    switch dd
+        case 1
+            im = squeeze(mean(mean(allMats(:,3,:,:),2)));
+        case 2
+            im = squeeze(mean(mean(allMats(:,1:2,:,:),2)));
+    end
+    nexttile()
+    im = round(im * 128 + 128);
+    image(im);
+    colormap(cmap)
+    axis square
+    title(setNames{dd});
+    drawnow
+    if dd == 1
+    plotCleanUp(allFreqs);
+    else
+        axis off
+    end
+end
+plotNamesPDF = 'FigSx_AvgSubjectDecodeFrequency.pdf';
+saveas(figHandleC,fullfile(savePath,plotNamesPDF));
+
 
 % Create and save and color bar
 figHandleB = figure();

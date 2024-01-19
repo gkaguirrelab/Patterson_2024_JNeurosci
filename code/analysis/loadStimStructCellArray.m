@@ -5,11 +5,9 @@ function [stimStructCellArray] = loadStimStructCellArray(userName)
 
 % Set Dropbox path used to load the stimulus specification files
 if ismac
-dropboxDataDir = fullfile('/Users', userName, '/Dropbox (Aguirre-Brainard Lab)/MELA_data_Through061317');
-elseif isunix
-dropboxDataDir = fullfile('/home', userName, '/Dropbox (Aguirre-Brainard Lab)/MELA_data_Through061317');    
-elseif ispc
-dropboxDataDir = fullfile('C:\Users', userName, '/Dropbox (Aguirre-Brainard Lab)/MELA_data_Through061317');     
+    dropboxDataDir = fullfile('/Users', userName, 'Dropbox (Aguirre-Brainard Lab)','MELA_data_Through061317');
+else
+    error('need to implement different computer type)')
 end
 
 % Define the stimulus file session directories
@@ -27,7 +25,7 @@ whichSessionsToMerge = {[1 2], [3 4]};
 %whichSessionsToMerge = {[1]};
 
 for ss = 1:length(stimulusSessDirs)
-    
+
     % Extract some information about this session and put it into the
     % params variable that will be passed to MakeStrimStruct
     tmp = strsplit(stimulusSessDirs{ss}, '/');
@@ -43,8 +41,9 @@ for ss = 1:length(stimulusSessDirs)
     makeStimStructParams.sessionDate = tmp{3};
     makeStimStructParams.packetType       = 'fMRI';
     makeStimStructParams.stimulusDir       = fullfile(dropboxDataDir, stimulusSessDirs{ss});
-    nRuns = length(listdir(fullfile(makeStimStructParams.stimulusDir, 'MatFiles', '*.mat'), 'files'));
-    
+    fileTarget = fullfile(makeStimStructParams.stimulusDir, 'MatFiles', '*.mat');
+    nRuns = length(listdir(fileTarget, 'files'));
+
     % Display some useful information
     fprintf('>> Processing <strong>%s</strong> | <strong>%s</strong> | <strong>%s</strong>\n', makeStimStructParams.sessionType, makeStimStructParams.sessionObserver, makeStimStructParams.sessionDate);
 
@@ -57,8 +56,8 @@ for ss = 1:length(stimulusSessDirs)
 
         % Make the stimulus structure
         [preMergeStimStructCellArray{ss, ii}.values, ...
-         preMergeStimStructCellArray{ss, ii}.timebase, ...
-         preMergeStimStructCellArray{ss, ii}.metaData] = makeStimStruct(makeStimStructParams);
+            preMergeStimStructCellArray{ss, ii}.timebase, ...
+            preMergeStimStructCellArray{ss, ii}.metaData] = makeStimStruct(makeStimStructParams);
     end
     fprintf('\n');
 end

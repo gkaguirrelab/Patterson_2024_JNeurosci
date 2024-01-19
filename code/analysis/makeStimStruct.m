@@ -104,6 +104,6 @@ metaData.stimulusOrderAorB = tmp(end:end);
 % Get the timing of the attention events and put this in the metaData
 eventTimesArray=getAttentionEvents(stimulus.metaData.params);
 metaData.eventTimesArray=eventTimesArray;
-[hitRate, falseAlarmRate]=getAttentionPerformance(stimulus.metaData.params);
+[hitRate, falseAlarmRate]=getAttentionPerformance_gka_asb(stimulus.metaData.params);
 metaData.hitRate=hitRate;
 metaData.falseAlarmRate=falseAlarmRate;

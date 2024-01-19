@@ -1,4 +1,4 @@
-function [hitRate, falseAlarmRate] = getAttentionPerformance(params)
+function [hitRate, falseAlarmRate] = getAttentionPerformance_gka_asb(params)
 % function eventTimesArray = getAttentionEvents(params)
 %
 % Returns performance on attention trials

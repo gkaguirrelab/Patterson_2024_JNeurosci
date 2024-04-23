@@ -1,7 +1,7 @@
-# mriSinaiAnalysis
+# Patterson 2024 J Neuroscience
 Analysis code for the paper:
 
-CP Gentile, M Spitchan, HO Taskin, A Bock, GK Aguirre. (in revision) Temporal sensitivity for achromatic and chromatic flicker across the visual cortex. J Neuroscience.
+CP Gentile, M Spitchan, HO Taskin, A Bock, GK Aguirre. (2024) [Temporal sensitivity for achromatic and chromatic flicker across the visual cortex](https://doi.org/10.1523/JNEUROSCI.1395-23.2024). J Neuroscience. 
 
 Overview of analysis pipeline
 

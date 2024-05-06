@@ -54,6 +54,11 @@ setpref(projectName,'projectBaseDir',projectBaseDir);
 %% Flywheel key preferences 
 setpref(projectName, 'flywheelAPIkey', 'Enter your key here');
 
+%% Set the workbench command path
+if ismac
+    setpref(projectName,'wbCommand','/Applications/workbench/bin_macosx64/wb_command');
+end
+
 %% Check for required Matlab toolboxes
 % The set of Matlab add-on toolboxes being used can be determined by
 % running the routines in the projecy, followed by the license function.
